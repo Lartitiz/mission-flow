@@ -209,14 +209,54 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
     saveImmediate({
       fixed_questions: checkedQuestions,
       ai_questions: aiQuestions,
-      questionnaire_status: 'ready',
+      questionnaire_status: 'sent',
+      sent_at: new Date().toISOString(),
     });
 
     toast({
-      title: 'Questionnaire prêt',
-      description: `${allSelected.length} question(s) prêtes à envoyer à ${clientName}.`,
+      title: 'Questionnaire envoyé',
+      description: `${allSelected.length} question(s) prêtes. Copie le lien pour l'envoyer à ${clientName}.`,
     });
   };
+
+  const handleStructureResponses = async () => {
+    if (!kickoff?.questionnaire_responses) return;
+    const responses = kickoff.questionnaire_responses as Record<string, string>;
+    const rawText = Object.entries(responses)
+      .filter(([, v]) => v && String(v).trim())
+      .map(([k, v]) => `**${k}** : ${v}`)
+      .join('\n\n');
+    if (!rawText.trim()) return;
+
+    setIsStructuring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('structure-kickoff-notes', {
+        body: {
+          raw_notes: rawText,
+          mission_type: mission?.mission_type ?? 'binome',
+          proposal_content: proposal?.content ?? null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+      const sections = data?.sections as KickoffStructuredSection[] | undefined;
+      if (sections && Array.isArray(sections)) {
+        setStructuredNotes(sections);
+        saveImmediate({ structured_notes: { sections } });
+        toast({ title: 'Notes structurées', description: 'La fiche kick-off a été générée depuis les réponses.' });
+      }
+    } catch (e) {
+      console.error('Structure questionnaire responses error:', e);
+      toast({ title: 'Erreur', description: 'Impossible de structurer les réponses.', variant: 'destructive' });
+    } finally {
+      setIsStructuring(false);
+    }
+  };
+
+  const questionnaireStatus = kickoff?.questionnaire_status ?? 'draft';
 
   if (isLoading) {
     return <p className="font-body text-muted-foreground py-8">Chargement...</p>;
