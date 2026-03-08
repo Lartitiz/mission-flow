@@ -2,13 +2,17 @@ import { StructuredNotes, StructuredSection } from '@/lib/discovery-types';
 import { useUpdateMission } from '@/hooks/useMissions';
 import { formatMissionType } from '@/lib/missions';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Download } from 'lucide-react';
 import { useState } from 'react';
+import { saveAs } from 'file-saver';
 
 interface StructuredNotesViewProps {
   structuredNotes: StructuredNotes;
   missionId: string;
+  clientName: string;
   currentMissionType: string;
+  rawNotes: string;
+  createdAt?: string;
   onSectionEdit: (index: number, content: string) => void;
 }
 
