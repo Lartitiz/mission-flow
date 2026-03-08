@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
+import { ProposalTab } from '@/components/proposal/ProposalTab';
 
 interface MissionTabsProps {
   missionId: string;
+  clientName: string;
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
@@ -16,7 +18,7 @@ interface TabDef {
   disabledReason?: string;
 }
 
-export function MissionTabs({ missionId, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
+export function MissionTabs({ missionId, clientName, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
   const tabs: TabDef[] = [
     {
       id: 'discovery',
@@ -95,6 +97,8 @@ export function MissionTabs({ missionId, statusIndex, hasStructuredNotes, curren
       <div className="py-6">
         {activeTab === 'discovery' ? (
           <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
+        ) : activeTab === 'proposal' ? (
+          <ProposalTab missionId={missionId} clientName={clientName} />
         ) : (
           <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
             <p className="font-body text-muted-foreground">
