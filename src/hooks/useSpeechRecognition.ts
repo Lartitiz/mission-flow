@@ -4,6 +4,9 @@ interface UseSpeechRecognitionOptions {
   onResult: (transcript: string) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SpeechRecognitionInstance = any;
+
 export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
