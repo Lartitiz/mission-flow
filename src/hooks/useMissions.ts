@@ -16,6 +16,54 @@ export function useMissions() {
   });
 }
 
+export function useMission(id: string) {
+  return useQuery({
+    queryKey: ['missions', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('missions')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as Mission;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpdateMission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Mission>) => {
+      const { error } = await supabase
+        .from('missions')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({ queryKey: ['missions', variables.id] });
+    },
+  });
+}
+
+export function useMissionDiscoveryCalls(missionId: string) {
+  return useQuery({
+    queryKey: ['discovery_calls', missionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('discovery_calls')
+        .select('structured_notes')
+        .eq('mission_id', missionId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!missionId,
+  });
+}
+
 export function useUpdateMissionStatus() {
   const queryClient = useQueryClient();
   return useMutation({

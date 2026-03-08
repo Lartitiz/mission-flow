@@ -8,6 +8,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import Login from './pages/Login';
 import Pipeline from './pages/Pipeline';
 import Missions from './pages/Missions';
+import MissionDetail from './pages/MissionDetail';
 import ClientView from './pages/ClientView';
 import NotFound from './pages/NotFound';
 
@@ -32,6 +33,8 @@ const App = () => (
           >
             <Route index element={<Pipeline />} />
             <Route path="missions" element={<Missions />} />
+            <Route path="mission/:id" element={<MissionDetail />} />
+            <Route path="mission/:id/:tab" element={<MissionDetail />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
