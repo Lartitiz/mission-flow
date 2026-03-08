@@ -6,6 +6,7 @@ interface MissionTabsProps {
   missionId: string;
   statusIndex: number;
   hasStructuredNotes: boolean;
+  currentMissionType: string;
 }
 
 interface TabDef {
@@ -15,7 +16,7 @@ interface TabDef {
   disabledReason?: string;
 }
 
-export function MissionTabs({ missionId, statusIndex, hasStructuredNotes }: MissionTabsProps) {
+export function MissionTabs({ missionId, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
   const tabs: TabDef[] = [
     {
       id: 'discovery',
@@ -93,7 +94,7 @@ export function MissionTabs({ missionId, statusIndex, hasStructuredNotes }: Miss
       {/* Tab content */}
       <div className="py-6">
         {activeTab === 'discovery' ? (
-          <DiscoveryTab missionId={missionId} />
+          <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
         ) : (
           <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
             <p className="font-body text-muted-foreground">

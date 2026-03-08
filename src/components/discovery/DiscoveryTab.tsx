@@ -3,22 +3,28 @@ import { useDiscoveryCall } from '@/hooks/useDiscoveryCall';
 import { DiscoveryQuestions } from '@/components/discovery/DiscoveryQuestions';
 import { SalesScripts } from '@/components/discovery/SalesScripts';
 import { NotesEditor } from '@/components/discovery/NotesEditor';
+import { StructuredNotesView } from '@/components/discovery/StructuredNotesView';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import type { StructuredNotes } from '@/lib/discovery-types';
 
 interface DiscoveryTabProps {
   missionId: string;
+  currentMissionType: string;
 }
 
-export function DiscoveryTab({ missionId }: DiscoveryTabProps) {
-  const { discoveryCall, isLoading, saveNotes, saveQuestions, isSaving } =
+export function DiscoveryTab({ missionId, currentMissionType }: DiscoveryTabProps) {
+  const { discoveryCall, isLoading, saveNotes, saveQuestions, saveStructuredNotes, isSaving } =
     useDiscoveryCall(missionId);
   const { toast } = useToast();
 
   const [notes, setNotes] = useState('');
   const [checkedQuestions, setCheckedQuestions] = useState<Record<string, boolean>>({});
   const [leftTab, setLeftTab] = useState<'questions' | 'scripts'>('questions');
+  const [isStructuring, setIsStructuring] = useState(false);
+  const [structuredNotes, setStructuredNotes] = useState<StructuredNotes | null>(null);
 
   // Sync from DB on load
   useEffect(() => {
@@ -27,6 +33,9 @@ export function DiscoveryTab({ missionId }: DiscoveryTabProps) {
       setCheckedQuestions(
         (discoveryCall.questions_asked as Record<string, boolean>) ?? {}
       );
+      if (discoveryCall.structured_notes) {
+        setStructuredNotes(discoveryCall.structured_notes as unknown as StructuredNotes);
+      }
     }
   }, [discoveryCall]);
 
@@ -41,12 +50,56 @@ export function DiscoveryTab({ missionId }: DiscoveryTabProps) {
     saveQuestions(updated);
   };
 
-  const handleStructure = () => {
-    toast({
-      title: 'Structuration IA à venir',
-      description:
-        'La structuration automatique des notes sera disponible prochainement.',
-    });
+  const handleStructure = async () => {
+    if (!notes.trim()) return;
+    setIsStructuring(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('structure-discovery-notes', {
+        body: { raw_notes: notes, mission_type: currentMissionType },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast({
+          title: 'Erreur',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const structured = data as StructuredNotes;
+      setStructuredNotes(structured);
+      saveStructuredNotes(structured);
+
+      toast({
+        title: 'Notes structurées',
+        description: 'La fiche a été générée avec succès.',
+      });
+    } catch (e) {
+      console.error('Structure error:', e);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de structurer les notes. Réessaie dans quelques instants.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsStructuring(false);
+    }
+  };
+
+  const handleSectionEdit = (index: number, content: string) => {
+    if (!structuredNotes) return;
+    const updated = {
+      ...structuredNotes,
+      sections: structuredNotes.sections.map((s, i) =>
+        i === index ? { ...s, content } : s
+      ),
+    };
+    setStructuredNotes(updated);
+    saveStructuredNotes(updated);
   };
 
   if (isLoading) {
@@ -105,12 +158,30 @@ export function DiscoveryTab({ missionId }: DiscoveryTabProps) {
 
         <Button
           onClick={handleStructure}
-          disabled={!notes.trim()}
+          disabled={!notes.trim() || isStructuring}
           className="font-body gap-2"
         >
-          <Sparkles className="h-4 w-4" />
-          Structurer mes notes
+          {isStructuring ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Structuration en cours... (jusqu'à 30s)
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Structurer mes notes
+            </>
+          )}
         </Button>
+
+        {structuredNotes && (
+          <StructuredNotesView
+            structuredNotes={structuredNotes}
+            missionId={missionId}
+            currentMissionType={currentMissionType}
+            onSectionEdit={handleSectionEdit}
+          />
+        )}
       </div>
     </div>
   );

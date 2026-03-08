@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
+import type { StructuredNotes } from '@/lib/discovery-types';
 
 export type DiscoveryCall = Tables<'discovery_calls'>;
 
@@ -45,7 +46,14 @@ export function useDiscoveryCall(missionId: string) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; raw_notes?: string; questions_asked?: Record<string, boolean> | null }) => {
+    mutationFn: async ({ id, ...updates }: {
+      id: string;
+      raw_notes?: string;
+      questions_asked?: Record<string, boolean> | null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      structured_notes?: any;
+      ai_suggested_type?: string | null;
+    }) => {
       const { error } = await supabase
         .from('discovery_calls')
         .update(updates)
@@ -86,6 +94,19 @@ export function useDiscoveryCall(missionId: string) {
     [discoveryCall, updateMutation, createMutation]
   );
 
+  const saveStructuredNotes = useCallback(
+    (structured: StructuredNotes) => {
+      if (discoveryCall) {
+        updateMutation.mutate({
+          id: discoveryCall.id,
+          structured_notes: structured,
+          ai_suggested_type: structured.suggested_type,
+        });
+      }
+    },
+    [discoveryCall, updateMutation]
+  );
+
   // Cleanup timeouts
   useEffect(() => {
     return () => {
@@ -99,6 +120,7 @@ export function useDiscoveryCall(missionId: string) {
     isLoading,
     saveNotes,
     saveQuestions,
+    saveStructuredNotes,
     isSaving: createMutation.isPending || updateMutation.isPending,
   };
 }
