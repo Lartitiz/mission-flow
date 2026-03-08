@@ -6,7 +6,7 @@ import { ClientActionsTable } from './ClientActionsTable';
 import { AiExtractionResults } from './AiExtractionResults';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Loader2, Plus, Upload } from 'lucide-react';
+import { Sparkles, Loader2, Plus, Upload, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -43,6 +43,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
   const [aiText, setAiText] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
   const [extractionResults, setExtractionResults] = useState<{
     new_actions: AiNewAction[];
     updates: AiUpdate[];
@@ -229,15 +230,60 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
             onDelete={deleteAction}
             onReorder={reorderActions}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addAction('laetitia')}
-            className="font-body gap-2"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Ajouter une action
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => addAction('laetitia')}
+              className="font-body gap-2"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Ajouter une action
+            </Button>
+            {myActions.some((a) => !a.category && a.task.trim()) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const uncategorized = myActions.filter((a) => !a.category && a.task.trim());
+                  if (!uncategorized.length) return;
+                  setIsCategorizing(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke('auto-categorize-actions', {
+                      body: {
+                        actions: uncategorized.map((a) => ({
+                          id: a.id,
+                          task: a.task,
+                          description: a.description,
+                          channel: a.channel,
+                        })),
+                      },
+                    });
+                    if (error || data?.error) {
+                      toast({ title: 'Erreur', description: data?.error || 'Erreur IA', variant: 'destructive' });
+                      return;
+                    }
+                    const cats = data?.categorizations as { id: string; category: string }[];
+                    if (cats?.length) {
+                      for (const c of cats) {
+                        updateAction(c.id, { category: c.category });
+                      }
+                      toast({ title: 'Catégorisation terminée', description: `${cats.length} action(s) catégorisée(s).` });
+                    }
+                  } catch {
+                    toast({ title: 'Erreur', description: 'Impossible de catégoriser.', variant: 'destructive' });
+                  } finally {
+                    setIsCategorizing(false);
+                  }
+                }}
+                disabled={isCategorizing}
+                className="font-body gap-2"
+              >
+                {isCategorizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                Auto-catégoriser
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.save-questionnaire-response]
 verify_jwt = false
+
+[functions.auto-categorize-actions]
+verify_jwt = false
