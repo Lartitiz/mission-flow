@@ -1,8 +1,18 @@
+import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 import type { Mission } from '@/lib/missions';
 import { formatMissionType, formatAmount, timeAgo, getDaysSince } from '@/lib/missions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { DeleteMissionDialog } from './DeleteMissionDialog';
+import { useDeleteMission } from '@/hooks/useMissions';
 
 interface MissionCardProps {
   mission: Mission;
@@ -10,6 +20,8 @@ interface MissionCardProps {
 
 export function MissionCard({ mission }: MissionCardProps) {
   const navigate = useNavigate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteMission = useDeleteMission();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: mission.id,
     data: { mission },
@@ -55,30 +67,65 @@ export function MissionCard({ mission }: MissionCardProps) {
   const amount = formatAmount(mission.amount);
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      onClick={() => navigate(`/dashboard/mission/${mission.id}`)}
-      className={`bg-card rounded-xl border-l-4 ${borderColor} shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-shadow hover:shadow-md`}
-    >
-      <p className="font-heading text-sm text-card-foreground leading-snug mb-2 break-words">
-        {mission.client_name}
-      </p>
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        onClick={() => navigate(`/dashboard/mission/${mission.id}`)}
+        className={`bg-card rounded-xl border-l-4 ${borderColor} shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-shadow hover:shadow-md relative group`}
+      >
+        {/* Menu three dots */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted"
+            >
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteOpen(true);
+                }}
+                className="text-destructive focus:text-destructive font-body text-sm"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {typeBadge()}
-        {amount && (
-          <span className="font-body text-xs text-muted-foreground font-medium">
-            {amount}
-          </span>
-        )}
+        <p className="font-heading text-sm text-card-foreground leading-snug mb-2 break-words pr-6">
+          {mission.client_name}
+        </p>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {typeBadge()}
+          {amount && (
+            <span className="font-body text-xs text-muted-foreground font-medium">
+              {amount}
+            </span>
+          )}
+        </div>
+
+        <p className="font-body text-[11px] text-muted-foreground mt-2">
+          {timeAgo(mission.updated_at)}
+        </p>
       </div>
 
-      <p className="font-body text-[11px] text-muted-foreground mt-2">
-        {timeAgo(mission.updated_at)}
-      </p>
-    </div>
+      <DeleteMissionDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        clientName={mission.client_name}
+        onConfirm={() => deleteMission.mutate(mission.id)}
+        isPending={deleteMission.isPending}
+      />
+    </>
   );
 }

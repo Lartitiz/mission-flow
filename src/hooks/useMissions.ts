@@ -116,3 +116,17 @@ export function useCreateMission() {
     },
   });
 }
+
+export function useDeleteMission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('missions').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      toast({ title: 'Mission supprimée' });
+    },
+  });
+}
