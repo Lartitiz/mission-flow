@@ -47,7 +47,7 @@ Sois directe et parfois cash. Dis clairement ce qui n'est PAS prioritaire ("La p
 
 SECTION 3 — "Ma proposition : ${tutoiement ? 'ta binôme de com\'' : 'votre binôme de com\''}"
 
-Commence par un encart : [ENCART]On fait ensemble. ${tutoiement ? 'Tu n\\'es plus seul·e' : 'Vous n\\'êtes plus seul·e'} face à ${tutoiement ? 'ta' : 'votre'} com'.[/ENCART]
+Commence par un encart : [ENCART]On fait ensemble. ${tutoiement ? "Tu n'es plus seul·e" : "Vous n'êtes plus seul·e"} face à ${tutoiement ? 'ta' : 'votre'} com'.[/ENCART]
 
 Puis détaille en 2 phases :
 
