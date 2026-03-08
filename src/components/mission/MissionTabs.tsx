@@ -6,6 +6,7 @@ interface MissionTabsProps {
   missionId: string;
   statusIndex: number;
   hasStructuredNotes: boolean;
+  currentMissionType: string;
 }
 
 interface TabDef {
