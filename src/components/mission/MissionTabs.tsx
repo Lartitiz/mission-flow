@@ -3,6 +3,7 @@ import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
 import { ProposalTab } from '@/components/proposal/ProposalTab';
 import { KickoffTab } from '@/components/kickoff/KickoffTab';
 import { ActionsTab } from '@/components/actions/ActionsTab';
+import { FollowUpTab } from '@/components/followup/FollowUpTab';
 
 interface MissionTabsProps {
   missionId: string;
@@ -62,6 +63,9 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
       case 'actions':
         if (statusIndex < 4) return <EmptyState />;
         return <ActionsTab missionId={missionId} clientName={clientName} />;
+      case 'follow-up':
+        if (statusIndex < 4) return <EmptyState />;
+        return <FollowUpTab missionId={missionId} clientName={clientName} missionType={currentMissionType} amount={amount} />;
       default:
         return <EmptyState />;
     }
