@@ -143,12 +143,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Canal</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                <span className="flex items-center gap-1">Heures <Badge variant="outline" className="text-[8px] px-1 py-0">Admin</Badge></span>
-              </th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                <span className="flex items-center gap-1">Budget HT <Badge variant="outline" className="text-[8px] px-1 py-0">Admin</Badge></span>
-              </th>
+              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 w-10"></th>
             </tr>
