@@ -169,21 +169,6 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                 <td className="px-1 py-1 w-[200px]">
                   <EditableCell value={action.description} onSave={(v) => onUpdate(action.id, { description: v })} />
                 </td>
-                <td className="px-2 py-1 w-[120px]">
-                  <Select
-                    value={action.channel ?? ''}
-                    onValueChange={(v) => onUpdate(action.id, { channel: v })}
-                  >
-                    <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CHANNELS.map((c) => (
-                        <SelectItem key={c} value={c} className="font-body text-xs">{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </td>
                 <td className="px-1 py-1 w-[100px]">
                   <DateCell
                     date={action.target_date}
