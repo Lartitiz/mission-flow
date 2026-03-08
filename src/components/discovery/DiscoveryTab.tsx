@@ -180,7 +180,10 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
           <StructuredNotesView
             structuredNotes={structuredNotes}
             missionId={missionId}
+            clientName={clientName}
             currentMissionType={currentMissionType}
+            rawNotes={notes}
+            createdAt={discoveryCall?.created_at}
             onSectionEdit={handleSectionEdit}
           />
         )}

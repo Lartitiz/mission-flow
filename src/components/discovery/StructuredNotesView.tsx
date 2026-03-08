@@ -66,7 +66,18 @@ export function StructuredNotesView({
 
   return (
     <div className="space-y-4 mt-6">
-      <h3 className="font-heading text-lg text-foreground">Fiche structurée</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-heading text-lg text-foreground">Fiche structurée</h3>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleDownloadMarkdown}
+          className="font-body gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Télécharger (.md)
+        </Button>
+      </div>
 
       {structuredNotes.sections.map((section, idx) => (
         <SectionCard

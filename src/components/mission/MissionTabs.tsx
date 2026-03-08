@@ -97,8 +97,8 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
 
       {/* Tab content */}
       <div className="py-6">
-        {activeTab === 'discovery' ? (
-          <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
+         {activeTab === 'discovery' ? (
+           <DiscoveryTab missionId={missionId} clientName={clientName} currentMissionType={currentMissionType} />
         ) : activeTab === 'proposal' ? (
           <ProposalTab missionId={missionId} clientName={clientName} clientEmail={clientEmail} missionType={currentMissionType} amount={amount} />
         ) : (
