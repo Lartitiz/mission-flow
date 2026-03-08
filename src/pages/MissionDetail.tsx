@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMission, useUpdateMission, useMissionDiscoveryCalls } from '@/hooks/useMissions';
+import { useMission, useUpdateMission, useMissionDiscoveryCalls, useDeleteMission } from '@/hooks/useMissions';
 import { formatMissionType, formatAmount, statusLabel, statusColor, statusIndex } from '@/lib/missions';
 import { MissionTypeBadge } from '@/components/mission/MissionTypeBadge';
 import { MissionTabs } from '@/components/mission/MissionTabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { DeleteMissionDialog } from '@/components/pipeline/DeleteMissionDialog';
 
 const MissionDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,9 +20,11 @@ const MissionDetail = () => {
   const { data: mission, isLoading } = useMission(id!);
   const { data: discoveryCalls } = useMissionDiscoveryCalls(id!);
   const updateMission = useUpdateMission();
+  const deleteMission = useDeleteMission();
 
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountValue, setAmountValue] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -56,11 +65,19 @@ const MissionDetail = () => {
     if (e.key === 'Escape') setEditingAmount(false);
   };
 
+  const handleDelete = () => {
+    deleteMission.mutate(mission.id, {
+      onSuccess: () => {
+        navigate('/dashboard');
+      },
+    });
+  };
+
   return (
     <div>
       {/* Header */}
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <Button
             variant="ghost"
             size="sm"
@@ -70,6 +87,23 @@ const MissionDetail = () => {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Pipeline
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setDeleteOpen(true)}
+                className="text-destructive focus:text-destructive font-body text-sm"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer la mission
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -122,6 +156,14 @@ const MissionDetail = () => {
         statusIndex={si}
         hasStructuredNotes={!!hasStructuredNotes}
         currentMissionType={mission.mission_type}
+      />
+
+      <DeleteMissionDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        clientName={mission.client_name}
+        onConfirm={handleDelete}
+        isPending={deleteMission.isPending}
       />
     </div>
   );

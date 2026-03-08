@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import type { Mission } from '@/lib/missions';
 
 export function useMissions() {
@@ -112,6 +113,20 @@ export function useCreateMission() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions'] });
+    },
+  });
+}
+
+export function useDeleteMission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('missions').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      toast({ title: 'Mission supprimée' });
     },
   });
 }
