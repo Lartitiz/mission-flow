@@ -64,6 +64,16 @@ export default {
         brand: {
           logo: "hsl(var(--brand-logo))",
         },
+        badge: {
+          gray: "hsl(var(--badge-gray))",
+          "gray-foreground": "hsl(var(--badge-gray-foreground))",
+          rose: "hsl(var(--badge-rose))",
+          bordeaux: "hsl(var(--badge-bordeaux))",
+        },
+        warning: {
+          orange: "hsl(var(--warning-orange))",
+          red: "hsl(var(--warning-red))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -49,6 +49,14 @@
 
     --font-heading: 'Libre Baskerville', serif;
     --font-body: 'IBM Plex Sans', sans-serif;
+
+    --badge-gray: 0 0% 88%;
+    --badge-gray-foreground: 0 0% 30%;
+    --badge-rose: 340 97% 61%;
+    --badge-bordeaux: 330 100% 28%;
+    --warning-orange: 30 100% 50%;
+    --warning-red: 0 80% 50%;
+    --card-shadow: 0 2px 8px 0 hsla(0, 0%, 0%, 0.06);
   }
 }
 
