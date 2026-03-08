@@ -1,20 +1,61 @@
 import { useState, useEffect } from 'react';
 import { useKickoff } from '@/hooks/useKickoff';
+import { useDiscoveryCall } from '@/hooks/useDiscoveryCall';
 import { KickoffQuestions } from './KickoffQuestions';
 import { QuestionnairePreview } from './QuestionnairePreview';
 import { NotesEditor } from '@/components/discovery/NotesEditor';
+import { KickoffStructuredNotes } from './KickoffStructuredNotes';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Video, FileText } from 'lucide-react';
+import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface KickoffTabProps {
   missionId: string;
   clientName: string;
 }
 
+interface KickoffStructuredSection {
+  title: string;
+  content: string;
+}
+
 export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
   const { kickoff, isLoading, saveNotes, saveField, saveImmediate, isSaving } = useKickoff(missionId);
+  const { discoveryCall } = useDiscoveryCall(missionId);
   const { toast } = useToast();
+
+  // Fetch proposal for context
+  const { data: proposal } = useQuery({
+    queryKey: ['proposal', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('proposals')
+        .select('content')
+        .eq('mission_id', missionId)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!missionId,
+  });
+
+  // Fetch mission type
+  const { data: mission } = useQuery({
+    queryKey: ['mission-type', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('missions')
+        .select('mission_type')
+        .eq('id', missionId)
+        .single();
+      return data;
+    },
+    enabled: !!missionId,
+  });
 
   const [mode, setMode] = useState<'visio' | 'questionnaire'>('visio');
   const [notes, setNotes] = useState('');
@@ -22,6 +63,8 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
   const [aiQuestions, setAiQuestions] = useState<string[]>([]);
   const [declicEnabled, setDeclicEnabled] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [isStructuring, setIsStructuring] = useState(false);
+  const [structuredNotes, setStructuredNotes] = useState<KickoffStructuredSection[] | null>(null);
 
   // Sync from DB
   useEffect(() => {
@@ -35,6 +78,13 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
 
       const ai = kickoff.ai_questions as string[] | null;
       if (ai) setAiQuestions(ai);
+
+      const structured = kickoff.structured_notes as unknown;
+      if (structured && Array.isArray(structured)) {
+        setStructuredNotes(structured as KickoffStructuredSection[]);
+      } else if (structured && typeof structured === 'object' && 'sections' in (structured as Record<string, unknown>)) {
+        setStructuredNotes((structured as { sections: KickoffStructuredSection[] }).sections);
+      }
     }
   }, [kickoff]);
 
@@ -66,23 +116,95 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
   };
 
   const handleGenerateAiQuestions = async () => {
-    // Placeholder — Edge Function will be created in next prompt
     setIsGeneratingAi(true);
-    setTimeout(() => {
-      toast({
-        title: 'Bientôt disponible',
-        description: "La génération IA des questions kick-off sera implémentée prochainement.",
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-kickoff-questions', {
+        body: {
+          structured_discovery_notes: discoveryCall?.structured_notes ?? null,
+          proposal_content: proposal?.content ?? null,
+          mission_type: mission?.mission_type ?? 'binome',
+        },
       });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+
+      // Flatten themes into a flat question list
+      const themes = data?.themes as { name: string; questions: string[] }[] | undefined;
+      if (themes && Array.isArray(themes)) {
+        const allQuestions = themes.flatMap((t) => t.questions);
+        setAiQuestions(allQuestions);
+        saveImmediate({ ai_questions: allQuestions });
+        toast({
+          title: 'Questions générées',
+          description: `${allQuestions.length} questions contextuelles générées.`,
+        });
+      } else {
+        toast({ title: 'Erreur', description: 'Format de réponse inattendu.', variant: 'destructive' });
+      }
+    } catch (e) {
+      console.error('Generate kickoff questions error:', e);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de générer les questions. Réessaie dans quelques instants.',
+        variant: 'destructive',
+      });
+    } finally {
       setIsGeneratingAi(false);
-    }, 1000);
+    }
+  };
+
+  const handleStructureNotes = async () => {
+    if (!notes.trim()) return;
+    setIsStructuring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('structure-kickoff-notes', {
+        body: {
+          raw_notes: notes,
+          mission_type: mission?.mission_type ?? 'binome',
+          proposal_content: proposal?.content ?? null,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+
+      const sections = data?.sections as KickoffStructuredSection[] | undefined;
+      if (sections && Array.isArray(sections)) {
+        setStructuredNotes(sections);
+        saveImmediate({ structured_notes: { sections } });
+        toast({ title: 'Notes structurées', description: 'La fiche kick-off a été générée.' });
+      }
+    } catch (e) {
+      console.error('Structure kickoff notes error:', e);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de structurer les notes. Réessaie dans quelques instants.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsStructuring(false);
+    }
+  };
+
+  const handleSectionEdit = (index: number, content: string) => {
+    if (!structuredNotes) return;
+    const updated = structuredNotes.map((s, i) => (i === index ? { ...s, content } : s));
+    setStructuredNotes(updated);
+    saveImmediate({ structured_notes: { sections: updated } });
   };
 
   const handleSendQuestionnaire = () => {
-    // Collect all selected questions into kickoff record
     const allSelected = Object.entries(checkedQuestions)
       .filter(([, v]) => v)
       .map(([k]) => k);
-    
+
     saveImmediate({
       fixed_questions: checkedQuestions,
       ai_questions: aiQuestions,
@@ -138,11 +260,41 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
         {/* RIGHT — Notes or Questionnaire Preview (60%) */}
         <div className="w-full lg:w-[60%] space-y-4">
           {mode === 'visio' ? (
-            <NotesEditor
-              notes={notes}
-              onChange={handleNotesChange}
-              isSaving={isSaving}
-            />
+            <>
+              <NotesEditor
+                notes={notes}
+                onChange={handleNotesChange}
+                isSaving={isSaving}
+              />
+
+              <Button
+                onClick={handleStructureNotes}
+                disabled={!notes.trim() || isStructuring}
+                className="font-body gap-2"
+              >
+                {isStructuring ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Structuration en cours... (jusqu'à 30s)
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Structurer mes notes
+                  </>
+                )}
+              </Button>
+
+              {structuredNotes && (
+                <KickoffStructuredNotes
+                  sections={structuredNotes}
+                  clientName={clientName}
+                  rawNotes={notes}
+                  createdAt={kickoff?.created_at}
+                  onSectionEdit={handleSectionEdit}
+                />
+              )}
+            </>
           ) : (
             <QuestionnairePreview
               checkedQuestions={checkedQuestions}
