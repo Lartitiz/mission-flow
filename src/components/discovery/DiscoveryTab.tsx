@@ -141,6 +141,7 @@ export function DiscoveryTab({ missionId, currentMissionType }: DiscoveryTabProp
             <DiscoveryQuestions
               checkedQuestions={checkedQuestions}
               onToggle={handleQuestionToggle}
+              currentNotes={notes}
             />
           ) : (
             <SalesScripts />

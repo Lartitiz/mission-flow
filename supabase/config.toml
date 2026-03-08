@@ -2,3 +2,6 @@ project_id = "xfotgssasntgrpributa"
 
 [functions.structure-discovery-notes]
 verify_jwt = false
+
+[functions.suggest-discovery-questions]
+verify_jwt = false
