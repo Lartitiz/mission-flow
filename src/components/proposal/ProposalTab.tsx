@@ -75,9 +75,19 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
     },
   });
 
-  const sections: ProposalSection[] = Array.isArray(proposal?.content)
-    ? (proposal.content as unknown as ProposalSection[])
-    : [];
+  console.log("Proposal content:", proposal?.content);
+
+  const sections: ProposalSection[] = (() => {
+    const c = proposal?.content;
+    if (!c) return [];
+    if (Array.isArray(c)) return c as unknown as ProposalSection[];
+    // Handle { sections: [...] } shape
+    if (typeof c === 'object' && 'sections' in (c as Record<string, unknown>)) {
+      const s = (c as Record<string, unknown>).sections;
+      if (Array.isArray(s)) return s as unknown as ProposalSection[];
+    }
+    return [];
+  })();
 
   const handleGenerateWord = async () => {
     if (sections.length === 0) {
@@ -88,9 +98,9 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
     try {
       await generateProposalDocx(clientName, sections);
       toast.success('Document Word téléchargé !');
-    } catch (err) {
-      console.error(err);
-      toast.error("Erreur lors de la génération du document.");
+    } catch (err: any) {
+      console.error("Erreur Word:", err);
+      toast.error("Erreur : " + (err?.message || "Génération impossible"));
     } finally {
       setGeneratingWord(false);
     }
@@ -187,7 +197,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
             </Button>
             <Button
               onClick={handleGenerateWord}
-              disabled={generatingWord || sections.length === 0}
+              disabled={generatingWord || (!proposal?.content || sections.length === 0)}
               className="gap-2"
             >
               {generatingWord ? (
