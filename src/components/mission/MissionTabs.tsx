@@ -3,6 +3,7 @@ import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
 import { ProposalTab } from '@/components/proposal/ProposalTab';
 import { KickoffTab } from '@/components/kickoff/KickoffTab';
 import { ActionsTab } from '@/components/actions/ActionsTab';
+import { FollowUpTab } from '@/components/followup/FollowUpTab';
 
 interface MissionTabsProps {
   missionId: string;
