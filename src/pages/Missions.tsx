@@ -274,6 +274,7 @@ const Missions = () => {
       <DeleteMissionDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
+        clientName={missions.find((m) => m.id === deleteId)?.client_name ?? ''}
         onConfirm={() => {
           if (deleteId) {
             deleteMission.mutate(deleteId);
