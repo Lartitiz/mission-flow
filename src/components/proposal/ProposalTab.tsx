@@ -75,9 +75,19 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
     },
   });
 
-  const sections: ProposalSection[] = Array.isArray(proposal?.content)
-    ? (proposal.content as unknown as ProposalSection[])
-    : [];
+  console.log("Proposal content:", proposal?.content);
+
+  const sections: ProposalSection[] = (() => {
+    const c = proposal?.content;
+    if (!c) return [];
+    if (Array.isArray(c)) return c as unknown as ProposalSection[];
+    // Handle { sections: [...] } shape
+    if (typeof c === 'object' && 'sections' in (c as Record<string, unknown>)) {
+      const s = (c as Record<string, unknown>).sections;
+      if (Array.isArray(s)) return s as unknown as ProposalSection[];
+    }
+    return [];
+  })();
 
   const handleGenerateWord = async () => {
     if (sections.length === 0) {
