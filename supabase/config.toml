@@ -20,3 +20,12 @@ verify_jwt = false
 
 [functions.structure-session-notes]
 verify_jwt = false
+
+[functions.get-client-space]
+verify_jwt = false
+
+[functions.update-client-action]
+verify_jwt = false
+
+[functions.upload-client-file]
+verify_jwt = false
