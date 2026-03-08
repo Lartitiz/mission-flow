@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, List, LogOut } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { title: 'Pipeline', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Missions', url: '/dashboard/missions', icon: FolderOpen },
+  { title: 'Liste des missions', url: '/dashboard/missions', icon: List },
 ];
 
 export function AppSidebar() {
