@@ -28,6 +28,7 @@ const MissionDetail = () => {
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountValue, setAmountValue] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
