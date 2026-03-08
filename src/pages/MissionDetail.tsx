@@ -118,6 +118,7 @@ const MissionDetail = () => {
         missionId={mission.id}
         statusIndex={si}
         hasStructuredNotes={!!hasStructuredNotes}
+        currentMissionType={mission.mission_type}
       />
     </div>
   );
