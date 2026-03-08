@@ -177,7 +177,26 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
 
   return (
     <div className="space-y-6">
-      <ActionsStats actions={actions} />
+      <div className="flex items-center justify-between">
+        <ActionsStats actions={actions} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setImportOpen(true)}
+          className="font-body gap-2"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Importer un Excel
+        </Button>
+      </div>
+
+      <ExcelImportDialog
+        missionId={missionId}
+        existingActionsCount={actions.length}
+        maxSortOrder={actions.length > 0 ? Math.max(...actions.map((a) => a.sort_order)) : -1}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
 
       <div className="flex gap-1 border-b border-border">
         <button
