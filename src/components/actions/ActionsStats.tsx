@@ -1,7 +1,6 @@
 import type { Action } from '@/hooks/useActions';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, Clock, DollarSign } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { AlertTriangle } from 'lucide-react';
 
 interface ActionsStatsProps {
   actions: Action[];
@@ -19,11 +18,8 @@ export function ActionsStats({ actions }: ActionsStatsProps) {
     (a) => a.target_date && a.target_date < today && !DONE_STATUSES.includes(a.status)
   ).length;
 
-  const totalHours = actions.reduce((sum, a) => sum + (a.hours_estimated ?? 0), 0);
-  const totalBudget = actions.reduce((sum, a) => sum + (Number(a.budget_ht) ?? 0), 0);
-
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4">
       {/* Progress */}
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-4">
         <p className="font-body text-xs text-muted-foreground mb-2">Progression</p>
@@ -50,32 +46,6 @@ export function ActionsStats({ actions }: ActionsStatsProps) {
           ) : (
             <span className="font-body text-lg font-semibold text-foreground">0</span>
           )}
-        </div>
-      </div>
-
-      {/* Hours (admin) */}
-      <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <p className="font-body text-xs text-muted-foreground">Heures estimées</p>
-          <Badge variant="outline" className="text-[9px] px-1 py-0 font-body">Admin</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="font-body text-lg font-semibold text-foreground">{totalHours}h</span>
-        </div>
-      </div>
-
-      {/* Budget (admin) */}
-      <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <p className="font-body text-xs text-muted-foreground">Budget HT</p>
-          <Badge variant="outline" className="text-[9px] px-1 py-0 font-body">Admin</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-          <span className="font-body text-lg font-semibold text-foreground">
-            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(totalBudget)}
-          </span>
         </div>
       </div>
     </div>
