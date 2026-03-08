@@ -37,6 +37,7 @@ const App = () => (
             <Route path="mission/:id" element={<MissionDetail />} />
             <Route path="mission/:id/:tab" element={<MissionDetail />} />
           </Route>
+          <Route path="/client/:token" element={<ClientView />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
