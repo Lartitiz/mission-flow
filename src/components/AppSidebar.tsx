@@ -24,7 +24,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border md:flex">
       <div className="px-5 py-6">
         {!collapsed && (
           <h2 className="font-heading text-lg text-brand-logo leading-tight">
