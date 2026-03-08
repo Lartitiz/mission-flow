@@ -94,7 +94,7 @@ export function MissionTabs({ missionId, statusIndex, hasStructuredNotes, curren
       {/* Tab content */}
       <div className="py-6">
         {activeTab === 'discovery' ? (
-          <DiscoveryTab missionId={missionId} />
+          <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
         ) : (
           <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
             <p className="font-body text-muted-foreground">

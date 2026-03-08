@@ -50,7 +50,8 @@ export function useDiscoveryCall(missionId: string) {
       id: string;
       raw_notes?: string;
       questions_asked?: Record<string, boolean> | null;
-      structured_notes?: StructuredNotes | null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      structured_notes?: any;
       ai_suggested_type?: string | null;
     }) => {
       const { error } = await supabase
