@@ -98,7 +98,7 @@ export function MissionTabs({ missionId, clientName, statusIndex, hasStructuredN
         {activeTab === 'discovery' ? (
           <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
         ) : activeTab === 'proposal' ? (
-          <ProposalTab missionId={missionId} clientName={clientName} />
+          <ProposalTab missionId={missionId} clientName={clientName} missionType={currentMissionType} />
         ) : (
           <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
             <p className="font-body text-muted-foreground">
