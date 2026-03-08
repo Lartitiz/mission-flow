@@ -79,11 +79,11 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
       const ai = kickoff.ai_questions as string[] | null;
       if (ai) setAiQuestions(ai);
 
-      const structured = kickoff.structured_notes as KickoffStructuredSection[] | null;
+      const structured = kickoff.structured_notes as unknown;
       if (structured && Array.isArray(structured)) {
-        setStructuredNotes(structured);
-      } else if (structured && typeof structured === 'object' && 'sections' in (structured as any)) {
-        setStructuredNotes((structured as any).sections);
+        setStructuredNotes(structured as KickoffStructuredSection[]);
+      } else if (structured && typeof structured === 'object' && 'sections' in (structured as Record<string, unknown>)) {
+        setStructuredNotes((structured as { sections: KickoffStructuredSection[] }).sections);
       }
     }
   }, [kickoff]);
