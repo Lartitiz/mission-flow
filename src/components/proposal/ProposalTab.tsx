@@ -98,9 +98,9 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
     try {
       await generateProposalDocx(clientName, sections);
       toast.success('Document Word téléchargé !');
-    } catch (err) {
-      console.error(err);
-      toast.error("Erreur lors de la génération du document.");
+    } catch (err: any) {
+      console.error("Erreur Word:", err);
+      toast.error("Erreur : " + (err?.message || "Génération impossible"));
     } finally {
       setGeneratingWord(false);
     }
