@@ -34,7 +34,7 @@ export function NewMissionDialog({ open, onOpenChange }: NewMissionDialogProps) 
     setClientName('');
     setClientEmail('');
     onOpenChange(false);
-    navigate(`/mission/${mission.id}/discovery`);
+    navigate(`/dashboard/mission/${mission.id}/discovery`);
   };
 
   return (
