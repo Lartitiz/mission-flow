@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
+import { QuestionnaireStatus } from './QuestionnaireStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -208,14 +209,54 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
     saveImmediate({
       fixed_questions: checkedQuestions,
       ai_questions: aiQuestions,
-      questionnaire_status: 'ready',
+      questionnaire_status: 'sent',
+      sent_at: new Date().toISOString(),
     });
 
     toast({
-      title: 'Questionnaire prêt',
-      description: `${allSelected.length} question(s) prêtes à envoyer à ${clientName}.`,
+      title: 'Questionnaire envoyé',
+      description: `${allSelected.length} question(s) prêtes. Copie le lien pour l'envoyer à ${clientName}.`,
     });
   };
+
+  const handleStructureResponses = async () => {
+    if (!kickoff?.questionnaire_responses) return;
+    const responses = kickoff.questionnaire_responses as Record<string, string>;
+    const rawText = Object.entries(responses)
+      .filter(([, v]) => v && String(v).trim())
+      .map(([k, v]) => `**${k}** : ${v}`)
+      .join('\n\n');
+    if (!rawText.trim()) return;
+
+    setIsStructuring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('structure-kickoff-notes', {
+        body: {
+          raw_notes: rawText,
+          mission_type: mission?.mission_type ?? 'binome',
+          proposal_content: proposal?.content ?? null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+      const sections = data?.sections as KickoffStructuredSection[] | undefined;
+      if (sections && Array.isArray(sections)) {
+        setStructuredNotes(sections);
+        saveImmediate({ structured_notes: { sections } });
+        toast({ title: 'Notes structurées', description: 'La fiche kick-off a été générée depuis les réponses.' });
+      }
+    } catch (e) {
+      console.error('Structure questionnaire responses error:', e);
+      toast({ title: 'Erreur', description: 'Impossible de structurer les réponses.', variant: 'destructive' });
+    } finally {
+      setIsStructuring(false);
+    }
+  };
+
+  const questionnaireStatus = kickoff?.questionnaire_status ?? 'draft';
 
   if (isLoading) {
     return <p className="font-body text-muted-foreground py-8">Chargement...</p>;
@@ -296,13 +337,43 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
               )}
             </>
           ) : (
-            <QuestionnairePreview
-              checkedQuestions={checkedQuestions}
-              aiQuestions={aiQuestions}
-              declicEnabled={declicEnabled}
-              onSend={handleSendQuestionnaire}
-              isSaving={isSaving}
-            />
+            <>
+              {(questionnaireStatus === 'sent' || questionnaireStatus === 'completed') && kickoff ? (
+                <QuestionnaireStatus
+                  kickoff={{
+                    id: kickoff.id,
+                    questionnaire_token: kickoff.questionnaire_token,
+                    questionnaire_status: kickoff.questionnaire_status,
+                    sent_at: kickoff.sent_at,
+                    completed_at: kickoff.completed_at,
+                    questionnaire_responses: kickoff.questionnaire_responses as Record<string, string> | null,
+                    fixed_questions: kickoff.fixed_questions as Record<string, boolean> | null,
+                    ai_questions: kickoff.ai_questions as string[] | null,
+                    declic_questions_enabled: kickoff.declic_questions_enabled,
+                  }}
+                  onStructureResponses={handleStructureResponses}
+                  isStructuring={isStructuring}
+                />
+              ) : (
+                <QuestionnairePreview
+                  checkedQuestions={checkedQuestions}
+                  aiQuestions={aiQuestions}
+                  declicEnabled={declicEnabled}
+                  onSend={handleSendQuestionnaire}
+                  isSaving={isSaving}
+                />
+              )}
+
+              {structuredNotes && (
+                <KickoffStructuredNotes
+                  sections={structuredNotes}
+                  clientName={clientName}
+                  rawNotes={notes}
+                  createdAt={kickoff?.created_at}
+                  onSectionEdit={handleSectionEdit}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
