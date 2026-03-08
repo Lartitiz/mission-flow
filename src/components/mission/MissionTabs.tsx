@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
 import { ProposalTab } from '@/components/proposal/ProposalTab';
+import { KickoffTab } from '@/components/kickoff/KickoffTab';
 
 interface MissionTabsProps {
   missionId: string;
@@ -54,6 +55,9 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
       case 'proposal':
         if (!hasStructuredNotes && statusIndex < 1) return <EmptyState />;
         return <ProposalTab missionId={missionId} clientName={clientName} clientEmail={clientEmail} missionType={currentMissionType} amount={amount} />;
+      case 'kickoff':
+        if (statusIndex < 3) return <EmptyState />;
+        return <KickoffTab missionId={missionId} clientName={clientName} />;
       default:
         return <EmptyState />;
     }
