@@ -11,6 +11,7 @@ import Missions from './pages/Missions';
 import MissionDetail from './pages/MissionDetail';
 import ClientView from './pages/ClientView';
 import NotFound from './pages/NotFound';
+import ResetPassword from './pages/ResetPassword';
 
 const queryClient = new QueryClient();
 
@@ -22,7 +23,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/client/:token" element={<ClientView />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={
