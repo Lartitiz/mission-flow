@@ -35,11 +35,35 @@ interface ProposalSection {
   content: string;
 }
 
+function createEncartParagraph(content: string): Paragraph {
+  return new Paragraph({
+    spacing: { before: 200, after: 200 },
+    border: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+      left: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+      right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+    },
+    shading: { type: ShadingType.CLEAR, color: LIGHT_GRAY, fill: LIGHT_GRAY },
+    indent: { left: convertInchesToTwip(0.3), right: convertInchesToTwip(0.3) },
+    children: [
+      new TextRun({
+        text: content,
+        bold: true,
+        size: 22,
+        font: 'Arial',
+      }),
+    ],
+  });
+}
+
 function parseMarkdownToParagraphs(text: string): Paragraph[] {
   const lines = text.split('\n');
   const paragraphs: Paragraph[] = [];
   let inTable = false;
   let tableRows: string[][] = [];
+  let inEncart = false;
+  let encartLines: string[] = [];
 
   const flushTable = () => {
     if (tableRows.length > 0) {
@@ -49,8 +73,41 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
     inTable = false;
   };
 
+  const flushEncart = () => {
+    if (encartLines.length > 0) {
+      paragraphs.push(createEncartParagraph(encartLines.join(' ')));
+      encartLines = [];
+    }
+    inEncart = false;
+  };
+
   for (const line of lines) {
     const trimmed = line.trim();
+
+    // Handle multi-line encart accumulation
+    if (inEncart) {
+      if (trimmed.includes('[/ENCART]')) {
+        encartLines.push(trimmed.replace('[/ENCART]', '').trim());
+        flushEncart();
+      } else {
+        encartLines.push(trimmed);
+      }
+      continue;
+    }
+
+    // Detect [ENCART]...[/ENCART] blocks (single-line)
+    if (trimmed.startsWith('[ENCART]')) {
+      if (inTable) flushTable();
+      if (trimmed.includes('[/ENCART]')) {
+        const encartContent = trimmed.replace('[ENCART]', '').replace('[/ENCART]', '').trim();
+        paragraphs.push(createEncartParagraph(encartContent));
+      } else {
+        // Multi-line encart starts
+        inEncart = true;
+        encartLines = [trimmed.replace('[ENCART]', '').trim()];
+      }
+      continue;
+    }
 
     // Table detection
     if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
@@ -95,6 +152,22 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
       continue;
     }
 
+    // Checkmark list (✓)
+    if (trimmed.startsWith('✓ ')) {
+      const content = trimmed.slice(2);
+      paragraphs.push(
+        new Paragraph({
+          spacing: { after: 60 },
+          indent: { left: convertInchesToTwip(0.3) },
+          children: [
+            new TextRun({ text: '✓ ', bold: true, size: 22, font: 'Arial', color: BRAND_PINK }),
+            ...parseInlineFormatting(content),
+          ],
+        })
+      );
+      continue;
+    }
+
     // Bullet list
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       const content = trimmed.slice(2);
@@ -124,12 +197,13 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
     // Regular paragraph
     paragraphs.push(
       new Paragraph({
-        spacing: { after: 80, line: 312 }, // 1.3 line spacing (240 * 1.3)
+        spacing: { after: 80, line: 312 },
         children: parseInlineFormatting(trimmed),
       })
     );
   }
 
+  if (inEncart) flushEncart();
   if (inTable) flushTable();
   return paragraphs;
 }
