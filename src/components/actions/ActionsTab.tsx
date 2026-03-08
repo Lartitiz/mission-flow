@@ -37,6 +37,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
   const { actions, isLoading, addAction, updateAction, deleteAction, reorderActions, isSaving } =
     useActions(missionId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<'laetitia' | 'client'>('laetitia');
   const [aiText, setAiText] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
