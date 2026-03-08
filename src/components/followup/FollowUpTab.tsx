@@ -8,6 +8,7 @@ import { MissionRecap } from './MissionRecap';
 import { NextSessionCard } from './NextSessionCard';
 import { SessionHistory } from './SessionHistory';
 import { JournalSection } from './JournalSection';
+import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 
 interface FollowUpTabProps {
@@ -99,6 +100,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
       />
 
       <JournalSection entries={entries} addEntry={addEntry} isSaving={journalSaving} />
+
+      <DocumentsSection missionId={missionId} />
 
       <ContextExport missionId={missionId} clientName={clientName} />
     </div>
