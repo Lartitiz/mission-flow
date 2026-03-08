@@ -77,8 +77,9 @@ export function useActions(missionId: string) {
 
   const addAction = useCallback(
     (assignee: 'laetitia' | 'client') => {
-      const maxSort = actions.length > 0
-        ? Math.max(...actions.filter(a => a.assignee === assignee).map(a => a.sort_order)) + 1
+      const filtered = actions.filter(a => a.assignee === assignee);
+      const maxSort = filtered.length > 0
+        ? Math.max(...filtered.map(a => a.sort_order)) + 1
         : 0;
       createMutation.mutate({
         mission_id: missionId,
