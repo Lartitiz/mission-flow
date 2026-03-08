@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Trash2 } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
