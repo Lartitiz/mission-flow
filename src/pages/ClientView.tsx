@@ -375,12 +375,11 @@ function ActionCard({ action, isUpdating, onToggle, onFileUpload }: {
           onClick={() => !isUpdating && onToggle(!isDone)}
           disabled={isUpdating}
           style={{
-            width: 20, height: 20, borderRadius: 5, flexShrink: 0, marginTop: 1,
+            width: 20, height: 20, borderRadius: 5, flexShrink: 0,
             border: isDone ? 'none' : '2px solid #D1D5DB',
             background: isDone ? '#91014b' : 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', transition: 'all 0.15s',
-            /* 44px tap target */
             padding: 0, minWidth: 44, minHeight: 44,
             marginLeft: -12, marginTop: -12, marginBottom: -12,
           }}
