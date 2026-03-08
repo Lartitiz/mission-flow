@@ -6,6 +6,8 @@ import { ProposalTab } from '@/components/proposal/ProposalTab';
 interface MissionTabsProps {
   missionId: string;
   clientName: string;
+  clientEmail?: string | null;
+  amount?: number | null;
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
