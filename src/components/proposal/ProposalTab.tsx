@@ -244,37 +244,30 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
 
   const handleRegenerateSection = async (idx: number) => {
     if (!discoveryCall?.structured_notes || !proposal?.id) return;
+    const section = sections[idx];
     setRegeneratingIdx(idx);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-proposal', {
+      const { data, error } = await supabase.functions.invoke('regenerate-proposal-section', {
         body: {
+          section_title: section.title,
+          section_content: section.content,
           structured_notes: discoveryCall.structured_notes,
-          clarification_qa: proposal.clarification_qa,
           mission_type: missionType,
           tutoiement: proposal.tutoiement,
         },
       });
       if (error) throw error;
-      if (!data?.sections) throw new Error("Format invalide");
+      if (!data?.content) throw new Error("Format invalide");
 
-      // Find matching section by title
-      const section = sections[idx];
-      const regenerated = data.sections.find(
-        (s: ProposalSection) => s.title === section.title
+      const updatedSections = sections.map((s, i) =>
+        i === idx ? { title: data.title || section.title, content: data.content } : s
       );
-      if (regenerated) {
-        const updatedSections = sections.map((s, i) =>
-          i === idx ? { ...s, content: regenerated.content } : s
-        );
-        await supabase
-          .from('proposals')
-          .update({ content: { sections: updatedSections } as any })
-          .eq('id', proposal.id);
-        await refetchProposal();
-        toast.success(`Section "${section.title}" régénérée`);
-      } else {
-        toast.error("La section n'a pas pu être régénérée.");
-      }
+      await supabase
+        .from('proposals')
+        .update({ content: { sections: updatedSections } as any })
+        .eq('id', proposal.id);
+      await refetchProposal();
+      toast.success(`Section "${section.title}" régénérée`);
     } catch (err: any) {
       console.error(err);
       toast.error("Erreur : " + (err?.message || "Régénération échouée."));
