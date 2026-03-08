@@ -19,7 +19,10 @@ interface StructuredNotesViewProps {
 export function StructuredNotesView({
   structuredNotes,
   missionId,
+  clientName,
   currentMissionType,
+  rawNotes,
+  createdAt,
   onSectionEdit,
 }: StructuredNotesViewProps) {
   const updateMission = useUpdateMission();
@@ -30,6 +33,35 @@ export function StructuredNotesView({
       { id: missionId, mission_type: structuredNotes.suggested_type },
       { onSuccess: () => setAppliedType(true) }
     );
+  };
+
+  const handleDownloadMarkdown = () => {
+    const date = createdAt ? new Date(createdAt).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }) : new Date().toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    let markdown = `# Appel découverte — ${clientName}\n\n`;
+    markdown += `**Date :** ${date}\n`;
+    markdown += `**Type de mission suggéré :** ${formatMissionType(structuredNotes.suggested_type)}\n\n`;
+    markdown += `---\n\n`;
+
+    structuredNotes.sections.forEach((section) => {
+      markdown += `## ${section.title}\n\n`;
+      markdown += `${section.content}\n\n`;
+    });
+
+    markdown += `---\n\n## Notes brutes\n\n`;
+    markdown += rawNotes;
+
+    const filename = `Appel_decouverte_${clientName.replace(/\s+/g, '_')}_${date.replace(/\s+/g, '_')}.md`;
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    saveAs(blob, filename);
   };
 
   return (
