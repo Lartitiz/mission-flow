@@ -101,6 +101,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
 
       <JournalSection entries={entries} addEntry={addEntry} isSaving={journalSaving} />
 
+      <DocumentsSection missionId={missionId} />
+
       <ContextExport missionId={missionId} clientName={clientName} />
     </div>
   );
