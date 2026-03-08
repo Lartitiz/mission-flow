@@ -73,7 +73,7 @@ const Login = () => {
             Nowadays Missions
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isSignUp ? 'Créez votre compte' : 'Connectez-vous à votre espace'}
+            {isForgot ? 'Réinitialisez votre mot de passe' : isSignUp ? 'Créez votre compte' : 'Connectez-vous à votre espace'}
           </p>
         </div>
 
