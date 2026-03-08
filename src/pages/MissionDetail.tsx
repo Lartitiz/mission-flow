@@ -117,6 +117,8 @@ const MissionDetail = () => {
       <MissionTabs
         missionId={mission.id}
         clientName={mission.client_name}
+        clientEmail={mission.client_email}
+        amount={mission.amount}
         statusIndex={si}
         hasStructuredNotes={!!hasStructuredNotes}
         currentMissionType={mission.mission_type}
