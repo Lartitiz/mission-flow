@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.extract-actions-from-cr]
 verify_jwt = false
+
+[functions.structure-session-notes]
+verify_jwt = false
