@@ -134,7 +134,8 @@ const ClientView = () => {
   };
 
   const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
-    const path = `${data?.mission.client_name?.replace(/\s+/g, '_') ?? 'client'}/actions/${actionId}/${Date.now()}_${file.name}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${data?.mission.client_name?.replace(/\s+/g, '_') ?? 'client'}/actions/${actionId}/${Date.now()}_${safeName}`;
     const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file);
     if (uploadError) { toast({ title: 'Erreur upload', variant: 'destructive' }); return; }
     await supabase.functions.invoke('update-client-action', { body: { token, action_id: actionId, file_name: file.name, file_size: file.size, storage_path: path } });
