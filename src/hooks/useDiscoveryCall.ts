@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
@@ -10,6 +10,8 @@ export function useDiscoveryCall(missionId: string) {
   const queryClient = useQueryClient();
   const debounceTimerNotes = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceTimerQuestions = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingNotesRef = useRef<string | null>(null);
+  const pendingQuestionsRef = useRef<Record<string, boolean> | null>(null);
 
   const { data: discoveryCall, isLoading } = useQuery({
     queryKey: ['discovery_call', missionId],
@@ -68,6 +70,7 @@ export function useDiscoveryCall(missionId: string) {
 
   const saveNotes = useCallback(
     (notes: string) => {
+      pendingNotesRef.current = notes;
       if (debounceTimerNotes.current) clearTimeout(debounceTimerNotes.current);
       debounceTimerNotes.current = setTimeout(() => {
         if (discoveryCall) {
@@ -75,6 +78,7 @@ export function useDiscoveryCall(missionId: string) {
         } else {
           createMutation.mutate({ raw_notes: notes });
         }
+        pendingNotesRef.current = null;
       }, 2000);
     },
     [discoveryCall, updateMutation, createMutation]
@@ -82,6 +86,7 @@ export function useDiscoveryCall(missionId: string) {
 
   const saveQuestions = useCallback(
     (questions: Record<string, boolean>) => {
+      pendingQuestionsRef.current = questions;
       if (debounceTimerQuestions.current) clearTimeout(debounceTimerQuestions.current);
       debounceTimerQuestions.current = setTimeout(() => {
         if (discoveryCall) {
@@ -89,6 +94,7 @@ export function useDiscoveryCall(missionId: string) {
         } else {
           createMutation.mutate({ questions_asked: questions });
         }
+        pendingQuestionsRef.current = null;
       }, 500);
     },
     [discoveryCall, updateMutation, createMutation]
@@ -107,13 +113,29 @@ export function useDiscoveryCall(missionId: string) {
     [discoveryCall, updateMutation]
   );
 
-  // Cleanup timeouts
+  // Flush pending saves on unmount
   useEffect(() => {
+    const currentCall = discoveryCall;
     return () => {
       if (debounceTimerNotes.current) clearTimeout(debounceTimerNotes.current);
       if (debounceTimerQuestions.current) clearTimeout(debounceTimerQuestions.current);
+
+      if (currentCall && pendingNotesRef.current !== null) {
+        supabase
+          .from('discovery_calls')
+          .update({ raw_notes: pendingNotesRef.current })
+          .eq('id', currentCall.id)
+          .then(() => {});
+      }
+      if (currentCall && pendingQuestionsRef.current !== null) {
+        supabase
+          .from('discovery_calls')
+          .update({ questions_asked: pendingQuestionsRef.current })
+          .eq('id', currentCall.id)
+          .then(() => {});
+      }
     };
-  }, []);
+  }, [discoveryCall]);
 
   return {
     discoveryCall,
