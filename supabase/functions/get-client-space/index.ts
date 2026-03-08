@@ -29,13 +29,20 @@ serve(async (req) => {
     // Get mission by token
     const { data: mission, error: missionError } = await supabase
       .from("missions")
-      .select("id, client_name, mission_type, status, amount")
+      .select("id, client_name, mission_type, status, amount, client_link_active")
       .eq("client_token", token)
       .single();
 
     if (missionError || !mission) {
       return new Response(JSON.stringify({ error: "Token invalide" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (mission.client_link_active === false) {
+      return new Response(JSON.stringify({ error: "Ce lien a été désactivé" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

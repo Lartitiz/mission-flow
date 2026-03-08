@@ -4,8 +4,9 @@ import { useMission, useUpdateMission, useMissionDiscoveryCalls, useDeleteMissio
 import { formatMissionType, formatAmount, statusLabel, statusColor, statusIndex } from '@/lib/missions';
 import { MissionTypeBadge } from '@/components/mission/MissionTypeBadge';
 import { MissionTabs } from '@/components/mission/MissionTabs';
+import { ClientLinkDialog } from '@/components/mission/ClientLinkDialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Trash2, Globe } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from '@/components/pipeline/DeleteMissionDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const MissionDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +28,22 @@ const MissionDetail = () => {
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountValue, setAmountValue] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch kickoff for questionnaire info
+  const { data: kickoff } = useQuery({
+    queryKey: ['kickoff', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('kickoffs')
+        .select('questionnaire_token, questionnaire_status')
+        .eq('mission_id', id!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id,
+  });
 
   useEffect(() => {
     if (editingAmount && amountInputRef.current) {
@@ -122,6 +140,16 @@ const MissionDetail = () => {
             {statusLabel(mission.status)}
           </span>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setClientLinkOpen(true)}
+            className="font-body gap-2 text-xs"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            Espace client
+          </Button>
+
           {/* Editable amount */}
           {editingAmount ? (
             <input
@@ -164,6 +192,18 @@ const MissionDetail = () => {
         clientName={mission.client_name}
         onConfirm={handleDelete}
         isPending={deleteMission.isPending}
+      />
+
+      <ClientLinkDialog
+        open={clientLinkOpen}
+        onOpenChange={setClientLinkOpen}
+        clientToken={mission.client_token}
+        clientLinkActive={(mission as any).client_link_active ?? true}
+        onToggleActive={(active) => {
+          updateMission.mutate({ id: mission.id, client_link_active: active } as any);
+        }}
+        questionnaireToken={kickoff?.questionnaire_token}
+        questionnaireStatus={kickoff?.questionnaire_status}
       />
     </div>
   );

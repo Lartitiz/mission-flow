@@ -256,6 +256,7 @@ export type Database = {
         Row: {
           amount: number | null
           client_email: string | null
+          client_link_active: boolean
           client_name: string
           client_token: string
           created_at: string
@@ -268,6 +269,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           client_email?: string | null
+          client_link_active?: boolean
           client_name: string
           client_token?: string
           created_at?: string
@@ -280,6 +282,7 @@ export type Database = {
         Update: {
           amount?: number | null
           client_email?: string | null
+          client_link_active?: boolean
           client_name?: string
           client_token?: string
           created_at?: string
