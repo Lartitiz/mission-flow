@@ -10,6 +10,7 @@ import { Sparkles, Loader2, Plus, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ExcelImportDialog } from './ExcelImportDialog';
 
 interface ActionsTabProps {
   missionId: string;
