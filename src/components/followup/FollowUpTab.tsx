@@ -8,6 +8,7 @@ import { MissionRecap } from './MissionRecap';
 import { NextSessionCard } from './NextSessionCard';
 import { SessionHistory } from './SessionHistory';
 import { JournalSection } from './JournalSection';
+import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 
 interface FollowUpTabProps {
