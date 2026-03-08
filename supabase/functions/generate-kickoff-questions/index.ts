@@ -54,7 +54,7 @@ serve(async (req) => {
 
     const { structured_discovery_notes, proposal_content, mission_type } = await req.json();
 
-    const ton = mission_type === "agency" ? "Vouvoiement." : "Tutoiement.";
+    const ton = "Tutoiement.";
 
     const userPrompt = `${ton}
 
