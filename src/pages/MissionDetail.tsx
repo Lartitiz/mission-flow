@@ -31,6 +31,20 @@ const MissionDetail = () => {
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch kickoff for questionnaire info
+  const { data: kickoff } = useQuery({
+    queryKey: ['kickoff', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('kickoffs')
+        .select('questionnaire_token, questionnaire_status')
+        .eq('mission_id', id!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id,
+  });
+
   useEffect(() => {
     if (editingAmount && amountInputRef.current) {
       amountInputRef.current.focus();
