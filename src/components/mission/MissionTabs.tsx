@@ -91,16 +91,20 @@ export function MissionTabs({ missionId, statusIndex, hasStructuredNotes }: Miss
       </div>
 
       {/* Tab content */}
-      <div className="py-8">
-        <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
-          <p className="font-body text-muted-foreground">
-            Section{' '}
-            <span className="font-medium text-foreground">
-              {tabs.find((t) => t.id === activeTab)?.label}
-            </span>{' '}
-            — à venir
-          </p>
-        </div>
+      <div className="py-6">
+        {activeTab === 'discovery' ? (
+          <DiscoveryTab missionId={missionId} />
+        ) : (
+          <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
+            <p className="font-body text-muted-foreground">
+              Section{' '}
+              <span className="font-medium text-foreground">
+                {tabs.find((t) => t.id === activeTab)?.label}
+              </span>{' '}
+              — à venir
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
