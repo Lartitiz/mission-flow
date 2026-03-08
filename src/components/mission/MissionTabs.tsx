@@ -97,6 +97,8 @@ export function MissionTabs({ missionId, clientName, statusIndex, hasStructuredN
       <div className="py-6">
         {activeTab === 'discovery' ? (
           <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
+        ) : activeTab === 'proposal' ? (
+          <ProposalTab missionId={missionId} clientName={clientName} />
         ) : (
           <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
             <p className="font-body text-muted-foreground">
