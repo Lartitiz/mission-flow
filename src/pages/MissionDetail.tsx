@@ -126,6 +126,16 @@ const MissionDetail = () => {
             {statusLabel(mission.status)}
           </span>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setClientLinkOpen(true)}
+            className="font-body gap-2 text-xs"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            Espace client
+          </Button>
+
           {/* Editable amount */}
           {editingAmount ? (
             <input
