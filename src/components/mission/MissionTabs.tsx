@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
 import { ProposalTab } from '@/components/proposal/ProposalTab';
 
@@ -16,68 +15,55 @@ interface MissionTabsProps {
 interface TabDef {
   id: string;
   label: string;
-  isAvailable: boolean;
-  disabledReason?: string;
+}
+
+const ALL_TABS: TabDef[] = [
+  { id: 'discovery', label: 'Appel découverte' },
+  { id: 'proposal', label: 'Proposition' },
+  { id: 'kickoff', label: 'Kick-off' },
+  { id: 'actions', label: "Plan d'actions" },
+  { id: 'follow-up', label: 'Suivi' },
+];
+
+// Map statusIndex to a default tab
+function defaultTabForStatus(si: number): string {
+  if (si <= 0) return 'discovery';
+  if (si <= 2) return 'proposal';
+  if (si === 3) return 'kickoff';
+  if (si >= 4) return 'actions';
+  return 'discovery';
+}
+
+function EmptyState() {
+  return (
+    <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8 text-center">
+      <p className="font-body text-muted-foreground">
+        Pas encore de données. Tu peux remplir cette section quand tu veux.
+      </p>
+    </div>
+  );
 }
 
 export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
-  const tabs: TabDef[] = [
-    {
-      id: 'discovery',
-      label: 'Appel découverte',
-      isAvailable: true,
-    },
-    {
-      id: 'proposal',
-      label: 'Proposition',
-      isAvailable: hasStructuredNotes,
-      disabledReason: "Disponible après l'appel découverte",
-    },
-    {
-      id: 'kickoff',
-      label: 'Kick-off',
-      isAvailable: statusIndex >= 3, // signed
-      disabledReason: 'Disponible après la signature',
-    },
-    {
-      id: 'actions',
-      label: "Plan d'actions",
-      isAvailable: statusIndex >= 4, // active
-      disabledReason: 'Disponible après le kick-off',
-    },
-    {
-      id: 'follow-up',
-      label: 'Suivi',
-      isAvailable: statusIndex >= 4, // active
-      disabledReason: 'Disponible après le kick-off',
-    },
-  ];
+  const [activeTab, setActiveTab] = useState(() => defaultTabForStatus(statusIndex));
 
-  const [activeTab, setActiveTab] = useState('discovery');
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'discovery':
+        return <DiscoveryTab missionId={missionId} clientName={clientName} currentMissionType={currentMissionType} />;
+      case 'proposal':
+        if (!hasStructuredNotes && statusIndex < 1) return <EmptyState />;
+        return <ProposalTab missionId={missionId} clientName={clientName} clientEmail={clientEmail} missionType={currentMissionType} amount={amount} />;
+      default:
+        return <EmptyState />;
+    }
+  };
 
   return (
     <div>
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-border overflow-x-auto">
-        {tabs.map((tab) => {
-          if (!tab.isAvailable) {
-            return (
-              <Tooltip key={tab.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    disabled
-                    className="px-4 py-3 font-body text-sm text-muted-foreground/50 cursor-not-allowed whitespace-nowrap"
-                  >
-                    {tab.label}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-body text-xs">{tab.disabledReason}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
-
+        {ALL_TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
@@ -97,21 +83,7 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
 
       {/* Tab content */}
       <div className="py-6">
-         {activeTab === 'discovery' ? (
-           <DiscoveryTab missionId={missionId} clientName={clientName} currentMissionType={currentMissionType} />
-        ) : activeTab === 'proposal' ? (
-          <ProposalTab missionId={missionId} clientName={clientName} clientEmail={clientEmail} missionType={currentMissionType} amount={amount} />
-        ) : (
-          <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
-            <p className="font-body text-muted-foreground">
-              Section{' '}
-              <span className="font-medium text-foreground">
-                {tabs.find((t) => t.id === activeTab)?.label}
-              </span>{' '}
-              — à venir
-            </p>
-          </div>
-        )}
+        {renderContent()}
       </div>
     </div>
   );
