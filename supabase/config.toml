@@ -1,1 +1,4 @@
 project_id = "xfotgssasntgrpributa"
+
+[functions.structure-discovery-notes]
+verify_jwt = false
