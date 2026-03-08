@@ -12,10 +12,11 @@ import type { StructuredNotes } from '@/lib/discovery-types';
 
 interface DiscoveryTabProps {
   missionId: string;
+  clientName: string;
   currentMissionType: string;
 }
 
-export function DiscoveryTab({ missionId, currentMissionType }: DiscoveryTabProps) {
+export function DiscoveryTab({ missionId, clientName, currentMissionType }: DiscoveryTabProps) {
   const { discoveryCall, isLoading, saveNotes, saveQuestions, saveStructuredNotes, isSaving } =
     useDiscoveryCall(missionId);
   const { toast } = useToast();
