@@ -79,7 +79,8 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   const handleUpload = async () => {
     if (!pendingFile) return;
     setUploading(true);
-    const storagePath = `${missionId}/${Date.now()}_${pendingFile.name}`;
+    const safeName = pendingFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${missionId}/${Date.now()}_${safeName}`;
     const { error: uploadError } = await supabase.storage.from('mission-files').upload(storagePath, pendingFile);
     if (uploadError) {
       toast({ title: 'Erreur upload', variant: 'destructive' });
