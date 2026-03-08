@@ -14,6 +14,244 @@ export type Database = {
   }
   public: {
     Tables: {
+      actions: {
+        Row: {
+          assignee: string
+          budget_ht: number | null
+          category: string | null
+          channel: string | null
+          created_at: string
+          description: string | null
+          hours_estimated: number | null
+          id: string
+          mission_id: string
+          sort_order: number
+          status: string
+          target_date: string | null
+          task: string
+          updated_at: string
+        }
+        Insert: {
+          assignee: string
+          budget_ht?: number | null
+          category?: string | null
+          channel?: string | null
+          created_at?: string
+          description?: string | null
+          hours_estimated?: number | null
+          id?: string
+          mission_id: string
+          sort_order?: number
+          status?: string
+          target_date?: string | null
+          task: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string
+          budget_ht?: number | null
+          category?: string | null
+          channel?: string | null
+          created_at?: string
+          description?: string | null
+          hours_estimated?: number | null
+          id?: string
+          mission_id?: string
+          sort_order?: number
+          status?: string
+          target_date?: string | null
+          task?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discovery_calls: {
+        Row: {
+          ai_suggested_type: string | null
+          created_at: string
+          id: string
+          mission_id: string
+          questions_asked: Json | null
+          raw_notes: string | null
+          structured_notes: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_suggested_type?: string | null
+          created_at?: string
+          id?: string
+          mission_id: string
+          questions_asked?: Json | null
+          raw_notes?: string | null
+          structured_notes?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_suggested_type?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string
+          questions_asked?: Json | null
+          raw_notes?: string | null
+          structured_notes?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_calls_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      files: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          id: string
+          mission_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          mission_id: string
+          storage_path: string
+          uploaded_by?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          mission_id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          content: string
+          created_at: string
+          entry_date: string
+          id: string
+          mission_id: string
+          source: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          mission_id: string
+          source?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          mission_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kickoffs: {
+        Row: {
+          ai_questions: Json | null
+          completed_at: string | null
+          created_at: string
+          declic_questions_enabled: boolean
+          fixed_questions: Json | null
+          id: string
+          mission_id: string
+          mode: string
+          questionnaire_responses: Json | null
+          questionnaire_status: string
+          questionnaire_token: string
+          raw_notes: string | null
+          sent_at: string | null
+          structured_notes: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_questions?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          declic_questions_enabled?: boolean
+          fixed_questions?: Json | null
+          id?: string
+          mission_id: string
+          mode?: string
+          questionnaire_responses?: Json | null
+          questionnaire_status?: string
+          questionnaire_token?: string
+          raw_notes?: string | null
+          sent_at?: string | null
+          structured_notes?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_questions?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          declic_questions_enabled?: boolean
+          fixed_questions?: Json | null
+          id?: string
+          mission_id?: string
+          mode?: string
+          questionnaire_responses?: Json | null
+          questionnaire_status?: string
+          questionnaire_token?: string
+          raw_notes?: string | null
+          sent_at?: string | null
+          structured_notes?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kickoffs_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       missions: {
         Row: {
           amount: number | null
@@ -52,6 +290,124 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pitch_scripts: {
+        Row: {
+          content: string
+          id: string
+          script_type: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          script_type: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          script_type?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      proposals: {
+        Row: {
+          clarification_qa: Json | null
+          content: Json | null
+          created_at: string
+          email_draft: string | null
+          id: string
+          mission_id: string
+          status: string
+          tutoiement: boolean
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          clarification_qa?: Json | null
+          content?: Json | null
+          created_at?: string
+          email_draft?: string | null
+          id?: string
+          mission_id: string
+          status?: string
+          tutoiement?: boolean
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          clarification_qa?: Json | null
+          content?: Json | null
+          created_at?: string
+          email_draft?: string | null
+          id?: string
+          mission_id?: string
+          status?: string
+          tutoiement?: boolean
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          id: string
+          mission_id: string
+          next_session_agenda: string | null
+          next_session_date: string | null
+          raw_notes: string | null
+          session_date: string
+          session_type: string
+          structured_notes: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mission_id: string
+          next_session_agenda?: string | null
+          next_session_date?: string | null
+          raw_notes?: string | null
+          session_date: string
+          session_type?: string
+          structured_notes?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mission_id?: string
+          next_session_agenda?: string | null
+          next_session_date?: string | null
+          raw_notes?: string | null
+          session_date?: string
+          session_type?: string
+          structured_notes?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
