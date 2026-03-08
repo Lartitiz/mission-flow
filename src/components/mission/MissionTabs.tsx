@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
 import { ProposalTab } from '@/components/proposal/ProposalTab';
+import { KickoffTab } from '@/components/kickoff/KickoffTab';
 
 interface MissionTabsProps {
   missionId: string;
