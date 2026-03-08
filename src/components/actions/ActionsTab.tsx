@@ -43,6 +43,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
   const [aiText, setAiText] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
   const [extractionResults, setExtractionResults] = useState<{
     new_actions: AiNewAction[];
     updates: AiUpdate[];
