@@ -156,11 +156,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
 
       setExtractionResults(null);
       setAiText('');
-
-      // Refresh actions
-      const { useActions: _ } = await import('@/hooks/useActions');
-      // Force refetch by invalidating - the hook will handle it
-      window.location.reload(); // Simple approach; alternatively use queryClient
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
     } catch (e) {
       console.error('Apply extraction error:', e);
       toast({
