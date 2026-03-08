@@ -2,20 +2,27 @@ import { StructuredNotes, StructuredSection } from '@/lib/discovery-types';
 import { useUpdateMission } from '@/hooks/useMissions';
 import { formatMissionType } from '@/lib/missions';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Download } from 'lucide-react';
 import { useState } from 'react';
+import { saveAs } from 'file-saver';
 
 interface StructuredNotesViewProps {
   structuredNotes: StructuredNotes;
   missionId: string;
+  clientName: string;
   currentMissionType: string;
+  rawNotes: string;
+  createdAt?: string;
   onSectionEdit: (index: number, content: string) => void;
 }
 
 export function StructuredNotesView({
   structuredNotes,
   missionId,
+  clientName,
   currentMissionType,
+  rawNotes,
+  createdAt,
   onSectionEdit,
 }: StructuredNotesViewProps) {
   const updateMission = useUpdateMission();
@@ -28,9 +35,49 @@ export function StructuredNotesView({
     );
   };
 
+  const handleDownloadMarkdown = () => {
+    const date = createdAt ? new Date(createdAt).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }) : new Date().toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    let markdown = `# Appel découverte — ${clientName}\n\n`;
+    markdown += `**Date :** ${date}\n`;
+    markdown += `**Type de mission suggéré :** ${formatMissionType(structuredNotes.suggested_type)}\n\n`;
+    markdown += `---\n\n`;
+
+    structuredNotes.sections.forEach((section) => {
+      markdown += `## ${section.title}\n\n`;
+      markdown += `${section.content}\n\n`;
+    });
+
+    markdown += `---\n\n## Notes brutes\n\n`;
+    markdown += rawNotes;
+
+    const filename = `Appel_decouverte_${clientName.replace(/\s+/g, '_')}_${date.replace(/\s+/g, '_')}.md`;
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    saveAs(blob, filename);
+  };
+
   return (
     <div className="space-y-4 mt-6">
-      <h3 className="font-heading text-lg text-foreground">Fiche structurée</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-heading text-lg text-foreground">Fiche structurée</h3>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleDownloadMarkdown}
+          className="font-body gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Télécharger (.md)
+        </Button>
+      </div>
 
       {structuredNotes.sections.map((section, idx) => (
         <SectionCard
