@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,20 +11,40 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [success, setSuccess] = useState('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError('Email ou mot de passe incorrect');
-      setLoading(false);
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else {
+        setSuccess('Compte créé !');
+        // Auto sign-in after signup
+        const { error: signInError } = await signIn(email, password);
+        if (!signInError) {
+          navigate('/dashboard');
+        } else {
+          setLoading(false);
+        }
+      }
     } else {
-      navigate('/dashboard');
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError('Email ou mot de passe incorrect');
+        setLoading(false);
+      } else {
+        navigate('/dashboard');
+      }
     }
   };
 
@@ -35,7 +56,7 @@ const Login = () => {
             Nowadays Missions
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Connectez-vous à votre espace
+            {isSignUp ? 'Créez votre compte' : 'Connectez-vous à votre espace'}
           </p>
         </div>
 
@@ -69,14 +90,41 @@ const Login = () => {
           {error && (
             <p className="text-sm text-destructive font-body">{error}</p>
           )}
+          {success && (
+            <p className="text-sm text-primary font-body">{success}</p>
+          )}
 
           <Button type="submit" className="w-full font-body" disabled={loading}>
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading
+              ? (isSignUp ? 'Création...' : 'Connexion...')
+              : (isSignUp ? 'Créer mon compte' : 'Se connecter')}
           </Button>
         </form>
+
+        {!isSignUp && (
+          <p className="text-center">
+            <button
+              type="button"
+              onClick={() => { setIsSignUp(true); setError(''); setSuccess(''); }}
+              className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Première connexion ? Créer mon compte
+            </button>
+          </p>
+        )}
+        {isSignUp && (
+          <p className="text-center">
+            <button
+              type="button"
+              onClick={() => { setIsSignUp(false); setError(''); setSuccess(''); }}
+              className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Déjà un compte ? Se connecter
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
 };
-
 export default Login;
