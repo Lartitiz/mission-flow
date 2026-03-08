@@ -91,6 +91,7 @@ const ClientView = () => {
         body: { token },
       });
       if (error || result?.error) {
+        setErrorMessage(result?.error || "Ce lien n'est pas valide");
         setNotFound(true);
         return;
       }
