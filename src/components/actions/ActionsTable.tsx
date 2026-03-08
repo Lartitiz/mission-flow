@@ -140,9 +140,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Catégorie</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Canal</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 w-10"></th>
             </tr>
@@ -170,21 +168,6 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                 </td>
                 <td className="px-1 py-1 w-[200px]">
                   <EditableCell value={action.description} onSave={(v) => onUpdate(action.id, { description: v })} />
-                </td>
-                <td className="px-2 py-1 w-[120px]">
-                  <Select
-                    value={action.channel ?? ''}
-                    onValueChange={(v) => onUpdate(action.id, { channel: v })}
-                  >
-                    <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CHANNELS.map((c) => (
-                        <SelectItem key={c} value={c} className="font-body text-xs">{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </td>
                 <td className="px-1 py-1 w-[100px]">
                   <DateCell
