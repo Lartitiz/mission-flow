@@ -47,6 +47,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
     new_actions: AiNewAction[];
     updates: AiUpdate[];
   } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: mission } = useQuery({
     queryKey: ['mission-type-actions', missionId],
