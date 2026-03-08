@@ -6,10 +6,11 @@ import { ClientActionsTable } from './ClientActionsTable';
 import { AiExtractionResults } from './AiExtractionResults';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Loader2, Plus } from 'lucide-react';
+import { Sparkles, Loader2, Plus, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ExcelImportDialog } from './ExcelImportDialog';
 
 interface ActionsTabProps {
   missionId: string;
@@ -46,6 +47,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
     new_actions: AiNewAction[];
     updates: AiUpdate[];
   } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: mission } = useQuery({
     queryKey: ['mission-type-actions', missionId],
@@ -175,7 +177,26 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
 
   return (
     <div className="space-y-6">
-      <ActionsStats actions={actions} />
+      <div className="flex items-center justify-between">
+        <ActionsStats actions={actions} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setImportOpen(true)}
+          className="font-body gap-2"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Importer un Excel
+        </Button>
+      </div>
+
+      <ExcelImportDialog
+        missionId={missionId}
+        existingActionsCount={actions.length}
+        maxSortOrder={actions.length > 0 ? Math.max(...actions.map((a) => a.sort_order)) : -1}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
 
       <div className="flex gap-1 border-b border-border">
         <button
