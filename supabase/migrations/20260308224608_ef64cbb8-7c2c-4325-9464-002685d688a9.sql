@@ -1,0 +1,1 @@
+ALTER TABLE public.missions ADD COLUMN IF NOT EXISTS client_link_active boolean NOT NULL DEFAULT true;
