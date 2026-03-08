@@ -193,6 +193,18 @@ const MissionDetail = () => {
         onConfirm={handleDelete}
         isPending={deleteMission.isPending}
       />
+
+      <ClientLinkDialog
+        open={clientLinkOpen}
+        onOpenChange={setClientLinkOpen}
+        clientToken={mission.client_token}
+        clientLinkActive={(mission as any).client_link_active ?? true}
+        onToggleActive={(active) => {
+          updateMission.mutate({ id: mission.id, client_link_active: active } as any);
+        }}
+        questionnaireToken={kickoff?.questionnaire_token}
+        questionnaireStatus={kickoff?.questionnaire_status}
+      />
     </div>
   );
 };
