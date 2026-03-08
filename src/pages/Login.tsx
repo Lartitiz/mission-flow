@@ -150,7 +150,17 @@ const Login = () => {
           </form>
         )}
 
-        {!isSignUp && (
+        {isForgot ? (
+          <p className="text-center">
+            <button
+              type="button"
+              onClick={() => { setIsForgot(false); setError(''); setSuccess(''); }}
+              className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Retour à la connexion
+            </button>
+          </p>
+        ) : !isSignUp ? (
           <p className="text-center">
             <button
               type="button"
@@ -160,8 +170,7 @@ const Login = () => {
               Première connexion ? Créer mon compte
             </button>
           </p>
-        )}
-        {isSignUp && (
+        ) : (
           <p className="text-center">
             <button
               type="button"
