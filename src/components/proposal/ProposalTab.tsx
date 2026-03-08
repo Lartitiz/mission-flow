@@ -197,7 +197,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
             </Button>
             <Button
               onClick={handleGenerateWord}
-              disabled={generatingWord || sections.length === 0}
+              disabled={generatingWord || (!proposal?.content || sections.length === 0)}
               className="gap-2"
             >
               {generatingWord ? (
