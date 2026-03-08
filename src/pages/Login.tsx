@@ -77,46 +77,78 @@ const Login = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="font-body text-sm">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="votre@email.com"
-              required
-              className="font-body"
-            />
-          </div>
+        {isForgot ? (
+          <form onSubmit={handleForgot} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="font-body text-sm">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="votre@email.com"
+                required
+                className="font-body"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="font-body text-sm">Mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              className="font-body"
-            />
-          </div>
+            {error && <p className="text-sm text-destructive font-body">{error}</p>}
+            {success && <p className="text-sm text-primary font-body">{success}</p>}
 
-          {error && (
-            <p className="text-sm text-destructive font-body">{error}</p>
-          )}
-          {success && (
-            <p className="text-sm text-primary font-body">{success}</p>
-          )}
+            <Button type="submit" className="w-full font-body" disabled={loading}>
+              {loading ? 'Envoi...' : 'Réinitialiser mon mot de passe'}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="font-body text-sm">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="votre@email.com"
+                required
+                className="font-body"
+              />
+            </div>
 
-          <Button type="submit" className="w-full font-body" disabled={loading}>
-            {loading
-              ? (isSignUp ? 'Création...' : 'Connexion...')
-              : (isSignUp ? 'Créer mon compte' : 'Se connecter')}
-          </Button>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="font-body text-sm">Mot de passe</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="font-body"
+              />
+            </div>
+
+            {error && <p className="text-sm text-destructive font-body">{error}</p>}
+            {success && <p className="text-sm text-primary font-body">{success}</p>}
+
+            <Button type="submit" className="w-full font-body" disabled={loading}>
+              {loading
+                ? (isSignUp ? 'Création...' : 'Connexion...')
+                : (isSignUp ? 'Créer mon compte' : 'Se connecter')}
+            </Button>
+
+            {!isSignUp && (
+              <p className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setIsForgot(true); setError(''); setSuccess(''); }}
+                  className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </p>
+            )}
+          </form>
+        )}
 
         {!isSignUp && (
           <p className="text-center">
