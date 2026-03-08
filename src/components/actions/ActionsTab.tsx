@@ -3,14 +3,34 @@ import { useActions, type Action } from '@/hooks/useActions';
 import { ActionsStats } from './ActionsStats';
 import { ActionsTable } from './ActionsTable';
 import { ClientActionsTable } from './ClientActionsTable';
+import { AiExtractionResults } from './AiExtractionResults';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface ActionsTabProps {
   missionId: string;
   clientName: string;
+}
+
+interface AiNewAction {
+  assignee: string;
+  category: string;
+  task: string;
+  description: string;
+  channel?: string;
+  target_date?: string;
+}
+
+interface AiUpdate {
+  action_id: string;
+  field: string;
+  old_value: string;
+  new_value: string;
+  reason: string;
 }
 
 export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
@@ -20,19 +40,136 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
   const [subTab, setSubTab] = useState<'laetitia' | 'client'>('laetitia');
   const [aiText, setAiText] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [extractionResults, setExtractionResults] = useState<{
+    new_actions: AiNewAction[];
+    updates: AiUpdate[];
+  } | null>(null);
+
+  const { data: mission } = useQuery({
+    queryKey: ['mission-type-actions', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('missions')
+        .select('mission_type')
+        .eq('id', missionId)
+        .single();
+      return data;
+    },
+    enabled: !!missionId,
+  });
 
   const myActions = actions.filter((a) => a.assignee === 'laetitia');
   const clientActions = actions.filter((a) => a.assignee === 'client');
 
-  const handleExtractAi = () => {
+  const handleExtractAi = async () => {
+    if (!aiText.trim()) return;
     setIsExtracting(true);
-    setTimeout(() => {
-      toast({
-        title: 'Bientôt disponible',
-        description: "L'extraction IA des actions sera implémentée prochainement.",
+    setExtractionResults(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-actions-from-cr', {
+        body: {
+          meeting_notes: aiText,
+          existing_actions: actions.map((a) => ({
+            id: a.id,
+            task: a.task,
+            description: a.description,
+            status: a.status,
+            assignee: a.assignee,
+            target_date: a.target_date,
+            category: a.category,
+            channel: a.channel,
+          })),
+          mission_type: mission?.mission_type ?? 'binome',
+        },
       });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+
+      const newActions = data?.new_actions ?? [];
+      const updates = data?.updates ?? [];
+
+      if (newActions.length === 0 && updates.length === 0) {
+        toast({ title: 'Aucune action détectée', description: 'Le CR ne contient pas de nouvelles actions identifiables.' });
+        return;
+      }
+
+      setExtractionResults({ new_actions: newActions, updates });
+      toast({
+        title: 'Extraction terminée',
+        description: `${newActions.length} nouvelle(s) action(s) et ${updates.length} mise(s) à jour proposée(s).`,
+      });
+    } catch (e) {
+      console.error('Extract actions error:', e);
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'extraire les actions. Réessaie dans quelques instants.",
+        variant: 'destructive',
+      });
+    } finally {
       setIsExtracting(false);
-    }, 1000);
+    }
+  };
+
+  const handleApplyExtraction = async (selectedNew: AiNewAction[], selectedUpdates: AiUpdate[]) => {
+    setIsApplying(true);
+    try {
+      // Insert new actions
+      for (const action of selectedNew) {
+        const maxSort = actions.length > 0
+          ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
+          : 0;
+
+        const { error } = await supabase.from('actions').insert({
+          mission_id: missionId,
+          assignee: action.assignee,
+          task: action.task,
+          description: action.description || null,
+          category: action.category || null,
+          channel: action.channel || null,
+          target_date: action.target_date || null,
+          sort_order: maxSort,
+          status: 'not_started',
+        });
+        if (error) console.error('Insert action error:', error);
+      }
+
+      // Apply updates
+      for (const update of selectedUpdates) {
+        const { error } = await supabase
+          .from('actions')
+          .update({ [update.field]: update.new_value })
+          .eq('id', update.action_id);
+        if (error) console.error('Update action error:', error);
+      }
+
+      toast({
+        title: 'Changements appliqués',
+        description: `${selectedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
+      });
+
+      setExtractionResults(null);
+      setAiText('');
+
+      // Refresh actions
+      const { useActions: _ } = await import('@/hooks/useActions');
+      // Force refetch by invalidating - the hook will handle it
+      window.location.reload(); // Simple approach; alternatively use queryClient
+    } catch (e) {
+      console.error('Apply extraction error:', e);
+      toast({
+        title: 'Erreur',
+        description: "Erreur lors de l'application des changements.",
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   if (isLoading) {
@@ -41,10 +178,8 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
       <ActionsStats actions={actions} />
 
-      {/* Sub-tabs */}
       <div className="flex gap-1 border-b border-border">
         <button
           onClick={() => setSubTab('laetitia')}
@@ -68,7 +203,6 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
         </button>
       </div>
 
-      {/* Table */}
       {subTab === 'laetitia' ? (
         <div className="space-y-3">
           <ActionsTable
@@ -108,7 +242,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
         </div>
       )}
 
-      {/* AI extraction section */}
+      {/* AI extraction */}
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-3">
         <h3 className="font-heading text-sm font-medium text-foreground">
           Mise à jour IA
@@ -127,7 +261,7 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
           {isExtracting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Extraction...
+              Extraction en cours... (jusqu'à 30s)
             </>
           ) : (
             <>
@@ -137,6 +271,17 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
           )}
         </Button>
       </div>
+
+      {/* Extraction results panel */}
+      {extractionResults && (
+        <AiExtractionResults
+          newActions={extractionResults.new_actions}
+          updates={extractionResults.updates}
+          onApply={handleApplyExtraction}
+          onCancel={() => setExtractionResults(null)}
+          isApplying={isApplying}
+        />
+      )}
     </div>
   );
 }
