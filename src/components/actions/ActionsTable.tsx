@@ -193,20 +193,6 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                     onDateChange={(d) => onUpdate(action.id, { target_date: d })}
                   />
                 </td>
-                <td className="px-1 py-1 w-[70px]">
-                  <EditableCell
-                    value={action.hours_estimated}
-                    onSave={(v) => onUpdate(action.id, { hours_estimated: v ? parseFloat(v) : null })}
-                    type="number"
-                  />
-                </td>
-                <td className="px-1 py-1 w-[90px]">
-                  <EditableCell
-                    value={action.budget_ht}
-                    onSave={(v) => onUpdate(action.id, { budget_ht: v ? parseFloat(v) : null })}
-                    type="number"
-                  />
-                </td>
                 <td className="px-2 py-1 w-[120px]">
                   <StatusBadge
                     status={action.status}
