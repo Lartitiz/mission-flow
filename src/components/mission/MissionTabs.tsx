@@ -59,6 +59,9 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
       case 'kickoff':
         if (statusIndex < 3) return <EmptyState />;
         return <KickoffTab missionId={missionId} clientName={clientName} />;
+      case 'actions':
+        if (statusIndex < 4) return <EmptyState />;
+        return <ActionsTab missionId={missionId} clientName={clientName} />;
       default:
         return <EmptyState />;
     }
