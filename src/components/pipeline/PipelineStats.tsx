@@ -18,7 +18,7 @@ export function PipelineStats({ missions }: PipelineStatsProps) {
   const activeMissions = missions.filter((m) => m.status === 'active');
 
   return (
-    <div className="flex flex-wrap gap-4 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       <div className="bg-card rounded-xl p-5 min-w-[180px] shadow-[var(--card-shadow)]">
         <p className="font-body text-xs text-muted-foreground mb-1">Propositions en cours</p>
         <p className="font-heading text-2xl text-foreground">{prospectionMissions.length}</p>

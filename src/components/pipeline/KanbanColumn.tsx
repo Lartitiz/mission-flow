@@ -14,7 +14,7 @@ export function KanbanColumn({ id, label, missions, isLost }: KanbanColumnProps)
 
   return (
     <div
-      className={`flex flex-col min-w-[260px] max-w-[280px] flex-shrink-0 ${isLost ? 'opacity-60' : ''}`}
+      className={`flex flex-col min-w-[280px] w-[280px] flex-shrink-0 ${isLost ? 'opacity-60' : ''}`}
     >
       <div className="flex items-center gap-2 mb-4 px-1">
         <h3 className="font-body text-sm font-semibold text-foreground">

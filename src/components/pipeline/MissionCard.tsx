@@ -63,7 +63,7 @@ export function MissionCard({ mission }: MissionCardProps) {
       onClick={() => navigate(`/dashboard/mission/${mission.id}`)}
       className={`bg-card rounded-xl border-l-4 ${borderColor} shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-shadow hover:shadow-md`}
     >
-      <p className="font-heading text-sm text-card-foreground leading-snug mb-2">
+      <p className="font-heading text-sm text-card-foreground leading-snug mb-2 break-words">
         {mission.client_name}
       </p>
 

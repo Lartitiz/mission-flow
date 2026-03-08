@@ -50,12 +50,13 @@ const Pipeline = () => {
   }
 
   return (
-    <div>
+    <div className="relative pb-20 md:pb-0">
       <div className="flex items-start justify-between mb-6">
         <h1 className="font-heading text-2xl text-foreground">Pipeline</h1>
+        {/* Desktop button */}
         <Button
           onClick={() => setDialogOpen(true)}
-          className="font-body rounded-lg"
+          className="font-body rounded-lg hidden md:inline-flex"
         >
           <Plus className="h-4 w-4 mr-1" />
           Nouvelle mission
@@ -69,7 +70,7 @@ const Pipeline = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-5 overflow-x-auto pb-6">
+        <div className="flex gap-5 overflow-x-auto pb-6 -mx-4 px-4 md:mx-0 md:px-0">
           {PIPELINE_COLUMNS.map((col) => (
             <KanbanColumn
               key={col.id}
@@ -85,6 +86,15 @@ const Pipeline = () => {
           {activeMission ? <MissionCard mission={activeMission} /> : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Mobile FAB */}
+      <Button
+        onClick={() => setDialogOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg p-0"
+        aria-label="Nouvelle mission"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
 
       <NewMissionDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
