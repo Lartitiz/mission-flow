@@ -12,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgot, setIsForgot] = useState(false);
   const [success, setSuccess] = useState('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
