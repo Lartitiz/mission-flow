@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -143,12 +142,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Canal</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                <span className="flex items-center gap-1">Heures <Badge variant="outline" className="text-[8px] px-1 py-0">Admin</Badge></span>
-              </th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                <span className="flex items-center gap-1">Budget HT <Badge variant="outline" className="text-[8px] px-1 py-0">Admin</Badge></span>
-              </th>
+              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 w-10"></th>
             </tr>
@@ -196,20 +190,6 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                   <DateCell
                     date={action.target_date}
                     onDateChange={(d) => onUpdate(action.id, { target_date: d })}
-                  />
-                </td>
-                <td className="px-1 py-1 w-[70px]">
-                  <EditableCell
-                    value={action.hours_estimated}
-                    onSave={(v) => onUpdate(action.id, { hours_estimated: v ? parseFloat(v) : null })}
-                    type="number"
-                  />
-                </td>
-                <td className="px-1 py-1 w-[90px]">
-                  <EditableCell
-                    value={action.budget_ht}
-                    onSave={(v) => onUpdate(action.id, { budget_ht: v ? parseFloat(v) : null })}
-                    type="number"
                   />
                 </td>
                 <td className="px-2 py-1 w-[120px]">
