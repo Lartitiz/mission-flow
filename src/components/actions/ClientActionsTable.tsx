@@ -93,7 +93,8 @@ function FileCell({ actionId, missionId }: { actionId: string; missionId: string
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const path = `${missionId}/actions/${actionId}/${Date.now()}_${file.name}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${missionId}/actions/${actionId}/${Date.now()}_${safeName}`;
     const { error: uploadError } = await supabase.storage
       .from('mission-files')
       .upload(path, file);
