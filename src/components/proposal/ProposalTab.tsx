@@ -42,7 +42,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
   const [flowStep, setFlowStep] = useState<FlowStep>('idle');
   const [clarificationQuestions, setClarificationQuestions] = useState<string[]>([]);
   const [clarificationAnswers, setClarificationAnswers] = useState<string[]>([]);
-  const [tutoiement, setTutoiement] = useState(missionType === 'agency' ? false : true);
+  const [tutoiement, setTutoiement] = useState(true);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
