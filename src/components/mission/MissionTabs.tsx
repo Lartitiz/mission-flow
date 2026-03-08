@@ -6,6 +6,8 @@ import { ProposalTab } from '@/components/proposal/ProposalTab';
 interface MissionTabsProps {
   missionId: string;
   clientName: string;
+  clientEmail?: string | null;
+  amount?: number | null;
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
@@ -18,7 +20,7 @@ interface TabDef {
   disabledReason?: string;
 }
 
-export function MissionTabs({ missionId, clientName, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
+export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
   const tabs: TabDef[] = [
     {
       id: 'discovery',
@@ -98,7 +100,7 @@ export function MissionTabs({ missionId, clientName, statusIndex, hasStructuredN
         {activeTab === 'discovery' ? (
           <DiscoveryTab missionId={missionId} currentMissionType={currentMissionType} />
         ) : activeTab === 'proposal' ? (
-          <ProposalTab missionId={missionId} clientName={clientName} />
+          <ProposalTab missionId={missionId} clientName={clientName} clientEmail={clientEmail} missionType={currentMissionType} amount={amount} />
         ) : (
           <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
             <p className="font-body text-muted-foreground">
