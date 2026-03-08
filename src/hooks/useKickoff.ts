@@ -11,6 +11,8 @@ export function useKickoff(missionId: string) {
   const debounceNotes = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceFields = useRef<ReturnType<typeof setTimeout> | null>(null);
   const creatingRef = useRef(false);
+  const pendingNotesRef = useRef<string | null>(null);
+  const pendingFieldsRef = useRef<Record<string, unknown> | null>(null);
 
   const { data: kickoff, isLoading } = useQuery({
     queryKey: ['kickoff', missionId],
@@ -77,10 +79,12 @@ export function useKickoff(missionId: string) {
 
   const saveNotes = useCallback(
     (notes: string) => {
+      pendingNotesRef.current = notes;
       if (debounceNotes.current) clearTimeout(debounceNotes.current);
       debounceNotes.current = setTimeout(() => {
         if (kickoff) {
           updateMutation.mutate({ id: kickoff.id, raw_notes: notes });
+          pendingNotesRef.current = null;
         }
       }, 2000);
     },
@@ -89,10 +93,12 @@ export function useKickoff(missionId: string) {
 
   const saveField = useCallback(
     (updates: Record<string, unknown>) => {
+      pendingFieldsRef.current = updates;
       if (debounceFields.current) clearTimeout(debounceFields.current);
       debounceFields.current = setTimeout(() => {
         if (kickoff) {
           updateMutation.mutate({ id: kickoff.id, ...updates } as any);
+          pendingFieldsRef.current = null;
         }
       }, 500);
     },
@@ -108,12 +114,29 @@ export function useKickoff(missionId: string) {
     [kickoff, updateMutation]
   );
 
+  // Flush pending saves on unmount
   useEffect(() => {
+    const currentKickoff = kickoff;
     return () => {
       if (debounceNotes.current) clearTimeout(debounceNotes.current);
       if (debounceFields.current) clearTimeout(debounceFields.current);
+
+      if (currentKickoff && pendingNotesRef.current !== null) {
+        supabase
+          .from('kickoffs')
+          .update({ raw_notes: pendingNotesRef.current })
+          .eq('id', currentKickoff.id)
+          .then(() => {});
+      }
+      if (currentKickoff && pendingFieldsRef.current !== null) {
+        supabase
+          .from('kickoffs')
+          .update(pendingFieldsRef.current)
+          .eq('id', currentKickoff.id)
+          .then(() => {});
+      }
     };
-  }, []);
+  }, [kickoff]);
 
   return {
     kickoff,
