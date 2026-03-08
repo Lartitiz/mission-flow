@@ -10,7 +10,7 @@ type SpeechRecognitionInstance = any;
 export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance>(null);
 
   useEffect(() => {
     const SpeechRecognitionAPI =
