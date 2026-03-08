@@ -181,7 +181,7 @@ const ClientView = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF4F8' }}>
         <div className="text-center space-y-4">
           <h1 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.5rem' }}>
-            Ce lien n'est pas valide
+            {errorMessage}
           </h1>
           <p style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: '#666', fontSize: '0.875rem' }}>
             Vérifie que tu as bien copié le lien envoyé par Laetitia.
