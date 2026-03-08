@@ -33,7 +33,8 @@ const App = () => (
           >
             <Route index element={<Pipeline />} />
             <Route path="missions" element={<Missions />} />
-          </Route>
+            <Route path="mission/:id" element={<MissionDetail />} />
+            <Route path="mission/:id/:tab" element={<MissionDetail />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

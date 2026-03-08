@@ -14,6 +14,37 @@ export const PIPELINE_COLUMNS = [
 
 export type PipelineStatus = typeof PIPELINE_COLUMNS[number]['id'];
 
+const STATUS_ORDER: Record<string, number> = {
+  discovery_call: 0,
+  proposal_drafting: 1,
+  proposal_sent: 2,
+  signed: 3,
+  active: 4,
+  completed: 5,
+  lost: 6,
+};
+
+export function statusIndex(status: string): number {
+  return STATUS_ORDER[status] ?? 0;
+}
+
+export function statusLabel(status: string): string {
+  return PIPELINE_COLUMNS.find((c) => c.id === status)?.label ?? status;
+}
+
+export function statusColor(status: string): { bg: string; text: string } {
+  switch (status) {
+    case 'discovery_call': return { bg: 'bg-secondary', text: 'text-secondary-foreground' };
+    case 'proposal_drafting': return { bg: 'bg-accent', text: 'text-accent-foreground' };
+    case 'proposal_sent': return { bg: 'bg-badge-rose/20', text: 'text-badge-rose' };
+    case 'signed': return { bg: 'bg-badge-bordeaux/20', text: 'text-badge-bordeaux' };
+    case 'active': return { bg: 'bg-emerald-100', text: 'text-emerald-700' };
+    case 'completed': return { bg: 'bg-muted', text: 'text-muted-foreground' };
+    case 'lost': return { bg: 'bg-muted', text: 'text-muted-foreground' };
+    default: return { bg: 'bg-muted', text: 'text-muted-foreground' };
+  }
+}
+
 export function formatMissionType(type: string) {
   switch (type) {
     case 'binome': return 'Binôme';
