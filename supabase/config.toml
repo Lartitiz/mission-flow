@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.upload-client-file]
 verify_jwt = false
+
+[functions.get-questionnaire]
+verify_jwt = false
+
+[functions.save-questionnaire-response]
+verify_jwt = false
