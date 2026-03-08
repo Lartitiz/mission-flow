@@ -4,8 +4,9 @@ import { useMission, useUpdateMission, useMissionDiscoveryCalls, useDeleteMissio
 import { formatMissionType, formatAmount, statusLabel, statusColor, statusIndex } from '@/lib/missions';
 import { MissionTypeBadge } from '@/components/mission/MissionTypeBadge';
 import { MissionTabs } from '@/components/mission/MissionTabs';
+import { ClientLinkDialog } from '@/components/mission/ClientLinkDialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Trash2, Globe } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from '@/components/pipeline/DeleteMissionDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const MissionDetail = () => {
   const { id } = useParams<{ id: string }>();
