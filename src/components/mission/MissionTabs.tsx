@@ -18,7 +18,7 @@ interface TabDef {
   disabledReason?: string;
 }
 
-export function MissionTabs({ missionId, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
+export function MissionTabs({ missionId, clientName, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
   const tabs: TabDef[] = [
     {
       id: 'discovery',
