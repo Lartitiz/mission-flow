@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
 
 interface MissionTabsProps {
   missionId: string;
