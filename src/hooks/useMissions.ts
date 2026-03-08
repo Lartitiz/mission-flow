@@ -83,10 +83,28 @@ export function useUpdateMissionStatus() {
 export function useCreateMission() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ client_name, client_email }: { client_name: string; client_email?: string }) => {
+    mutationFn: async ({
+      client_name,
+      client_email,
+      mission_type,
+      status,
+      amount,
+    }: {
+      client_name: string;
+      client_email?: string;
+      mission_type?: string;
+      status?: string;
+      amount?: number;
+    }) => {
       const { data, error } = await supabase
         .from('missions')
-        .insert({ client_name, client_email: client_email || null })
+        .insert({
+          client_name,
+          client_email: client_email || null,
+          mission_type: mission_type || 'non_determine',
+          status: status || 'discovery_call',
+          amount: amount ?? null,
+        })
         .select()
         .single();
       if (error) throw error;
