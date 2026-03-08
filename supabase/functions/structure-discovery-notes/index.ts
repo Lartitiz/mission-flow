@@ -90,7 +90,7 @@ serve(async (req) => {
     const userPrompt = `Type de mission actuel : ${mission_type || "non_determine"}\n\nNotes brutes de l'appel :\n\n${raw_notes}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 90000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
