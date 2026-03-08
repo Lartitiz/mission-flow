@@ -140,9 +140,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Catégorie</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Canal</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
               <th className="px-3 py-2 w-10"></th>
             </tr>
