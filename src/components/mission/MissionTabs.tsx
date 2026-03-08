@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiscoveryTab } from '@/components/discovery/DiscoveryTab';
+import { ProposalTab } from '@/components/proposal/ProposalTab';
 
 interface MissionTabsProps {
   missionId: string;
+  clientName: string;
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
