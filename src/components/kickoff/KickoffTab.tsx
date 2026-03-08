@@ -337,13 +337,43 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
               )}
             </>
           ) : (
-            <QuestionnairePreview
-              checkedQuestions={checkedQuestions}
-              aiQuestions={aiQuestions}
-              declicEnabled={declicEnabled}
-              onSend={handleSendQuestionnaire}
-              isSaving={isSaving}
-            />
+            <>
+              {(questionnaireStatus === 'sent' || questionnaireStatus === 'completed') && kickoff ? (
+                <QuestionnaireStatus
+                  kickoff={{
+                    id: kickoff.id,
+                    questionnaire_token: kickoff.questionnaire_token,
+                    questionnaire_status: kickoff.questionnaire_status,
+                    sent_at: kickoff.sent_at,
+                    completed_at: kickoff.completed_at,
+                    questionnaire_responses: kickoff.questionnaire_responses as Record<string, string> | null,
+                    fixed_questions: kickoff.fixed_questions as Record<string, boolean> | null,
+                    ai_questions: kickoff.ai_questions as string[] | null,
+                    declic_questions_enabled: kickoff.declic_questions_enabled,
+                  }}
+                  onStructureResponses={handleStructureResponses}
+                  isStructuring={isStructuring}
+                />
+              ) : (
+                <QuestionnairePreview
+                  checkedQuestions={checkedQuestions}
+                  aiQuestions={aiQuestions}
+                  declicEnabled={declicEnabled}
+                  onSend={handleSendQuestionnaire}
+                  isSaving={isSaving}
+                />
+              )}
+
+              {structuredNotes && (
+                <KickoffStructuredNotes
+                  sections={structuredNotes}
+                  clientName={clientName}
+                  rawNotes={notes}
+                  createdAt={kickoff?.created_at}
+                  onSectionEdit={handleSectionEdit}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
