@@ -378,7 +378,7 @@ const ClientView = () => {
       </div>
 
       {/* Category cards grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }} className="grid-cols-1 sm:grid-cols-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8 }}>
         {laetitiaByCategory.map(({ cat, actions: catActions }) => {
           const doneCount = catActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status)).length;
           const allDone = doneCount === catActions.length;
