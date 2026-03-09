@@ -6,7 +6,8 @@ import { MissionTypeBadge } from '@/components/mission/MissionTypeBadge';
 import { MissionTabs } from '@/components/mission/MissionTabs';
 import { ClientLinkDialog } from '@/components/mission/ClientLinkDialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MoreHorizontal, Trash2, Globe } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Trash2, Globe, Mail } from 'lucide-react';
+import { LaunchEmailDialog } from '@/components/mission/LaunchEmailDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
