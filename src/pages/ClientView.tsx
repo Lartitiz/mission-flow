@@ -140,15 +140,15 @@ const ClientView = () => {
   useEffect(() => {
     if (data) {
       document.title = `${data.mission.client_name} — Espace projet Nowadays`;
-      const updateMeta = (property: string, content: string) => {
-        let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
-        if (!meta) {
-          meta = document.querySelector(`meta[name="${property}"]`) as HTMLMetaElement;
-        }
+      const updateMeta = (attr: string, key: string, content: string) => {
+        const meta = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement;
         if (meta) meta.content = content;
       };
-      updateMeta('og:title', `${data.mission.client_name} — Espace projet Nowadays`);
-      updateMeta('og:description', `Suivez l'avancement de la mission ${data.mission.mission_type === 'agency' ? 'Agency' : 'Binôme'} avec Nowadays Agency.`);
+      const typeLabel = data.mission.mission_type === 'agency' ? 'Agency' : 'Binôme';
+      updateMeta('property', 'og:title', `${data.mission.client_name} — Espace projet Nowadays`);
+      updateMeta('property', 'og:description', `Mission ${typeLabel} — Suivez l'avancement avec Nowadays Agency.`);
+      updateMeta('name', 'twitter:title', `${data.mission.client_name} — Espace projet Nowadays`);
+      updateMeta('name', 'twitter:description', `Mission ${typeLabel} — Suivez l'avancement avec Nowadays Agency.`);
     }
     return () => { document.title = 'Nowadays Missions'; };
   }, [data]);
