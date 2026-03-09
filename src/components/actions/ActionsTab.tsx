@@ -4,6 +4,7 @@ import { ActionsStats } from './ActionsStats';
 import { ActionsTable } from './ActionsTable';
 import { ClientActionsTable } from './ClientActionsTable';
 import { AiExtractionResults } from './AiExtractionResults';
+import { ActionsFromProposalCard } from './ActionsFromProposalCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Loader2, Plus, Upload, Wand2 } from 'lucide-react';
