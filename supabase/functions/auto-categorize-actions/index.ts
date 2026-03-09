@@ -19,6 +19,7 @@ const CATEGORIES = [
   "Commercial",
   "Support",
   "Préparation session",
+  "Finalisation",
   "Autre",
 ];
 
