@@ -94,9 +94,12 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
         sessions={sessions}
         missionId={missionId}
         missionType={missionType}
+        actions={actions}
         onCreate={createSession}
         onUpdate={updateSession}
+        onDelete={deleteSession}
         addJournalEntry={addEntry}
+        isSaving={sessionsSaving}
       />
 
       <JournalSection entries={entries} addEntry={addEntry} isSaving={journalSaving} />
