@@ -30,6 +30,7 @@ const MissionDetail = () => {
   const [amountValue, setAmountValue] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
+  const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch kickoff for questionnaire info
