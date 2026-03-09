@@ -476,7 +476,16 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
         <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-heading text-lg text-foreground">Proposition</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportDialogOpen(true)}
+                className="gap-2 font-body"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Remplacer
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleGenerateEmail}
@@ -630,6 +639,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
         missionId={missionId}
         missionType={missionType}
         proposalId={proposal?.id}
+        currentVersion={proposal?.version}
         onImportDone={() => {
           refetchProposal();
           queryClient.invalidateQueries({ queryKey: ['proposal', missionId] });

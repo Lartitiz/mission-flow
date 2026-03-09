@@ -4,6 +4,7 @@ import { ActionsStats } from './ActionsStats';
 import { ActionsTable } from './ActionsTable';
 import { ClientActionsTable } from './ClientActionsTable';
 import { AiExtractionResults } from './AiExtractionResults';
+import { ActionsFromProposalCard } from './ActionsFromProposalCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Loader2, Plus, Upload, Wand2 } from 'lucide-react';
@@ -55,9 +56,24 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
     queryFn: async () => {
       const { data } = await supabase
         .from('missions')
-        .select('mission_type')
+        .select('mission_type, client_name')
         .eq('id', missionId)
         .single();
+      return data;
+    },
+    enabled: !!missionId,
+  });
+
+  const { data: proposal } = useQuery({
+    queryKey: ['proposal-for-actions', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('proposals')
+        .select('id, content')
+        .eq('mission_id', missionId)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       return data;
     },
     enabled: !!missionId,
@@ -176,25 +192,58 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
     return <p className="font-body text-muted-foreground py-8">Chargement...</p>;
   }
 
+  const hasProposal = proposal?.content && (
+    Array.isArray(proposal.content) ||
+    (typeof proposal.content === 'object' && 'sections' in (proposal.content as Record<string, unknown>))
+  );
+
+  const maxSort = actions.length > 0 ? Math.max(...actions.map((a) => a.sort_order)) : -1;
+
   return (
     <div className="space-y-6">
+      {/* Init card when 0 actions + proposal exists */}
+      {actions.length === 0 && hasProposal && (
+        <ActionsFromProposalCard
+          missionId={missionId}
+          clientName={mission?.client_name || clientName}
+          missionType={mission?.mission_type || 'binome'}
+          proposalContent={proposal.content}
+          existingActionsCount={0}
+          maxSortOrder={-1}
+          variant="init"
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <ActionsStats actions={actions} />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setImportOpen(true)}
-          className="font-body gap-2"
-        >
-          <Upload className="h-3.5 w-3.5" />
-          Importer un Excel
-        </Button>
+        <div className="flex gap-2">
+          {actions.length > 0 && hasProposal && (
+            <ActionsFromProposalCard
+              missionId={missionId}
+              clientName={mission?.client_name || clientName}
+              missionType={mission?.mission_type || 'binome'}
+              proposalContent={proposal.content}
+              existingActionsCount={actions.length}
+              maxSortOrder={maxSort}
+              variant="complement"
+            />
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+            className="font-body gap-2"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Importer un Excel
+          </Button>
+        </div>
       </div>
 
       <ExcelImportDialog
         missionId={missionId}
         existingActionsCount={actions.length}
-        maxSortOrder={actions.length > 0 ? Math.max(...actions.map((a) => a.sort_order)) : -1}
+        maxSortOrder={maxSort}
         open={importOpen}
         onOpenChange={setImportOpen}
       />
