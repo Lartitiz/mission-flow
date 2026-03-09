@@ -268,18 +268,374 @@ const ClientView = () => {
     return order(a.status) - order(b.status);
   });
 
-  // Conditions for soft message
+  // Conditions
   const hasClientActions = clientActions.length > 0;
   const hasLaetitiaWip = laetitiaWip > 0;
   const hasLaetitiaDone = laetitiaDone > 0;
+  const hasLaetitiaActive = hasLaetitiaWip || hasLaetitiaDone;
 
   // Mission type badge
   const missionType = data.mission.mission_type;
   const isBinome = missionType === 'binome';
   const typeLabel = missionType === 'agency' ? 'Agency' : missionType === 'binome' ? 'Binôme' : missionType.replace(/_/g, ' ');
 
+  // Determine phase
+  const isPhase1 = !hasClientActions && !hasLaetitiaActive; // tout début
+  const isPhase2 = !hasClientActions && hasLaetitiaActive;  // laetitia active, pas encore d'actions client
+  const isPhase3 = hasClientActions;                         // actions client existent
+
+  // Show progress bar only in phase 2 and 3
+  const showProgress = isPhase2 || isPhase3;
+
+  // Laetitia section helpers
+  const laetitiaInProgress = laetitiaActions.filter(a => ['in_progress', 'to_validate'].includes(a.status));
+  const laetitiaDelivered = laetitiaActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status));
+  const laetitiaUpcoming = laetitiaActions.filter(a => a.status === 'not_started');
+  const isModeB = laetitiaInProgress.length > 0 || laetitiaDelivered.length > 0;
+  const sortByOrder = (arr: ClientAction[]) => [...arr].sort((a, b) => a.sort_order - b.sort_order);
+
+  const renderGroupLabel = (label: string, dotColor: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, marginTop: 4 }}>
+      <span style={{ width: 8, height: 8, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
+      <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#9CA3AF' }}>{label}</span>
+    </div>
+  );
+
   let sectionIdx = 0;
   const delay = () => `${(sectionIdx++) * 0.03}s`;
+
+  /* ─── RENDERABLE BLOCKS ─── */
+
+  const nextSessionBlock = data.next_session?.date ? (
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 28, background: '#fff', borderRadius: 14, borderLeft: '4px solid #FFE561', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ width: 42, height: 42, borderRadius: 10, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>📅</div>
+      <div>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#91014b' }}>PROCHAINE SESSION</p>
+        <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E', marginTop: 4 }}>
+          {format(new Date(data.next_session.date), "EEEE d MMMM yyyy — HH'h'mm", { locale: fr })}
+        </p>
+        {data.next_session.agenda && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{data.next_session.agenda}</p>}
+      </div>
+    </div>
+  ) : null;
+
+  const progressBlock = showProgress && allActions.length > 0 ? (
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E' }}>Avancement de la mission</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b' }}>{progressPct}%</span>
+      </div>
+      <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: '#FFD6E8' }}>
+        <div style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #91014b, #FB3D80)', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{inProgressAll} en cours</span>
+        <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+          {hasClientActions
+            ? `${doneClient}/${totalClient} de tes actions terminées`
+            : `${doneAll} livrées sur ${allActions.length}`
+          }
+        </span>
+      </div>
+    </div>
+  ) : null;
+
+  // Upcoming actions collapsible content
+  const upcomingContent = (() => {
+    if (laetitiaUpcoming.length === 0) return null;
+    if (isModeB) {
+      // Mode B: flat list
+      return sortByOrder(laetitiaUpcoming).map(a => (
+        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
+          <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
+        </div>
+      ));
+    } else {
+      // Mode A: grouped by category
+      const byCategory = new Map<string, ClientAction[]>();
+      laetitiaUpcoming.forEach(a => {
+        const cat = a.category?.trim() || 'Autre';
+        if (!byCategory.has(cat)) byCategory.set(cat, []);
+        byCategory.get(cat)!.push(a);
+      });
+      const sortedCats = [...byCategory.keys()].sort((a, b) => {
+        if (a === 'Cadrage') return -1;
+        if (b === 'Cadrage') return 1;
+        return a.localeCompare(b, 'fr');
+      });
+      return sortedCats.map(cat => (
+        <div key={cat} style={{ marginBottom: 12 }}>
+          {renderGroupLabel(cat, '#D1D5DB')}
+          {sortByOrder(byCategory.get(cat)!).map(a => (
+            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
+            </div>
+          ))}
+        </div>
+      ));
+    }
+  })();
+
+  const laetitiaBlock = laetitiaActions.length > 0 ? (
+    <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
+      <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
+
+      {/* Stats bar */}
+      <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#F3F4F6', gap: 1, marginBottom: 16 }}>
+        {[
+          { count: laetitiaDelivered.length, label: 'Livrées', color: '#10B981' },
+          { count: laetitiaInProgress.length, label: 'En cours', color: '#4A90D9' },
+          { count: laetitiaUpcoming.length, label: 'Prévues', color: '#9CA3AF' },
+        ].map((s, i) => (
+          <div key={i} style={{ flex: 1, background: '#fff', padding: '12px 0', textAlign: 'center' }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
+            <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* In progress — always visible */}
+      {laetitiaInProgress.length > 0 && (
+        <div>
+          {renderGroupLabel('En cours', '#4A90D9')}
+          {sortByOrder(laetitiaInProgress).map(a => (
+            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4A90D9', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 13, color: '#1A1A2E' }}>{a.task}</span>
+              <span style={{ fontSize: 10, fontWeight: 500, background: '#EFF6FF', color: '#2563EB', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>En cours</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Delivered — always visible */}
+      {laetitiaDelivered.length > 0 && (
+        <div>
+          {laetitiaInProgress.length > 0 && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
+          {renderGroupLabel('Livrées', '#10B981')}
+          {sortByOrder(laetitiaDelivered).map(a => (
+            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF', textDecoration: 'line-through' }}>{a.task}</span>
+              <span style={{ fontSize: 10, fontWeight: 500, background: '#ECFDF5', color: '#059669', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>Livré</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upcoming — collapsible */}
+      {laetitiaUpcoming.length > 0 && (
+        <div>
+          {(laetitiaInProgress.length > 0 || laetitiaDelivered.length > 0) && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
+          <button
+            onClick={() => setUpcomingOpen(o => !o)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px 0',
+              fontSize: 13,
+              fontWeight: 500,
+              color: '#91014b',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span style={{
+              display: 'inline-block',
+              transition: 'transform 0.2s',
+              transform: upcomingOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+              fontSize: 11,
+            }}>▶</span>
+            Voir les {laetitiaUpcoming.length} action{laetitiaUpcoming.length > 1 ? 's' : ''} prévue{laetitiaUpcoming.length > 1 ? 's' : ''}
+          </button>
+          {upcomingOpen && (
+            <div style={{ marginTop: 8 }}>
+              {upcomingContent}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  ) : null;
+
+  const softMessageBlock = !hasClientActions ? (
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: 12, padding: '20px 24px', textAlign: 'center', boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
+      {hasLaetitiaDone ? (
+        <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+          <span style={{ fontWeight: 500, color: '#91014b' }}>Pas encore d'actions pour toi.</span>{' '}
+          Je prépare la stratégie, tes premières actions arriveront bientôt ici.
+        </p>
+      ) : (
+        <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+          <span style={{ fontWeight: 500, color: '#91014b' }}>Je travaille sur ta stratégie.</span>{' '}
+          Tu retrouveras ici tes actions et l'avancement au fur et à mesure.
+        </p>
+      )}
+    </div>
+  ) : null;
+
+  const clientActionsBlock = hasClientActions ? (
+    <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal' }}>Ce que j'attends de toi</h2>
+        <span style={{ background: '#91014b', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 99, padding: '2px 10px', lineHeight: '18px' }}>{doneClient}/{totalClient}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {sortedClientActions.map(action => {
+          const isDone = action.status === 'done';
+          const isExpanded = expandedAction === action.id;
+          const isUpdating = updatingAction === action.id;
+
+          return (
+            <div
+              key={action.id}
+              style={{
+                background: '#fff',
+                borderRadius: 10,
+                padding: '11px 16px',
+                boxShadow: '0 1px 2px rgba(145,1,75,0.03)',
+                transition: 'all 0.15s',
+                opacity: isDone ? 0.4 : 1
+              }}
+              onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 2px 6px rgba(145,1,75,0.07)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.03)'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={() => handleToggleAction(action.id, !isDone)}
+                  disabled={isUpdating}
+                  style={{
+                    width: 20, height: 20, minWidth: 20, borderRadius: 5,
+                    border: `2px solid ${isDone ? '#91014b' : '#D1D5DB'}`,
+                    background: isDone ? '#91014b' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
+                  }}
+                  onMouseEnter={e => { if (!isDone) e.currentTarget.style.borderColor = '#91014b'; }}
+                  onMouseLeave={e => { if (!isDone) e.currentTarget.style.borderColor = '#D1D5DB'; }}
+                >
+                  {isDone && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#91014b' }} />}
+                </button>
+                <div style={{ flex: 1, minWidth: 0, cursor: action.description ? 'pointer' : 'default' }} onClick={() => action.description && setExpandedAction(isExpanded ? null : action.id)}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: isDone ? '#9CA3AF' : '#1A1A2E', textDecoration: isDone ? 'line-through' : 'none' }}>{action.task}</p>
+                  {isExpanded && action.description && <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+                    {isDone ? `✓ ${format(new Date(), 'd MMM', { locale: fr })}` : action.target_date ? format(new Date(action.target_date), 'd MMM', { locale: fr }) : ''}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setPendingActionId(action.id); actionFileInputRef.current?.click(); }}
+                    style={{ width: 26, height: 26, borderRadius: 6, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#FFF4F8'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Paperclip style={{ width: 14, height: 14, color: '#91014b' }} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <input
+        ref={actionFileInputRef}
+        type="file"
+        className="hidden"
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx"
+        onChange={e => {
+          const f = e.target.files?.[0];
+          if (f && pendingActionId) handleActionFileUpload(pendingActionId, f);
+          if (actionFileInputRef.current) actionFileInputRef.current.value = '';
+          setPendingActionId(null);
+        }}
+      />
+    </section>
+  ) : null;
+
+  const documentsBlock = (
+    <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
+      <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Documents & livrables</h2>
+      {data.files.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8, marginBottom: 12 }}>
+          {data.files.map(file => {
+            const cb = catBadge(file.category);
+            return (
+              <div key={file.id} onClick={() => file.download_url && window.open(file.download_url, '_blank')}
+                style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.04)', cursor: file.download_url ? 'pointer' : 'default', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 3px 8px rgba(145,1,75,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.04)'; }}
+              >
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{fileIconEmoji(file.file_name)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 500, color: '#1A1A2E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</p>
+                  <p style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>{fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{format(new Date(file.created_at), 'd MMM yyyy', { locale: fr })}</p>
+                </div>
+                {cb && <span style={{ fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 0.4, background: cb.bg, color: cb.text, borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>{cb.label}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div
+        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        style={{ border: `2px dashed ${isDragging ? '#FFA7C6' : '#FFD6E8'}`, borderRadius: 12, padding: 20, textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s', background: isDragging ? 'rgba(255,244,248,0.4)' : 'transparent' }}
+      >
+        <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
+        <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
+        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 50 Mo'}</p>
+        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
+      </div>
+    </section>
+  );
+
+  const sessionsBlock = data.sessions.length > 0 ? (
+    <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
+      <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Nos sessions</h2>
+      <div style={{ borderLeft: '2px solid #FFD6E8', paddingLeft: 22, marginLeft: 5 }}>
+        {data.sessions.map((session, idx) => (
+          <div key={session.id} style={{ position: 'relative', paddingBottom: idx < data.sessions.length - 1 ? 20 : 0 }}>
+            <span style={{ position: 'absolute', left: -27, top: 4, width: 10, height: 10, borderRadius: 3, background: '#91014b', border: '2px solid #fff', boxShadow: '0 0 0 2px #FFD6E8' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A2E' }}>{format(new Date(session.session_date), 'd MMMM yyyy', { locale: fr })}</span>
+              <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', borderRadius: 99, padding: '2px 8px' }}>{session.session_type === 'visio' ? 'Visio' : session.session_type === 'phone' ? 'Téléphone' : session.session_type}</span>
+            </div>
+            {session.structured_notes?.sections && session.structured_notes.sections.length > 0 && (
+              <div style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
+                {session.structured_notes.sections.map((sec, i) => (
+                  <div key={i} style={{ marginBottom: i < session.structured_notes!.sections!.length - 1 ? 12 : 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#1A1A2E', marginBottom: 4 }}>{sec.title}</p>
+                    <p style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>{sec.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  ) : null;
+
+  const footerBlock = (
+    <footer style={{ paddingTop: 48, textAlign: 'center' }}>
+      <p style={{ fontSize: 11, color: '#9CA3AF' }}>
+        Propulsé par{' '}
+        <a href="https://nowadaysagency.com" target="_blank" rel="noopener noreferrer" style={{ color: '#91014b', textDecoration: 'none' }}>Nowadays Agency</a>
+      </p>
+    </footer>
+  );
 
   return (
     <div className="min-h-screen" style={{ background: '#FFF4F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -288,26 +644,13 @@ const ClientView = () => {
       <header style={{ background: 'linear-gradient(180deg, white 0%, #FFF4F8 100%)' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 24, borderBottom: '2px solid #91014b' }}>
-            {/* Left side */}
             <div>
               <p style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 13, color: '#91014b', textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.7 }}>NOWADAYS</p>
               <h1 style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 26, color: '#1A1A2E', fontWeight: 'normal', marginTop: 8 }}>{data.mission.client_name}</h1>
               {missionType !== 'non_determine' && (
-                <span style={{
-                  display: 'inline-block',
-                  marginTop: 10,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#fff',
-                  background: isBinome ? '#FB3D80' : '#91014b',
-                  borderRadius: 99,
-                  padding: '3px 12px'
-                }}>
-                  {typeLabel}
-                </span>
+                <span style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fff', background: isBinome ? '#FB3D80' : '#91014b', borderRadius: 99, padding: '3px 12px' }}>{typeLabel}</span>
               )}
             </div>
-            {/* Right side */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
               <span style={{ width: 8, height: 8, borderRadius: 3, background: '#10B981' }} />
               <span style={{ fontSize: 11, color: '#6B7280' }}>Mission en cours</span>
@@ -316,437 +659,38 @@ const ClientView = () => {
         </div>
       </header>
 
-      {/* ═══ CONTENT ═══ */}
+      {/* ═══ CONTENT — Dynamic order ═══ */}
       <main style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 80px' }} className="sm:px-6">
-
-        {/* ─── SECTION 1: PROCHAINE SESSION ─── */}
-        {data.next_session?.date && (
-          <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 28, background: '#fff', borderRadius: 14, borderLeft: '4px solid #FFE561', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 10, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>📅</div>
-            <div>
-              <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#91014b' }}>PROCHAINE SESSION</p>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E', marginTop: 4 }}>
-                {format(new Date(data.next_session.date), "EEEE d MMMM yyyy — HH'h'mm", { locale: fr })}
-              </p>
-              {data.next_session.agenda && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{data.next_session.agenda}</p>}
-            </div>
-          </div>
+        {isPhase1 && (
+          <>
+            {nextSessionBlock}
+            {laetitiaBlock}
+            {documentsBlock}
+            {softMessageBlock}
+            {footerBlock}
+          </>
         )}
-
-        {/* ─── SECTION 2: PROGRESS BAR ─── */}
-        {allActions.length > 0 && (
-          <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E' }}>Avancement de la mission</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b' }}>{progressPct}%</span>
-            </div>
-            <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: '#FFD6E8' }}>
-              <div style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #91014b, #FB3D80)', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: '#9CA3AF' }}>{inProgressAll} en cours</span>
-              <span style={{ fontSize: 11, color: '#9CA3AF' }}>
-                {hasClientActions
-                  ? `${doneClient}/${totalClient} de tes actions terminées`
-                  : `${doneAll} livrées sur ${allActions.length}`
-                }
-              </span>
-            </div>
-          </div>
+        {isPhase2 && (
+          <>
+            {nextSessionBlock}
+            {progressBlock}
+            {laetitiaBlock}
+            {documentsBlock}
+            {softMessageBlock}
+            {footerBlock}
+          </>
         )}
-
-        {/* ─── SECTION 3: SOFT MESSAGE (no client actions) ─── */}
-        {!hasClientActions && (
-          <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: 12, padding: '20px 24px', textAlign: 'center', boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
-            {hasLaetitiaDone ? (
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 500, color: '#91014b' }}>Pas encore d'actions pour toi.</span>{' '}
-                Je prépare la stratégie, tes premières actions arriveront bientôt ici.
-              </p>
-            ) : (
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 500, color: '#91014b' }}>Je travaille sur ta stratégie.</span>{' '}
-                Tu retrouveras ici tes actions et l'avancement au fur et à mesure.
-              </p>
-            )}
-          </div>
+        {isPhase3 && (
+          <>
+            {nextSessionBlock}
+            {progressBlock}
+            {clientActionsBlock}
+            {documentsBlock}
+            {laetitiaBlock}
+            {sessionsBlock}
+            {footerBlock}
+          </>
         )}
-
-        {/* ─── SECTION 4: CLIENT ACTIONS ─── */}
-        {hasClientActions && (
-          <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal' }}>Ce que j'attends de toi</h2>
-              <span style={{ background: '#91014b', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 99, padding: '2px 10px', lineHeight: '18px' }}>{doneClient}/{totalClient}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {sortedClientActions.map(action => {
-                const isDone = action.status === 'done';
-                const isExpanded = expandedAction === action.id;
-                const isUpdating = updatingAction === action.id;
-
-                return (
-                  <div
-                    key={action.id}
-                    style={{
-                      background: '#fff',
-                      borderRadius: 10,
-                      padding: '11px 16px',
-                      boxShadow: '0 1px 2px rgba(145,1,75,0.03)',
-                      transition: 'all 0.15s',
-                      opacity: isDone ? 0.4 : 1
-                    }}
-                    onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 2px 6px rgba(145,1,75,0.07)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.03)'; }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {/* Checkbox */}
-                      <button
-                        onClick={() => handleToggleAction(action.id, !isDone)}
-                        disabled={isUpdating}
-                        style={{
-                          width: 20,
-                          height: 20,
-                          minWidth: 20,
-                          borderRadius: 5,
-                          border: `2px solid ${isDone ? '#91014b' : '#D1D5DB'}`,
-                          background: isDone ? '#91014b' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                          flexShrink: 0
-                        }}
-                        onMouseEnter={e => { if (!isDone) e.currentTarget.style.borderColor = '#91014b'; }}
-                        onMouseLeave={e => { if (!isDone) e.currentTarget.style.borderColor = '#D1D5DB'; }}
-                      >
-                        {isDone && (
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                        {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#91014b' }} />}
-                      </button>
-
-                      {/* Title & description */}
-                      <div
-                        style={{ flex: 1, minWidth: 0, cursor: action.description ? 'pointer' : 'default' }}
-                        onClick={() => action.description && setExpandedAction(isExpanded ? null : action.id)}
-                      >
-                        <p style={{
-                          fontSize: 13,
-                          fontWeight: 500,
-                          color: isDone ? '#9CA3AF' : '#1A1A2E',
-                          textDecoration: isDone ? 'line-through' : 'none'
-                        }}>
-                          {action.task}
-                        </p>
-                        {isExpanded && action.description && (
-                          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>
-                        )}
-                      </div>
-
-                      {/* Date & attachment */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <span style={{ fontSize: 11, color: '#9CA3AF' }}>
-                          {isDone
-                            ? `✓ ${format(new Date(), 'd MMM', { locale: fr })}`
-                            : action.target_date
-                              ? format(new Date(action.target_date), 'd MMM', { locale: fr })
-                              : ''
-                          }
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPendingActionId(action.id);
-                            actionFileInputRef.current?.click();
-                          }}
-                          style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: 6,
-                            background: 'transparent',
-                            border: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s'
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#FFF4F8'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                        >
-                          <Paperclip style={{ width: 14, height: 14, color: '#91014b' }} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <input
-              ref={actionFileInputRef}
-              type="file"
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx"
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f && pendingActionId) handleActionFileUpload(pendingActionId, f);
-                if (actionFileInputRef.current) actionFileInputRef.current.value = '';
-                setPendingActionId(null);
-              }}
-            />
-          </section>
-        )}
-
-        {/* ─── SECTION 5: DOCUMENTS ─── */}
-        <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-          <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Documents & livrables</h2>
-          
-          {data.files.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8, marginBottom: 12 }}>
-              {data.files.map(file => {
-                const cb = catBadge(file.category);
-                return (
-                  <div
-                    key={file.id}
-                    onClick={() => file.download_url && window.open(file.download_url, '_blank')}
-                    style={{
-                      background: '#fff',
-                      borderRadius: 10,
-                      padding: 13,
-                      boxShadow: '0 1px 2px rgba(145,1,75,0.04)',
-                      cursor: file.download_url ? 'pointer' : 'default',
-                      transition: 'all 0.15s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 3px 8px rgba(145,1,75,0.08)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.04)'; }}
-                  >
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{fileIconEmoji(file.file_name)}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 12, fontWeight: 500, color: '#1A1A2E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</p>
-                      <p style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
-                        {fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{format(new Date(file.created_at), 'd MMM yyyy', { locale: fr })}
-                      </p>
-                    </div>
-                    {cb && <span style={{ fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 0.4, background: cb.bg, color: cb.text, borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>{cb.label}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Upload zone */}
-          <div
-            onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${isDragging ? '#FFA7C6' : '#FFD6E8'}`,
-              borderRadius: 12,
-              padding: 20,
-              textAlign: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-              background: isDragging ? 'rgba(255,244,248,0.4)' : 'transparent'
-            }}
-          >
-            <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
-            <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>
-              {data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}
-            </p>
-            <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
-              {data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 50 Mo'}
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx"
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) handleGlobalFileUpload(f);
-                if (fileInputRef.current) fileInputRef.current.value = '';
-              }}
-            />
-          </div>
-        </section>
-
-        {/* ─── SEPARATOR ─── */}
-        <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '6px 0 24px' }} />
-
-        {/* ─── SECTION 6: CE QUE JE FAIS POUR TOI ─── */}
-        {laetitiaActions.length > 0 && (() => {
-          const inProgress = laetitiaActions.filter(a => ['in_progress', 'to_validate'].includes(a.status));
-          const delivered = laetitiaActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status));
-          const upcoming = laetitiaActions.filter(a => a.status === 'not_started');
-          const isModeB = inProgress.length > 0 || delivered.length > 0;
-
-          const sortByOrder = (arr: ClientAction[]) => [...arr].sort((a, b) => a.sort_order - b.sort_order);
-
-          const renderGroupLabel = (label: string, dotColor: string) => (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, marginTop: 4 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
-              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#9CA3AF' }}>{label}</span>
-            </div>
-          );
-
-          return (
-            <section className="cv-anim" style={{ animationDelay: delay() }}>
-              <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
-
-              {/* Stats bar */}
-              <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#F3F4F6', gap: 1, marginBottom: 16 }}>
-                {[
-                  { count: delivered.length, label: 'Livrées', color: '#10B981' },
-                  { count: inProgress.length, label: 'En cours', color: '#4A90D9' },
-                  { count: upcoming.length, label: 'Prévues', color: '#9CA3AF' },
-                ].map((s, i) => (
-                  <div key={i} style={{ flex: 1, background: '#fff', padding: '12px 0', textAlign: 'center' }}>
-                    <p style={{ fontSize: 22, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
-                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
-
-              {isModeB ? (
-                /* MODE B — Mission en cours: grouped by status */
-                <div>
-                  {inProgress.length > 0 && (
-                    <div>
-                      {renderGroupLabel('En cours', '#4A90D9')}
-                      {sortByOrder(inProgress).map(a => (
-                        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4A90D9', flexShrink: 0 }} />
-                          <span style={{ flex: 1, fontSize: 13, color: '#1A1A2E' }}>{a.task}</span>
-                          <span style={{ fontSize: 10, fontWeight: 500, background: '#EFF6FF', color: '#2563EB', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>En cours</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {delivered.length > 0 && (
-                    <div>
-                      {inProgress.length > 0 && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
-                      {renderGroupLabel('Livrées', '#10B981')}
-                      {sortByOrder(delivered).map(a => (
-                        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
-                          <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF', textDecoration: 'line-through' }}>{a.task}</span>
-                          <span style={{ fontSize: 10, fontWeight: 500, background: '#ECFDF5', color: '#059669', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>Livré</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {upcoming.length > 0 && (
-                    <div>
-                      {(inProgress.length > 0 || delivered.length > 0) && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
-                      {renderGroupLabel('À venir', '#D1D5DB')}
-                      {sortByOrder(upcoming).map(a => (
-                        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-                          <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* MODE A — Nouvelle cliente: grouped by category */
-                (() => {
-                  const byCategory = new Map<string, ClientAction[]>();
-                  laetitiaActions.forEach(a => {
-                    const cat = a.category?.trim() || 'Autre';
-                    if (!byCategory.has(cat)) byCategory.set(cat, []);
-                    byCategory.get(cat)!.push(a);
-                  });
-                  const sortedCats = [...byCategory.keys()].sort((a, b) => {
-                    if (a === 'Cadrage') return -1;
-                    if (b === 'Cadrage') return 1;
-                    return a.localeCompare(b, 'fr');
-                  });
-                  return (
-                    <div>
-                      {sortedCats.map(cat => (
-                        <div key={cat} style={{ marginBottom: 12 }}>
-                          {renderGroupLabel(cat, '#D1D5DB')}
-                          {sortByOrder(byCategory.get(cat)!).map(a => (
-                            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-                              <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()
-              )}
-            </section>
-          );
-        })()}
-
-        {/* ─── SECTION 7: SESSIONS ─── */}
-        {data.sessions.length > 0 && (
-          <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-            <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Nos sessions</h2>
-            <div style={{ borderLeft: '2px solid #FFD6E8', paddingLeft: 22, marginLeft: 5 }}>
-              {data.sessions.map((session, idx) => (
-                <div key={session.id} style={{ position: 'relative', paddingBottom: idx < data.sessions.length - 1 ? 20 : 0 }}>
-                  {/* Timeline dot */}
-                  <span style={{
-                    position: 'absolute',
-                    left: -27,
-                    top: 4,
-                    width: 10,
-                    height: 10,
-                    borderRadius: 3,
-                    background: '#91014b',
-                    border: '2px solid #fff',
-                    boxShadow: '0 0 0 2px #FFD6E8'
-                  }} />
-                  
-                  {/* Date & type */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A2E' }}>
-                      {format(new Date(session.session_date), 'd MMMM yyyy', { locale: fr })}
-                    </span>
-                    <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', borderRadius: 99, padding: '2px 8px' }}>
-                      {session.session_type === 'visio' ? 'Visio' : session.session_type === 'phone' ? 'Téléphone' : session.session_type}
-                    </span>
-                  </div>
-                  
-                  {/* Notes */}
-                  {session.structured_notes?.sections && session.structured_notes.sections.length > 0 && (
-                    <div style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
-                      {session.structured_notes.sections.map((sec, i) => (
-                        <div key={i} style={{ marginBottom: i < session.structured_notes!.sections!.length - 1 ? 12 : 0 }}>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: '#1A1A2E', marginBottom: 4 }}>{sec.title}</p>
-                          <p style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>{sec.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ─── FOOTER ─── */}
-        <footer style={{ paddingTop: 48, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: '#9CA3AF' }}>
-            Propulsé par{' '}
-            <a href="https://nowadaysagency.com" target="_blank" rel="noopener noreferrer" style={{ color: '#91014b', textDecoration: 'none' }}>
-              Nowadays Agency
-            </a>
-          </p>
-        </footer>
       </main>
     </div>
   );
