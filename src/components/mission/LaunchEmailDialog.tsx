@@ -164,11 +164,13 @@ export function LaunchEmailDialog({
   }, [open, missionId, missionType, prenom, amount]);
 
   // Rebuild email when toggles change
+  const clientSpaceUrl = `${window.location.origin}/client/${clientToken}`;
+
   const regenerate = useCallback(
     (a: AccompType, p: PaymentType, k: KickoffType, prop: typeof proposal, ac: string) => {
-      setBody(buildEmail(prenom, a, p, k, prop, ac));
+      setBody(buildEmail(prenom, a, p, k, prop, ac, clientSpaceUrl));
     },
-    [prenom]
+    [prenom, clientSpaceUrl]
   );
 
   // Auto-generate on proposal loaded or toggle change (if not manually edited)
