@@ -13,6 +13,7 @@ interface ImportProposalDialogProps {
   missionId: string;
   missionType: string;
   proposalId?: string;
+  currentVersion?: number;
   onImportDone: () => void;
 }
 
