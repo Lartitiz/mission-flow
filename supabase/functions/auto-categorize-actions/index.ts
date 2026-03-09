@@ -17,6 +17,8 @@ const CATEGORIES = [
   "Influence/Presse",
   "Formation",
   "Commercial",
+  "Support",
+  "Préparation session",
   "Autre",
 ];
 
