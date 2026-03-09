@@ -16,6 +16,7 @@ interface ClientLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientToken: string;
+  clientSlug?: string;
   clientLinkActive: boolean;
   onToggleActive: (active: boolean) => void;
   questionnaireToken?: string | null;
