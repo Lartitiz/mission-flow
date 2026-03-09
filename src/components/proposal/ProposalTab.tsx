@@ -378,6 +378,17 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
               Complète d'abord l'appel découverte et structure les notes.
             </p>
           )}
+
+          <p className="font-body text-xs text-muted-foreground my-4">— ou —</p>
+
+          <Button
+            variant="outline"
+            onClick={() => setImportDialogOpen(true)}
+            className="font-body text-sm gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importer une proposition existante
+          </Button>
         </div>
       )}
 
