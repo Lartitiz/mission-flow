@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.import-proposal]
 verify_jwt = false
+
+[functions.generate-actions-from-proposal]
+verify_jwt = false

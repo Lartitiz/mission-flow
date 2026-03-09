@@ -95,19 +95,20 @@ export function ImportProposalDialog({
       const contentToSave = { sections: data.sections };
 
       if (proposalId) {
+        const newVersion = (currentVersion || 1) + 1;
         await supabase
           .from('proposals')
-          .update({ content: contentToSave as any })
+          .update({ content: contentToSave as any, version: newVersion })
           .eq('id', proposalId);
+        toast.success(`Proposition mise à jour (v${newVersion})`);
       } else {
         await supabase.from('proposals').insert({
           mission_id: missionId,
           content: contentToSave as any,
           version: 1,
         });
+        toast.success('Proposition importée et structurée !');
       }
-
-      toast.success('Proposition importée et structurée !');
       onImportDone();
       onOpenChange(false);
       // Reset state

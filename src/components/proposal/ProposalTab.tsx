@@ -639,6 +639,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
         missionId={missionId}
         missionType={missionType}
         proposalId={proposal?.id}
+        currentVersion={proposal?.version}
         onImportDone={() => {
           refetchProposal();
           queryClient.invalidateQueries({ queryKey: ['proposal', missionId] });
