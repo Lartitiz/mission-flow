@@ -23,6 +23,7 @@ export function ImportProposalDialog({
   missionId,
   missionType,
   proposalId,
+  currentVersion,
   onImportDone,
 }: ImportProposalDialogProps) {
   const [tab, setTab] = useState('paste');
