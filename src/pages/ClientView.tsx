@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ChevronDown, Paperclip } from 'lucide-react';
+import { Loader2, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -112,7 +112,7 @@ const ClientView = () => {
   const [updatingAction, setUpdatingAction] = useState<string | null>(null);
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [laetitiaOpen, setLaetitiaOpen] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
@@ -580,51 +580,115 @@ const ClientView = () => {
         {/* ─── SEPARATOR ─── */}
         <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '6px 0 24px' }} />
 
-        {/* ─── SECTION 6: LAETITIA ACCORDION ─── */}
-        {laetitiaActions.length > 0 && (
-          <section className="cv-anim" style={{ animationDelay: delay() }}>
-            <div
-              onClick={() => setLaetitiaOpen(!laetitiaOpen)}
-              style={{
-                background: '#fff',
-                borderRadius: 14,
-                padding: '16px 20px',
-                boxShadow: '0 1px 3px rgba(145,1,75,0.05)',
-                cursor: 'pointer',
-                transition: 'box-shadow 0.15s'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 15, fontWeight: 'normal' }}>Ce que je fais de mon côté</h2>
-                  <p style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
-                    <span style={{ color: '#4A90D9', fontWeight: 600 }}>{laetitiaWip}</span> en cours · <span style={{ color: '#10B981', fontWeight: 600 }}>{laetitiaDone}</span> livrée{laetitiaDone > 1 ? 's' : ''} · <span>{laetitiaTodo}</span> à venir
-                  </p>
-                </div>
-                <ChevronDown style={{ width: 16, height: 16, color: '#9CA3AF', transition: 'transform 0.2s', transform: laetitiaOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+        {/* ─── SECTION 6: CE QUE JE FAIS POUR TOI ─── */}
+        {laetitiaActions.length > 0 && (() => {
+          const inProgress = laetitiaActions.filter(a => ['in_progress', 'to_validate'].includes(a.status));
+          const delivered = laetitiaActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status));
+          const upcoming = laetitiaActions.filter(a => a.status === 'not_started');
+          const isModeB = inProgress.length > 0 || delivered.length > 0;
+
+          const sortByOrder = (arr: ClientAction[]) => [...arr].sort((a, b) => a.sort_order - b.sort_order);
+
+          const renderGroupLabel = (label: string, dotColor: string) => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, marginTop: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#9CA3AF' }}>{label}</span>
+            </div>
+          );
+
+          return (
+            <section className="cv-anim" style={{ animationDelay: delay() }}>
+              <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
+
+              {/* Stats bar */}
+              <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#F3F4F6', gap: 1, marginBottom: 16 }}>
+                {[
+                  { count: delivered.length, label: 'Livrées', color: '#10B981' },
+                  { count: inProgress.length, label: 'En cours', color: '#4A90D9' },
+                  { count: upcoming.length, label: 'Prévues', color: '#9CA3AF' },
+                ].map((s, i) => (
+                  <div key={i} style={{ flex: 1, background: '#fff', padding: '12px 0', textAlign: 'center' }}>
+                    <p style={{ fontSize: 22, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
+                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.label}</p>
+                  </div>
+                ))}
               </div>
 
-              <div style={{
-                maxHeight: laetitiaOpen ? 2000 : 0,
-                overflow: 'hidden',
-                transition: 'max-height 0.4s ease'
-              }}>
-                <div style={{ marginTop: 14 }}>
-                  {sortedLaetitiaActions.map(a => {
-                    const s = STATUS_MAP[a.status] ?? STATUS_MAP.not_started;
-                    return (
-                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid #FAF0F4' }}>
-                        <span style={{ width: 7, height: 7, borderRadius: 2, background: s.dot, flexShrink: 0 }} />
-                        <span style={{ flex: 1, fontSize: 12, color: '#1A1A2E' }}>{a.task}</span>
-                        <span style={{ fontSize: 10, fontWeight: 500, background: s.bg, color: s.text, borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>{s.label}</span>
-                      </div>
-                    );
-                  })}
+              {isModeB ? (
+                /* MODE B — Mission en cours: grouped by status */
+                <div>
+                  {inProgress.length > 0 && (
+                    <div>
+                      {renderGroupLabel('En cours', '#4A90D9')}
+                      {sortByOrder(inProgress).map(a => (
+                        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4A90D9', flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: 13, color: '#1A1A2E' }}>{a.task}</span>
+                          <span style={{ fontSize: 10, fontWeight: 500, background: '#EFF6FF', color: '#2563EB', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>En cours</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {delivered.length > 0 && (
+                    <div>
+                      {inProgress.length > 0 && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
+                      {renderGroupLabel('Livrées', '#10B981')}
+                      {sortByOrder(delivered).map(a => (
+                        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF', textDecoration: 'line-through' }}>{a.task}</span>
+                          <span style={{ fontSize: 10, fontWeight: 500, background: '#ECFDF5', color: '#059669', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>Livré</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {upcoming.length > 0 && (
+                    <div>
+                      {(inProgress.length > 0 || delivered.length > 0) && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
+                      {renderGroupLabel('À venir', '#D1D5DB')}
+                      {sortByOrder(upcoming).map(a => (
+                        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
-          </section>
-        )}
+              ) : (
+                /* MODE A — Nouvelle cliente: grouped by category */
+                (() => {
+                  const byCategory = new Map<string, ClientAction[]>();
+                  laetitiaActions.forEach(a => {
+                    const cat = a.category?.trim() || 'Autre';
+                    if (!byCategory.has(cat)) byCategory.set(cat, []);
+                    byCategory.get(cat)!.push(a);
+                  });
+                  const sortedCats = [...byCategory.keys()].sort((a, b) => {
+                    if (a === 'Cadrage') return -1;
+                    if (b === 'Cadrage') return 1;
+                    return a.localeCompare(b, 'fr');
+                  });
+                  return (
+                    <div>
+                      {sortedCats.map(cat => (
+                        <div key={cat} style={{ marginBottom: 12 }}>
+                          {renderGroupLabel(cat, '#D1D5DB')}
+                          {sortByOrder(byCategory.get(cat)!).map(a => (
+                            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
+                              <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              )}
+            </section>
+          );
+        })()}
 
         {/* ─── SECTION 7: SESSIONS ─── */}
         {data.sessions.length > 0 && (
