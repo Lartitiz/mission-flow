@@ -27,6 +27,7 @@ export function ClientLinkDialog({
   open,
   onOpenChange,
   clientToken,
+  clientSlug,
   clientLinkActive,
   onToggleActive,
   questionnaireToken,
@@ -34,9 +35,11 @@ export function ClientLinkDialog({
 }: ClientLinkDialogProps) {
   const { toast } = useToast();
   const [copiedClient, setCopiedClient] = useState(false);
+  const [copiedShort, setCopiedShort] = useState(false);
   const [copiedQuestionnaire, setCopiedQuestionnaire] = useState(false);
 
   const clientLink = `${window.location.origin}/client/${clientToken}`;
+  const shortLink = clientSlug ? `${window.location.origin}/c/${clientSlug}` : null;
   const questionnaireLink = questionnaireToken
     ? `${window.location.origin}/questionnaire/${questionnaireToken}`
     : null;
