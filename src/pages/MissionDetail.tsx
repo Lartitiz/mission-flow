@@ -220,6 +220,16 @@ const MissionDetail = () => {
         questionnaireToken={kickoff?.questionnaire_token}
         questionnaireStatus={kickoff?.questionnaire_status}
       />
+
+      <LaunchEmailDialog
+        open={launchEmailOpen}
+        onOpenChange={setLaunchEmailOpen}
+        clientName={mission.client_name}
+        clientEmail={mission.client_email}
+        missionType={mission.mission_type}
+        missionId={mission.id}
+        amount={mission.amount}
+      />
     </div>
   );
 };
