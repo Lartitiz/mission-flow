@@ -16,6 +16,7 @@ const CATEGORIES = [
   "Cross-posting",
   "Influence/Presse",
   "Formation",
+  "Commercial",
   "Autre",
 ];
 
