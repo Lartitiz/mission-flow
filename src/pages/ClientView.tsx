@@ -112,7 +112,7 @@ const ClientView = () => {
   const [updatingAction, setUpdatingAction] = useState<string | null>(null);
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [laetitiaOpen, setLaetitiaOpen] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
