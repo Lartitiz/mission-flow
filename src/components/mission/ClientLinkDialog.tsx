@@ -16,6 +16,7 @@ interface ClientLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientToken: string;
+  clientSlug?: string;
   clientLinkActive: boolean;
   onToggleActive: (active: boolean) => void;
   questionnaireToken?: string | null;
@@ -26,6 +27,7 @@ export function ClientLinkDialog({
   open,
   onOpenChange,
   clientToken,
+  clientSlug,
   clientLinkActive,
   onToggleActive,
   questionnaireToken,
@@ -33,20 +35,25 @@ export function ClientLinkDialog({
 }: ClientLinkDialogProps) {
   const { toast } = useToast();
   const [copiedClient, setCopiedClient] = useState(false);
+  const [copiedShort, setCopiedShort] = useState(false);
   const [copiedQuestionnaire, setCopiedQuestionnaire] = useState(false);
 
   const clientLink = `${window.location.origin}/client/${clientToken}`;
+  const shortLink = clientSlug ? `${window.location.origin}/c/${clientSlug}` : null;
   const questionnaireLink = questionnaireToken
     ? `${window.location.origin}/questionnaire/${questionnaireToken}`
     : null;
 
   const showQuestionnaire = questionnaireLink && questionnaireStatus === 'sent';
 
-  const handleCopy = async (link: string, type: 'client' | 'questionnaire') => {
+  const handleCopy = async (link: string, type: 'client' | 'short' | 'questionnaire') => {
     await navigator.clipboard.writeText(link);
     if (type === 'client') {
       setCopiedClient(true);
       setTimeout(() => setCopiedClient(false), 2000);
+    } else if (type === 'short') {
+      setCopiedShort(true);
+      setTimeout(() => setCopiedShort(false), 2000);
     } else {
       setCopiedQuestionnaire(true);
       setTimeout(() => setCopiedQuestionnaire(false), 2000);
@@ -65,29 +72,49 @@ export function ClientLinkDialog({
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Client link */}
-          <div className="space-y-3">
-            <h4 className="font-heading text-sm font-medium text-foreground">Lien de l'espace client</h4>
+          {/* Short link (primary) */}
+          {shortLink && (
+            <div className="space-y-3">
+              <h4 className="font-heading text-sm font-medium text-foreground">🔗 Lien court (à envoyer au client)</h4>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-primary/5 rounded-lg px-3 py-2.5 font-body text-sm font-medium text-primary break-all border border-primary/10">
+                  {shortLink}
+                </code>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleCopy(shortLink, 'short')}
+                  className="font-body gap-2 flex-1"
+                >
+                  {copiedShort ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedShort ? 'Copié !' : 'Copier le lien court'}
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={shortLink} target="_blank" rel="noopener noreferrer" className="gap-2">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Ouvrir
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Full client link (secondary) */}
+          <div className="space-y-2">
+            <h4 className="font-body text-xs text-muted-foreground">Lien complet (alternatif)</h4>
             <div className="flex items-center gap-2">
-              <code className="flex-1 bg-muted rounded-lg px-3 py-2 font-body text-xs text-foreground break-all">
+              <code className="flex-1 bg-muted rounded-lg px-3 py-1.5 font-body text-[10px] text-muted-foreground break-all">
                 {clientLink}
               </code>
-            </div>
-            <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => handleCopy(clientLink, 'client')}
-                className="font-body gap-2 flex-1"
+                className="font-body h-7 w-7 p-0 shrink-0"
               >
-                {copiedClient ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copiedClient ? 'Copié !' : 'Copier le lien'}
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href={clientLink} target="_blank" rel="noopener noreferrer" className="gap-2">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Ouvrir
-                </a>
+                {copiedClient ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               </Button>
             </div>
           </div>

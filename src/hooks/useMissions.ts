@@ -101,6 +101,7 @@ export function useCreateMission() {
         .from('missions')
         .insert({
           client_name,
+          client_slug: '',
           client_email: client_email || null,
           mission_type: mission_type || 'non_determine',
           status: status || 'discovery_call',

@@ -26,12 +26,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get mission by token
-    const { data: mission, error: missionError } = await supabase
+    // Get mission by slug or token
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+    const query = supabase
       .from("missions")
       .select("id, client_name, mission_type, status, amount, client_link_active")
-      .eq("client_token", token)
-      .single();
+    
+    const { data: mission, error: missionError } = isUuid
+      ? await query.eq("client_token", token).single()
+      : await query.eq("client_slug", token).single();
 
     if (missionError || !mission) {
       return new Response(JSON.stringify({ error: "Token invalide" }), {
