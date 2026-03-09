@@ -120,7 +120,7 @@ ${proposal_content ? `Contexte (proposition commerciale) :\n${JSON.stringify(pro
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
+        max_tokens: 8000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
       }),

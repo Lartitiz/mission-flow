@@ -110,7 +110,7 @@ ${mission_context ? `Contexte de la mission :\n${JSON.stringify(mission_context,
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 3000,
+        max_tokens: 6000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
       }),
