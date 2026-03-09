@@ -26,7 +26,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const CATEGORIES = ['Cadrage', 'Messages', 'Site web', 'Social media', 'Emailing', 'Branding', 'Cross-posting', 'Influence/Presse', 'Formation', 'Commercial', 'Autre'];
+const CATEGORIES = ['Cadrage', 'Messages', 'Site web', 'Social media', 'Emailing', 'Branding', 'Cross-posting', 'Influence/Presse', 'Formation', 'Commercial', 'Support', 'Préparation session', 'Autre'];
 
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333', order: 0 },

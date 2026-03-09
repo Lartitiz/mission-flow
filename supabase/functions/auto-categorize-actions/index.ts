@@ -17,6 +17,8 @@ const CATEGORIES = [
   "Influence/Presse",
   "Formation",
   "Commercial",
+  "Support",
+  "Préparation session",
   "Autre",
 ];
 
@@ -69,6 +71,8 @@ Règles :
 - "Influence/Presse" = relations presse, influenceurs, partenariats
 - "Formation" = coaching, atelier, formation client
 - "Commercial" = devis, facturation, contrats, prospection, relances clients, CRM
+- "Support" = assistance technique, dépannage, maintenance, aide au client
+- "Préparation session" = préparer une visio, ordre du jour, supports de session, compte-rendu
 - "Autre" = si vraiment rien ne correspond`,
           },
           {

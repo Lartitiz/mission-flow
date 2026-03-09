@@ -35,7 +35,7 @@ Analyse la proposition et crée TOUTES les actions nécessaires pour la réalise
 
 Pour chaque action, détermine :
 - assignee : "laetitia" (ce que Laetitia fait) ou "client" (ce que le/la client·e doit fournir)
-- category : Cadrage, Messages, Site web, Social media, Emailing, Branding, Influence/Presse, Formation, Cross-posting, Commercial, Autre
+- category : Cadrage, Messages, Site web, Social media, Emailing, Branding, Influence/Presse, Formation, Cross-posting, Commercial, Support, Préparation session, Autre
 - task : intitulé court et clair (max 60 caractères)
 - description : détail de ce qui est à faire
 - channel : le canal concerné si applicable (Instagram, LinkedIn, Site web, Brevo, etc.) ou null
