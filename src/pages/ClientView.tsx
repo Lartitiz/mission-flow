@@ -291,15 +291,35 @@ const ClientView = () => {
   const laetitiaInProgress = laetitiaActions.filter(a => ['in_progress', 'to_validate'].includes(a.status));
   const laetitiaDelivered = laetitiaActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status));
   const laetitiaUpcoming = laetitiaActions.filter(a => a.status === 'not_started');
-  const isModeB = laetitiaInProgress.length > 0 || laetitiaDelivered.length > 0;
   const sortByOrder = (arr: ClientAction[]) => [...arr].sort((a, b) => a.sort_order - b.sort_order);
 
-  const renderGroupLabel = (label: string, dotColor: string) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, marginTop: 4 }}>
-      <span style={{ width: 8, height: 8, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
-      <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#9CA3AF' }}>{label}</span>
-    </div>
-  );
+  // Build category map for laetitia actions
+  const laetitiaByCategory = (() => {
+    const map = new Map<string, ClientAction[]>();
+    laetitiaActions.forEach(a => {
+      const cat = a.category?.trim() || 'Autre';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(a);
+    });
+    const sortedCats = [...map.keys()].sort((a, b) => {
+      if (a === 'Cadrage') return -1;
+      if (b === 'Cadrage') return 1;
+      return a.localeCompare(b, 'fr');
+    });
+    return sortedCats.map(cat => ({ cat, actions: sortByOrder(map.get(cat)!) }));
+  })();
+
+  const actionStatusColor = (status: string) => {
+    if (['validated', 'delivered', 'done'].includes(status)) return { color: '#D1D5DB', weight: 400, strike: true };
+    if (['in_progress', 'to_validate'].includes(status)) return { color: '#4A90D9', weight: 500, strike: false };
+    return { color: '#9CA3AF', weight: 400, strike: false };
+  };
+
+  const actionBarColor = (status: string) => {
+    if (['validated', 'delivered', 'done'].includes(status)) return '#10B981';
+    if (['in_progress', 'to_validate'].includes(status)) return '#4A90D9';
+    return '#E5E7EB';
+  };
 
   let sectionIdx = 0;
   const delay = () => `${(sectionIdx++) * 0.03}s`;
@@ -340,44 +360,6 @@ const ClientView = () => {
     </div>
   ) : null;
 
-  // Upcoming actions collapsible content
-  const upcomingContent = (() => {
-    if (laetitiaUpcoming.length === 0) return null;
-    if (isModeB) {
-      // Mode B: flat list
-      return sortByOrder(laetitiaUpcoming).map(a => (
-        <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-          <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
-        </div>
-      ));
-    } else {
-      // Mode A: grouped by category
-      const byCategory = new Map<string, ClientAction[]>();
-      laetitiaUpcoming.forEach(a => {
-        const cat = a.category?.trim() || 'Autre';
-        if (!byCategory.has(cat)) byCategory.set(cat, []);
-        byCategory.get(cat)!.push(a);
-      });
-      const sortedCats = [...byCategory.keys()].sort((a, b) => {
-        if (a === 'Cadrage') return -1;
-        if (b === 'Cadrage') return 1;
-        return a.localeCompare(b, 'fr');
-      });
-      return sortedCats.map(cat => (
-        <div key={cat} style={{ marginBottom: 12 }}>
-          {renderGroupLabel(cat, '#D1D5DB')}
-          {sortByOrder(byCategory.get(cat)!).map(a => (
-            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF' }}>{a.task}</span>
-            </div>
-          ))}
-        </div>
-      ));
-    }
-  })();
-
   const laetitiaBlock = laetitiaActions.length > 0 ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
       <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
@@ -390,75 +372,43 @@ const ClientView = () => {
           { count: laetitiaUpcoming.length, label: 'Prévues', color: '#9CA3AF' },
         ].map((s, i) => (
           <div key={i} style={{ flex: 1, background: '#fff', padding: '12px 0', textAlign: 'center' }}>
-            <p style={{ fontSize: 22, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
             <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* In progress — always visible */}
-      {laetitiaInProgress.length > 0 && (
-        <div>
-          {renderGroupLabel('En cours', '#4A90D9')}
-          {sortByOrder(laetitiaInProgress).map(a => (
-            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4A90D9', flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: 13, color: '#1A1A2E' }}>{a.task}</span>
-              <span style={{ fontSize: 10, fontWeight: 500, background: '#EFF6FF', color: '#2563EB', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>En cours</span>
+      {/* Category cards grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }} className="grid-cols-1 sm:grid-cols-2">
+        {laetitiaByCategory.map(({ cat, actions: catActions }) => {
+          const doneCount = catActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status)).length;
+          const allDone = doneCount === catActions.length;
+          return (
+            <div key={cat} style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
+              {/* Card header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#91014b', textTransform: 'uppercase', letterSpacing: 0.3 }}>{cat}</span>
+                <span style={{ fontSize: 11, color: '#9CA3AF' }}>{doneCount}/{catActions.length}{allDone ? ' ✓' : ''}</span>
+              </div>
+              {/* Action list */}
+              <div style={{ marginBottom: 10 }}>
+                {catActions.map(a => {
+                  const s = actionStatusColor(a.status);
+                  return (
+                    <p key={a.id} style={{ fontSize: 12, lineHeight: 1.6, color: s.color, fontWeight: s.weight, textDecoration: s.strike ? 'line-through' : 'none' }}>{a.task}</p>
+                  );
+                })}
+              </div>
+              {/* Mini progress bar */}
+              <div style={{ display: 'flex', gap: 3 }}>
+                {catActions.map(a => (
+                  <span key={a.id} style={{ width: 8, height: 4, borderRadius: 2, background: actionBarColor(a.status) }} />
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Delivered — always visible */}
-      {laetitiaDelivered.length > 0 && (
-        <div>
-          {laetitiaInProgress.length > 0 && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
-          {renderGroupLabel('Livrées', '#10B981')}
-          {sortByOrder(laetitiaDelivered).map(a => (
-            <div key={a.id} style={{ background: '#fff', borderRadius: 8, padding: '9px 14px', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: 13, color: '#9CA3AF', textDecoration: 'line-through' }}>{a.task}</span>
-              <span style={{ fontSize: 10, fontWeight: 500, background: '#ECFDF5', color: '#059669', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>Livré</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Upcoming — collapsible */}
-      {laetitiaUpcoming.length > 0 && (
-        <div>
-          {(laetitiaInProgress.length > 0 || laetitiaDelivered.length > 0) && <div style={{ height: 1, background: '#FFD6E8', opacity: 0.4, margin: '10px 0' }} />}
-          <button
-            onClick={() => setUpcomingOpen(o => !o)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '6px 0',
-              fontSize: 13,
-              fontWeight: 500,
-              color: '#91014b',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span style={{
-              display: 'inline-block',
-              transition: 'transform 0.2s',
-              transform: upcomingOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-              fontSize: 11,
-            }}>▶</span>
-            Voir les {laetitiaUpcoming.length} action{laetitiaUpcoming.length > 1 ? 's' : ''} prévue{laetitiaUpcoming.length > 1 ? 's' : ''}
-          </button>
-          {upcomingOpen && (
-            <div style={{ marginTop: 8 }}>
-              {upcomingContent}
-            </div>
-          )}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </section>
   ) : null;
 
