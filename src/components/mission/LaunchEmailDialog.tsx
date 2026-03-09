@@ -15,6 +15,7 @@ interface LaunchEmailDialogProps {
   missionType: string;
   missionId: string;
   amount: number | null;
+  clientToken: string;
 }
 
 type AccompType = 'binome' | 'agency' | 'courte';
@@ -61,7 +62,8 @@ function buildEmail(
   payment: PaymentType,
   kickoff: KickoffType,
   proposal: { perimeter: string; keyPoints: string[] },
-  acompte: string
+  acompte: string,
+  clientSpaceUrl: string
 ): string {
   let body = '';
 
@@ -102,7 +104,7 @@ function buildEmail(
   }
 
   // FIN
-  body += `Et pour qu'on puisse échanger facilement au quotidien, voici mon WhatsApp :\n👉 06 14 13 39 21\nN'hésite pas à m'envoyer un petit message pour qu'on se retrouve dessus. C'est souvent plus fluide que les mails pour les questions rapides.\n\nJ'ai vraiment hâte de travailler sur ton projet. On va faire du beau.\n\nLaetitia\n--\nLaetitia Mattioli\nNowadays Agency\nlaetitia@nowadaysagency.com\nnowadaysagency.com`;
+  body += `Et pour qu'on puisse échanger facilement au quotidien, voici mon WhatsApp :\n👉 06 14 13 39 21\nN'hésite pas à m'envoyer un petit message pour qu'on se retrouve dessus. C'est souvent plus fluide que les mails pour les questions rapides.\n\nEt pour suivre l'avancement de la mission, tu as ton propre espace projet ici :\n👉 ${clientSpaceUrl}\nTu y retrouveras tes actions, les documents partagés, et les notes de nos sessions au fur et à mesure.\n\nJ'ai vraiment hâte de travailler sur ton projet. On va faire du beau.\n\nLaetitia\n--\nLaetitia Mattioli\nNowadays Agency\nlaetitia@nowadaysagency.com\nnowadaysagency.com`;
 
   return body;
 }
@@ -120,6 +122,7 @@ export function LaunchEmailDialog({
   missionType,
   missionId,
   amount,
+  clientToken,
 }: LaunchEmailDialogProps) {
   const prenom = clientName.split(' ')[0];
   const defaultAccomp: AccompType = missionType === 'agency' ? 'agency' : 'binome';
@@ -161,11 +164,13 @@ export function LaunchEmailDialog({
   }, [open, missionId, missionType, prenom, amount]);
 
   // Rebuild email when toggles change
+  const clientSpaceUrl = `${window.location.origin}/client/${clientToken}`;
+
   const regenerate = useCallback(
     (a: AccompType, p: PaymentType, k: KickoffType, prop: typeof proposal, ac: string) => {
-      setBody(buildEmail(prenom, a, p, k, prop, ac));
+      setBody(buildEmail(prenom, a, p, k, prop, ac, clientSpaceUrl));
     },
-    [prenom]
+    [prenom, clientSpaceUrl]
   );
 
   // Auto-generate on proposal loaded or toggle change (if not manually edited)

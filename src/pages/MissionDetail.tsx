@@ -229,6 +229,7 @@ const MissionDetail = () => {
         missionType={mission.mission_type}
         missionId={mission.id}
         amount={mission.amount}
+        clientToken={mission.client_token}
       />
     </div>
   );
