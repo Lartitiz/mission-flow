@@ -17,7 +17,7 @@ Extrais :
 
 Pour chaque nouvelle action, détermine :
 - assignee : "laetitia" ou "client" (selon qui doit la faire)
-- category : la catégorie la plus adaptée parmi : Cadrage, Messages, Site web, Social media, Emailing, Branding, Cross-posting, Influence/Presse, Formation, Autre
+- category : la catégorie la plus adaptée parmi : Cadrage, Messages, Site web, Social media, Emailing, Branding, Cross-posting, Influence/Presse, Formation, Commercial, Autre
 - task : intitulé court
 - description : détail
 - channel : si applicable, parmi : Instagram, LinkedIn, Pinterest, Site web, Brevo, Facebook, Telegram/WhatsApp, Identité, Orga, Autre
