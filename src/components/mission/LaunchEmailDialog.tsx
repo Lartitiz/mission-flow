@@ -104,7 +104,7 @@ function buildEmail(
   }
 
   // FIN
-  body += `Et pour qu'on puisse échanger facilement au quotidien, voici mon WhatsApp :\n👉 06 14 13 39 21\nN'hésite pas à m'envoyer un petit message pour qu'on se retrouve dessus. C'est souvent plus fluide que les mails pour les questions rapides.\n\nJ'ai vraiment hâte de travailler sur ton projet. On va faire du beau.\n\nLaetitia\n--\nLaetitia Mattioli\nNowadays Agency\nlaetitia@nowadaysagency.com\nnowadaysagency.com`;
+  body += `Et pour qu'on puisse échanger facilement au quotidien, voici mon WhatsApp :\n👉 06 14 13 39 21\nN'hésite pas à m'envoyer un petit message pour qu'on se retrouve dessus. C'est souvent plus fluide que les mails pour les questions rapides.\n\nEt pour suivre l'avancement de la mission, tu as ton propre espace projet ici :\n👉 ${clientSpaceUrl}\nTu y retrouveras tes actions, les documents partagés, et les notes de nos sessions au fur et à mesure.\n\nJ'ai vraiment hâte de travailler sur ton projet. On va faire du beau.\n\nLaetitia\n--\nLaetitia Mattioli\nNowadays Agency\nlaetitia@nowadaysagency.com\nnowadaysagency.com`;
 
   return body;
 }
