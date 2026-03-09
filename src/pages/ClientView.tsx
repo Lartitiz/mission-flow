@@ -633,9 +633,9 @@ const ClientView = () => {
           <>
             {nextSessionBlock}
             {progressBlock}
+            {laetitiaBlock}
             {clientActionsBlock}
             {documentsBlock}
-            {laetitiaBlock}
             {sessionsBlock}
             {footerBlock}
           </>
