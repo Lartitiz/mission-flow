@@ -112,6 +112,7 @@ const ClientView = () => {
   const [updatingAction, setUpdatingAction] = useState<string | null>(null);
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
