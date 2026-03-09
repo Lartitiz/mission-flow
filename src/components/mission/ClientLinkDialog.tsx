@@ -46,11 +46,14 @@ export function ClientLinkDialog({
 
   const showQuestionnaire = questionnaireLink && questionnaireStatus === 'sent';
 
-  const handleCopy = async (link: string, type: 'client' | 'questionnaire') => {
+  const handleCopy = async (link: string, type: 'client' | 'short' | 'questionnaire') => {
     await navigator.clipboard.writeText(link);
     if (type === 'client') {
       setCopiedClient(true);
       setTimeout(() => setCopiedClient(false), 2000);
+    } else if (type === 'short') {
+      setCopiedShort(true);
+      setTimeout(() => setCopiedShort(false), 2000);
     } else {
       setCopiedQuestionnaire(true);
       setTimeout(() => setCopiedQuestionnaire(false), 2000);
