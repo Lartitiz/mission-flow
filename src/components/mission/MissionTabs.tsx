@@ -58,13 +58,10 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
         if (!hasStructuredNotes && statusIndex < 1) return <EmptyState />;
         return <ProposalTab missionId={missionId} clientName={clientName} clientEmail={clientEmail} missionType={currentMissionType} amount={amount} />;
       case 'kickoff':
-        if (statusIndex < 3) return <EmptyState />;
         return <KickoffTab missionId={missionId} clientName={clientName} />;
       case 'actions':
-        if (statusIndex < 4) return <EmptyState />;
         return <ActionsTab missionId={missionId} clientName={clientName} />;
       case 'follow-up':
-        if (statusIndex < 4) return <EmptyState />;
         return <FollowUpTab missionId={missionId} clientName={clientName} missionType={currentMissionType} amount={amount} />;
       default:
         return <EmptyState />;

@@ -199,9 +199,9 @@ const MissionDetail = () => {
         onOpenChange={setClientLinkOpen}
         clientToken={mission.client_token}
         clientSlug={(mission as any).client_slug}
-        clientLinkActive={(mission as any).client_link_active ?? true}
+        clientLinkActive={mission.client_link_active ?? true}
         onToggleActive={(active) => {
-          updateMission.mutate({ id: mission.id, client_link_active: active } as any);
+          updateMission.mutate({ id: mission.id, client_link_active: active });
         }}
         questionnaireToken={kickoff?.questionnaire_token}
         questionnaireStatus={kickoff?.questionnaire_status}

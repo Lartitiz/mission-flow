@@ -90,7 +90,6 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
     },
   });
 
-  console.log("Proposal content:", proposal?.content);
 
   const sections: ProposalSection[] = (() => {
     const c = proposal?.content;
