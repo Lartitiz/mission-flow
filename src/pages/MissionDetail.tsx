@@ -6,7 +6,8 @@ import { MissionTypeBadge } from '@/components/mission/MissionTypeBadge';
 import { MissionTabs } from '@/components/mission/MissionTabs';
 import { ClientLinkDialog } from '@/components/mission/ClientLinkDialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MoreHorizontal, Trash2, Globe } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Trash2, Globe, Mail } from 'lucide-react';
+import { LaunchEmailDialog } from '@/components/mission/LaunchEmailDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,7 @@ const MissionDetail = () => {
   const [amountValue, setAmountValue] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
+  const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch kickoff for questionnaire info
@@ -150,6 +152,18 @@ const MissionDetail = () => {
             Espace client
           </Button>
 
+          {(mission.status === 'signed' || mission.status === 'active') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLaunchEmailOpen(true)}
+              className="font-body gap-2 text-xs"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Email de lancement
+            </Button>
+          )}
+
           {/* Editable amount */}
           {editingAmount ? (
             <input
@@ -205,6 +219,16 @@ const MissionDetail = () => {
         }}
         questionnaireToken={kickoff?.questionnaire_token}
         questionnaireStatus={kickoff?.questionnaire_status}
+      />
+
+      <LaunchEmailDialog
+        open={launchEmailOpen}
+        onOpenChange={setLaunchEmailOpen}
+        clientName={mission.client_name}
+        clientEmail={mission.client_email}
+        missionType={mission.mission_type}
+        missionId={mission.id}
+        amount={mission.amount}
       />
     </div>
   );
