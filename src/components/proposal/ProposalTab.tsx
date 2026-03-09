@@ -2,13 +2,15 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { FileDown, Loader2, Mail, Copy, ExternalLink, Sparkles, RefreshCw } from 'lucide-react';
+import { FileDown, Loader2, Mail, Copy, ExternalLink, Sparkles, RefreshCw, Upload, Download } from 'lucide-react';
 import { generateProposalDocx } from '@/lib/generate-proposal-docx';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ImportProposalDialog } from '@/components/proposal/ImportProposalDialog';
+import { saveAs } from 'file-saver';
 
 interface ProposalTabProps {
   missionId: string;
@@ -36,6 +38,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [emailGenerated, setEmailGenerated] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Flow state
@@ -375,6 +378,17 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
               Complète d'abord l'appel découverte et structure les notes.
             </p>
           )}
+
+          <p className="font-body text-xs text-muted-foreground my-4">— ou —</p>
+
+          <Button
+            variant="outline"
+            onClick={() => setImportDialogOpen(true)}
+            className="font-body text-sm gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importer une proposition existante
+          </Button>
         </div>
       )}
 
@@ -498,6 +512,23 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const md = `# Proposition — ${clientName}\n\n` +
+                    sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n');
+                  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+                  const date = new Date().toISOString().slice(0, 10);
+                  const safeName = clientName.replace(/[^a-zA-Z0-9]/g, '_');
+                  saveAs(blob, `Proposition_${safeName}_${date}.md`);
+                  toast.success('Export Markdown téléchargé !');
+                }}
+                disabled={sections.length === 0}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Exporter en .md
+              </Button>
             </div>
           </div>
 
@@ -592,6 +623,19 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
           </div>
         </div>
       )}
+
+      <ImportProposalDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        missionId={missionId}
+        missionType={missionType}
+        proposalId={proposal?.id}
+        onImportDone={() => {
+          refetchProposal();
+          queryClient.invalidateQueries({ queryKey: ['proposal', missionId] });
+          setFlowStep('done');
+        }}
+      />
     </div>
   );
 }
