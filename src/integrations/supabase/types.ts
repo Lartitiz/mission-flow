@@ -258,6 +258,7 @@ export type Database = {
           client_email: string | null
           client_link_active: boolean
           client_name: string
+          client_slug: string
           client_token: string
           created_at: string
           id: string
@@ -271,6 +272,7 @@ export type Database = {
           client_email?: string | null
           client_link_active?: boolean
           client_name: string
+          client_slug: string
           client_token?: string
           created_at?: string
           id?: string
@@ -284,6 +286,7 @@ export type Database = {
           client_email?: string | null
           client_link_active?: boolean
           client_name?: string
+          client_slug?: string
           client_token?: string
           created_at?: string
           id?: string
@@ -417,7 +420,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_client_slug: { Args: { p_client_name: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
