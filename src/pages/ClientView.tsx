@@ -136,6 +136,23 @@ const ClientView = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Dynamic meta tags
+  useEffect(() => {
+    if (data) {
+      document.title = `${data.mission.client_name} — Espace projet Nowadays`;
+      const updateMeta = (property: string, content: string) => {
+        let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+        if (!meta) {
+          meta = document.querySelector(`meta[name="${property}"]`) as HTMLMetaElement;
+        }
+        if (meta) meta.content = content;
+      };
+      updateMeta('og:title', `${data.mission.client_name} — Espace projet Nowadays`);
+      updateMeta('og:description', `Suivez l'avancement de la mission ${data.mission.mission_type === 'agency' ? 'Agency' : 'Binôme'} avec Nowadays Agency.`);
+    }
+    return () => { document.title = 'Nowadays Missions'; };
+  }, [data]);
+
   const handleToggleAction = async (actionId: string, done: boolean) => {
     setUpdatingAction(actionId);
     try {

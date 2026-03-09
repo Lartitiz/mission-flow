@@ -27,6 +27,14 @@ export default function QuestionnaireView() {
   const [completedAt, setCompletedAt] = useState<string | null>(null);
   const savingRef = useRef<Set<string>>(new Set());
 
+  // Dynamic title
+  useEffect(() => {
+    if (clientName) {
+      document.title = `Questionnaire — ${clientName} — Nowadays`;
+    }
+    return () => { document.title = 'Nowadays Missions'; };
+  }, [clientName]);
+
   useEffect(() => {
     if (!token) return;
     (async () => {
