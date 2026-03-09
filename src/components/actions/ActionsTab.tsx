@@ -334,6 +334,9 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
             </>
           )}
         </Button>
+        <p className="font-body text-xs text-muted-foreground">
+          Astuce : tu peux aussi dicter tes notes directement dans l'onglet Suivi → Sessions
+        </p>
       </div>
 
       {/* Extraction results panel */}
