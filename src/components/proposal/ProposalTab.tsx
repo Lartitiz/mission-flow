@@ -512,6 +512,23 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const md = `# Proposition — ${clientName}\n\n` +
+                    sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n');
+                  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+                  const date = new Date().toISOString().slice(0, 10);
+                  const safeName = clientName.replace(/[^a-zA-Z0-9]/g, '_');
+                  saveAs(blob, `Proposition_${safeName}_${date}.md`);
+                  toast.success('Export Markdown téléchargé !');
+                }}
+                disabled={sections.length === 0}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Exporter en .md
+              </Button>
             </div>
           </div>
 
