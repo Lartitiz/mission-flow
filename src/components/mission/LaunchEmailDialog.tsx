@@ -62,7 +62,8 @@ function buildEmail(
   payment: PaymentType,
   kickoff: KickoffType,
   proposal: { perimeter: string; keyPoints: string[] },
-  acompte: string
+  acompte: string,
+  clientSpaceUrl: string
 ): string {
   let body = '';
 
