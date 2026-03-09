@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Upload, FileDown, File } from 'lucide-react';
+import { Trash2, Upload, FileDown, File, GripVertical } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +13,21 @@ import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const CLIENT_STATUS_OPTIONS = [
   { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333' },
@@ -155,7 +170,149 @@ function FileCell({ actionId, missionId }: { actionId: string; missionId: string
   );
 }
 
+function SortableRow({ action, missionId, onUpdate, onDelete }: {
+  action: Action;
+  missionId: string;
+  onUpdate: (id: string, updates: Record<string, unknown>) => void;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: action.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+    >
+      <td className="px-1 py-1 w-8">
+        <button
+          {...attributes}
+          {...listeners}
+          className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing p-1 touch-none"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+      </td>
+      <td className="px-1 py-1 w-[180px]">
+        <EditableCell value={action.task} onSave={(v) => onUpdate(action.id, { task: v })} />
+      </td>
+      <td className="px-1 py-1 w-[240px]">
+        <EditableCell value={action.description} onSave={(v) => onUpdate(action.id, { description: v })} />
+      </td>
+      <td className="px-1 py-1 w-[100px]">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="font-body text-xs text-foreground hover:bg-secondary/30 rounded px-2 py-1 transition-colors min-h-[28px] w-full text-left">
+              {action.target_date
+                ? format(new Date(action.target_date), 'dd/MM/yy', { locale: fr })
+                : <span className="text-muted-foreground italic">—</span>}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={action.target_date ? new Date(action.target_date) : undefined}
+              onSelect={(d) => onUpdate(action.id, { target_date: d ? format(d, 'yyyy-MM-dd') : null })}
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </td>
+      <td className="px-2 py-1 w-[120px]">
+        <Select value={action.status} onValueChange={(s) => onUpdate(action.id, { status: s })}>
+          <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 w-auto">
+            {(() => {
+              const current = CLIENT_STATUS_OPTIONS.find((s) => s.value === action.status) ?? CLIENT_STATUS_OPTIONS[0];
+              return (
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] font-medium"
+                  style={{ backgroundColor: current.bg, color: current.text }}
+                >
+                  {current.label}
+                </span>
+              );
+            })()}
+          </SelectTrigger>
+          <SelectContent>
+            {CLIENT_STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s.value} value={s.value} className="font-body text-xs">
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] font-medium mr-2"
+                  style={{ backgroundColor: s.bg, color: s.text }}
+                >
+                  {s.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </td>
+      <td className="px-2 py-1 w-[160px]">
+        <FileCell actionId={action.id} missionId={missionId} />
+      </td>
+      <td className="px-2 py-1">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="text-muted-foreground hover:text-destructive transition-colors p-1">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-heading">Supprimer l'action ?</AlertDialogTitle>
+              <AlertDialogDescription className="font-body">
+                Cette action sera supprimée définitivement.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="font-body">Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => onDelete(action.id)}
+                className="bg-destructive text-destructive-foreground font-body"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </td>
+    </tr>
+  );
+}
+
 export function ClientActionsTable({ actions, missionId, onUpdate, onDelete, onReorder }: ClientActionsTableProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = actions.findIndex((a) => a.id === active.id);
+    const newIndex = actions.findIndex((a) => a.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = [...actions];
+    const [moved] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, moved);
+    onReorder(newOrder.map((a) => a.id));
+  }, [actions, onReorder]);
+
   if (actions.length === 0) {
     return (
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8 text-center">
@@ -167,107 +324,34 @@ export function ClientActionsTable({ actions, missionId, onUpdate, onDelete, onR
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-border bg-secondary/30">
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
-              <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fichiers</th>
-              <th className="px-3 py-2 w-10"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {actions.map((action) => (
-              <tr key={action.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
-                <td className="px-1 py-1 w-[180px]">
-                  <EditableCell value={action.task} onSave={(v) => onUpdate(action.id, { task: v })} />
-                </td>
-                <td className="px-1 py-1 w-[240px]">
-                  <EditableCell value={action.description} onSave={(v) => onUpdate(action.id, { description: v })} />
-                </td>
-                <td className="px-1 py-1 w-[100px]">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="font-body text-xs text-foreground hover:bg-secondary/30 rounded px-2 py-1 transition-colors min-h-[28px] w-full text-left">
-                        {action.target_date
-                          ? format(new Date(action.target_date), 'dd/MM/yy', { locale: fr })
-                          : <span className="text-muted-foreground italic">—</span>}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={action.target_date ? new Date(action.target_date) : undefined}
-                        onSelect={(d) => onUpdate(action.id, { target_date: d ? format(d, 'yyyy-MM-dd') : null })}
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </td>
-                <td className="px-2 py-1 w-[120px]">
-                  <Select value={action.status} onValueChange={(s) => onUpdate(action.id, { status: s })}>
-                    <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 w-auto">
-                      {(() => {
-                        const current = CLIENT_STATUS_OPTIONS.find((s) => s.value === action.status) ?? CLIENT_STATUS_OPTIONS[0];
-                        return (
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] font-medium"
-                            style={{ backgroundColor: current.bg, color: current.text }}
-                          >
-                            {current.label}
-                          </span>
-                        );
-                      })()}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CLIENT_STATUS_OPTIONS.map((s) => (
-                        <SelectItem key={s.value} value={s.value} className="font-body text-xs">
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] font-medium mr-2"
-                            style={{ backgroundColor: s.bg, color: s.text }}
-                          >
-                            {s.label}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </td>
-                <td className="px-2 py-1 w-[160px]">
-                  <FileCell actionId={action.id} missionId={missionId} />
-                </td>
-                <td className="px-2 py-1">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="font-heading">Supprimer l'action ?</AlertDialogTitle>
-                        <AlertDialogDescription className="font-body">
-                          Cette action sera supprimée définitivement.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="font-body">Annuler</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => onDelete(action.id)}
-                          className="bg-destructive text-destructive-foreground font-body"
-                        >
-                          Supprimer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </td>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-border bg-secondary/30">
+                <th className="px-1 py-2 w-8"></th>
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fichiers</th>
+                <th className="px-3 py-2 w-10"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <SortableContext items={actions.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+              <tbody>
+                {actions.map((action) => (
+                  <SortableRow
+                    key={action.id}
+                    action={action}
+                    missionId={missionId}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                  />
+                ))}
+              </tbody>
+            </SortableContext>
+          </table>
+        </DndContext>
       </div>
     </div>
   );
