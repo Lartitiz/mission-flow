@@ -15,6 +15,7 @@ interface LaunchEmailDialogProps {
   missionType: string;
   missionId: string;
   amount: number | null;
+  clientToken: string;
 }
 
 type AccompType = 'binome' | 'agency' | 'courte';
