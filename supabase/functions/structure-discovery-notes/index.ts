@@ -94,9 +94,9 @@ serve(async (req) => {
       });
     }
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
-      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY non configurée" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY non configurée" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -104,40 +104,36 @@ serve(async (req) => {
 
     const userPrompt = `Type de mission actuel : ${mission_type || "non_determine"}\n\nNotes brutes de l'appel :\n\n${raw_notes}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90000);
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
         max_tokens: 8000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
+        response_format: { type: "json_object" },
       }),
-      signal: controller.signal,
     });
-
-    clearTimeout(timeout);
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic API error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "Erreur API Claude" }), {
+      console.error("Lovable AI error:", response.status, errText);
+      return new Response(JSON.stringify({ error: "Erreur API IA" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const result = await response.json();
-    const textContent = result.content?.[0]?.text;
+    const textContent = result.choices?.[0]?.message?.content;
     if (!textContent) {
-      return new Response(JSON.stringify({ error: "Réponse Claude vide" }), {
+      return new Response(JSON.stringify({ error: "Réponse IA vide" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -154,9 +150,9 @@ serve(async (req) => {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      console.error("Invalid JSON from Claude:", textContent);
+      console.error("Invalid JSON from AI:", textContent);
       return new Response(
-        JSON.stringify({ error: "Réponse Claude non valide (JSON invalide)" }),
+        JSON.stringify({ error: "Réponse IA non valide (JSON invalide)" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -166,10 +162,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("structure-discovery-notes error:", e);
-    const message = e instanceof Error && e.name === "AbortError"
-      ? "Timeout : la structuration a pris trop de temps"
-      : "Erreur interne";
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "Erreur interne" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
