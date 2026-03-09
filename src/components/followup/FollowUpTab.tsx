@@ -19,7 +19,7 @@ interface FollowUpTabProps {
 }
 
 export function FollowUpTab({ missionId, clientName, missionType, amount }: FollowUpTabProps) {
-  const { sessions, isLoading: sessionsLoading, createSession, updateSession, isSaving: sessionsSaving } = useSessions(missionId);
+  const { sessions, isLoading: sessionsLoading, createSession, updateSession, deleteSession, isSaving: sessionsSaving } = useSessions(missionId);
   const { entries, isLoading: journalLoading, addEntry, isSaving: journalSaving } = useJournal(missionId);
   const { actions } = useActions(missionId);
 
