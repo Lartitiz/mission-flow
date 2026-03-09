@@ -56,9 +56,24 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
     queryFn: async () => {
       const { data } = await supabase
         .from('missions')
-        .select('mission_type')
+        .select('mission_type, client_name')
         .eq('id', missionId)
         .single();
+      return data;
+    },
+    enabled: !!missionId,
+  });
+
+  const { data: proposal } = useQuery({
+    queryKey: ['proposal-for-actions', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('proposals')
+        .select('id, content')
+        .eq('mission_id', missionId)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       return data;
     },
     enabled: !!missionId,
