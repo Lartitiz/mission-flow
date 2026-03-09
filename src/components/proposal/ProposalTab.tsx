@@ -2,13 +2,15 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { FileDown, Loader2, Mail, Copy, ExternalLink, Sparkles, RefreshCw } from 'lucide-react';
+import { FileDown, Loader2, Mail, Copy, ExternalLink, Sparkles, RefreshCw, Upload, Download } from 'lucide-react';
 import { generateProposalDocx } from '@/lib/generate-proposal-docx';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ImportProposalDialog } from '@/components/proposal/ImportProposalDialog';
+import { saveAs } from 'file-saver';
 
 interface ProposalTabProps {
   missionId: string;
