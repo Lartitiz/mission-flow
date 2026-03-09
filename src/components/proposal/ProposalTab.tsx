@@ -38,6 +38,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [emailGenerated, setEmailGenerated] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Flow state
