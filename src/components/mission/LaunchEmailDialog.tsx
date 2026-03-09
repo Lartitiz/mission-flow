@@ -122,6 +122,7 @@ export function LaunchEmailDialog({
   missionType,
   missionId,
   amount,
+  clientToken,
 }: LaunchEmailDialogProps) {
   const prenom = clientName.split(' ')[0];
   const defaultAccomp: AccompType = missionType === 'agency' ? 'agency' : 'binome';
