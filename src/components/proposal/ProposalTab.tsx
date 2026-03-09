@@ -623,6 +623,19 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
           </div>
         </div>
       )}
+
+      <ImportProposalDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        missionId={missionId}
+        missionType={missionType}
+        proposalId={proposal?.id}
+        onImportDone={() => {
+          refetchProposal();
+          queryClient.invalidateQueries({ queryKey: ['proposal', missionId] });
+          setFlowStep('done');
+        }}
+      />
     </div>
   );
 }
