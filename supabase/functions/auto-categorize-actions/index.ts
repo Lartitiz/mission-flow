@@ -68,6 +68,7 @@ Règles :
 - "Cross-posting" = republication multi-plateformes
 - "Influence/Presse" = relations presse, influenceurs, partenariats
 - "Formation" = coaching, atelier, formation client
+- "Commercial" = devis, facturation, contrats, prospection, relances clients, CRM
 - "Autre" = si vraiment rien ne correspond`,
           },
           {
