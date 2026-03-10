@@ -155,6 +155,18 @@ const MissionDetail = () => {
             Espace client
           </Button>
 
+          {canFollowUp && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFollowUpOpen(true)}
+              className="font-body gap-2 text-xs"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Relancer
+            </Button>
+          )}
+
           {(mission.status === 'signed' || mission.status === 'active') && (
             <Button
               variant="outline"
