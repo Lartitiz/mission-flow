@@ -17,6 +17,7 @@ interface ClientAction {
   status: string;
   assignee: string;
   sort_order: number;
+  client_comment: string | null;
 }
 interface ClientSession {
   id: string;
@@ -112,6 +113,8 @@ const ClientView = () => {
   const [updatingAction, setUpdatingAction] = useState<string | null>(null);
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [savingComment, setSavingComment] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
@@ -167,6 +170,25 @@ const ClientView = () => {
       toast({ title: 'Erreur', variant: 'destructive' });
     } finally {
       setUpdatingAction(null);
+    }
+  };
+
+  const handleSaveComment = async (actionId: string) => {
+    const comment = commentDrafts[actionId] ?? '';
+    setSavingComment(actionId);
+    try {
+      await supabase.functions.invoke('update-client-action', {
+        body: { token, action_id: actionId, client_comment: comment }
+      });
+      setData(p => p ? {
+        ...p,
+        actions: p.actions.map(a => a.id === actionId ? { ...a, client_comment: comment || null } : a)
+      } : p);
+      toast({ title: 'Commentaire enregistré ✓' });
+    } catch {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    } finally {
+      setSavingComment(null);
     }
   };
 
@@ -488,7 +510,7 @@ const ClientView = () => {
                   )}
                   {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#91014b' }} />}
                 </button>
-                <div style={{ flex: 1, minWidth: 0, cursor: action.description ? 'pointer' : 'default' }} onClick={() => action.description && setExpandedAction(isExpanded ? null : action.id)}>
+                <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setExpandedAction(isExpanded ? null : action.id)}>
                   <p style={{ fontSize: 13, fontWeight: 500, color: isDone ? '#9CA3AF' : '#1A1A2E', textDecoration: isDone ? 'line-through' : 'none' }}>{action.task}</p>
                   {isExpanded && action.description && <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>}
                 </div>
@@ -506,6 +528,41 @@ const ClientView = () => {
                   </button>
                 </div>
               </div>
+              {/* Expanded: comment zone */}
+              {isExpanded && (
+                <div style={{ marginTop: 10, paddingLeft: 32 }}>
+                  {action.client_comment && !(commentDrafts[action.id] !== undefined) && (
+                    <p style={{ fontSize: 12, color: '#6B7280', background: '#F9FAFB', borderRadius: 6, padding: '6px 10px', marginBottom: 6, lineHeight: 1.5 }}>
+                      💬 {action.client_comment}
+                    </p>
+                  )}
+                  <textarea
+                    placeholder="Ajoute un commentaire…"
+                    value={commentDrafts[action.id] ?? action.client_comment ?? ''}
+                    onChange={e => setCommentDrafts(p => ({ ...p, [action.id]: e.target.value }))}
+                    style={{
+                      width: '100%', fontSize: 12, border: '1px solid #E5E7EB', borderRadius: 6,
+                      padding: '6px 10px', minHeight: 50, resize: 'vertical', fontFamily: "'IBM Plex Sans', sans-serif",
+                      outline: 'none', transition: 'border-color 0.15s',
+                    }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#91014b'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#E5E7EB'; }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                    <button
+                      onClick={() => handleSaveComment(action.id)}
+                      disabled={savingComment === action.id}
+                      style={{
+                        fontSize: 12, fontWeight: 500, color: '#fff', background: '#91014b',
+                        border: 'none', borderRadius: 6, padding: '5px 14px', cursor: 'pointer',
+                        opacity: savingComment === action.id ? 0.6 : 1, transition: 'opacity 0.15s',
+                      }}
+                    >
+                      {savingComment === action.id ? 'Envoi…' : 'Enregistrer'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

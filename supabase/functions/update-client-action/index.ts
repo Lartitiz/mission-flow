@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action_id, status, file_name, file_size, file_base64, content_type } = await req.json();
+    const { token, action_id, status, client_comment, file_name, file_size, file_base64, content_type } = await req.json();
 
     if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "Token requis" }), {
@@ -58,11 +58,15 @@ serve(async (req) => {
       });
     }
 
-    // Update status
-    if (status) {
+    // Update status and/or client_comment
+    const updates: Record<string, unknown> = {};
+    if (status) updates.status = status;
+    if (typeof client_comment === "string") updates.client_comment = client_comment;
+
+    if (Object.keys(updates).length > 0) {
       const { error } = await supabase
         .from("actions")
-        .update({ status })
+        .update(updates)
         .eq("id", action_id);
       if (error) throw error;
     }
