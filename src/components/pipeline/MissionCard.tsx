@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, Mail } from 'lucide-react';
 import type { Mission } from '@/lib/missions';
 import { formatMissionType, formatAmount, timeAgo, getDaysSince } from '@/lib/missions';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from './DeleteMissionDialog';
 import { useDeleteMission } from '@/hooks/useMissions';
+import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
   mission: Mission;
