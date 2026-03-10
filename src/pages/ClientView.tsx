@@ -571,7 +571,7 @@ const ClientView = () => {
         ref={actionFileInputRef}
         type="file"
         className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx"
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip"
         onChange={e => {
           const f = e.target.files?.[0];
           if (f && pendingActionId) handleActionFileUpload(pendingActionId, f);
