@@ -193,8 +193,8 @@ const ClientView = () => {
   };
 
   const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
+    if (file.size > 4.5 * 1024 * 1024) {
+      toast({ title: 'Fichier trop volumineux', description: 'Maximum 4.5 Mo pour les uploads depuis l\'espace client. Pour les fichiers plus lourds, envoie-les directement à Laetitia.', variant: 'destructive' });
       return;
     }
     const base64 = await new Promise<string>((resolve, reject) => {
@@ -215,8 +215,8 @@ const ClientView = () => {
   };
 
   const handleGlobalFileUpload = async (file: globalThis.File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
+    if (file.size > 4.5 * 1024 * 1024) {
+      toast({ title: 'Fichier trop volumineux', description: 'Maximum 4.5 Mo pour les uploads depuis l\'espace client. Pour les fichiers plus lourds, envoie-les directement à Laetitia.', variant: 'destructive' });
       return;
     }
     const base64 = await new Promise<string>((resolve, reject) => {
@@ -571,7 +571,7 @@ const ClientView = () => {
         ref={actionFileInputRef}
         type="file"
         className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx"
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip"
         onChange={e => {
           const f = e.target.files?.[0];
           if (f && pendingActionId) handleActionFileUpload(pendingActionId, f);
@@ -615,8 +615,8 @@ const ClientView = () => {
       >
         <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
         <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
-        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 50 Mo'}</p>
-        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
+        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 4.5 Mo'}</p>
+        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
       </div>
     </section>
   );
