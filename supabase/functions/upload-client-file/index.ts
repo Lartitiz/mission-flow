@@ -75,9 +75,14 @@ serve(async (req) => {
     return new Response(JSON.stringify({ success: true, storage_path: storagePath }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error("upload-client-file error:", e);
-    return new Response(JSON.stringify({ error: "Erreur interne" }), {
+    const message = e?.message?.includes('Payload too large')
+      ? 'Fichier trop volumineux (max 4.5 Mo)'
+      : e?.message?.includes('mime') || e?.message?.includes('type')
+      ? 'Type de fichier non supporté'
+      : 'Erreur lors de l\'upload. Réessaie ou contacte Laetitia.';
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

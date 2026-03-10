@@ -615,8 +615,8 @@ const ClientView = () => {
       >
         <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
         <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
-        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 50 Mo'}</p>
-        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
+        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 4.5 Mo'}</p>
+        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
       </div>
     </section>
   );
