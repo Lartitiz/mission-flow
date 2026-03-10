@@ -173,7 +173,26 @@ const ClientView = () => {
     }
   };
 
-  const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
+  const handleSaveComment = async (actionId: string) => {
+    const comment = commentDrafts[actionId] ?? '';
+    setSavingComment(actionId);
+    try {
+      await supabase.functions.invoke('update-client-action', {
+        body: { token, action_id: actionId, client_comment: comment }
+      });
+      setData(p => p ? {
+        ...p,
+        actions: p.actions.map(a => a.id === actionId ? { ...a, client_comment: comment || null } : a)
+      } : p);
+      toast({ title: 'Commentaire enregistré ✓' });
+    } catch {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    } finally {
+      setSavingComment(null);
+    }
+  };
+
+
     if (file.size > 50 * 1024 * 1024) {
       toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
       return;
