@@ -246,6 +246,20 @@ const MissionDetail = () => {
         amount={mission.amount}
         clientToken={mission.client_token}
       />
+
+      {canFollowUp && (
+        <FollowUpEmailDialog
+          open={followUpOpen}
+          onOpenChange={setFollowUpOpen}
+          clientName={mission.client_name}
+          clientEmail={mission.client_email ?? null}
+          missionType={mission.mission_type}
+          missionStatus={mission.status}
+          amount={mission.amount}
+          clientToken={mission.client_token}
+          missionId={mission.id}
+        />
+      )}
     </div>
   );
 };

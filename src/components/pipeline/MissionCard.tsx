@@ -141,6 +141,20 @@ export function MissionCard({ mission }: MissionCardProps) {
         onConfirm={() => deleteMission.mutate(mission.id)}
         isPending={deleteMission.isPending}
       />
+
+      {canFollowUp && (
+        <FollowUpEmailDialog
+          open={followUpOpen}
+          onOpenChange={setFollowUpOpen}
+          clientName={mission.client_name}
+          clientEmail={mission.client_email ?? null}
+          missionType={mission.mission_type}
+          missionStatus={mission.status}
+          amount={mission.amount ?? null}
+          clientToken={mission.client_token}
+          missionId={mission.id}
+        />
+      )}
     </>
   );
 }
