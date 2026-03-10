@@ -193,47 +193,77 @@ const ClientView = () => {
   };
 
   const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
-    if (file.size > 4.5 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 4.5 Mo pour les uploads depuis l\'espace client. Pour les fichiers plus lourds, envoie-les directement à Laetitia.', variant: 'destructive' });
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
       return;
     }
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const { data: res, error } = await supabase.functions.invoke('update-client-action', {
-      body: { token, action_id: actionId, file_name: file.name, file_size: file.size, file_base64: base64, content_type: file.type },
-    });
-    if (error || res?.error) {
-      toast({ title: 'Erreur upload', description: res?.error || "Impossible d'envoyer le fichier.", variant: 'destructive' });
-      return;
+
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const clientFolder = (data?.mission.client_name || 'client').replace(/\s+/g, '_');
+      const path = `${clientFolder}/actions/${actionId}/${Date.now()}_${safeName}`;
+
+      const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file, {
+        contentType: file.type || 'application/octet-stream',
+      });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        toast({ title: 'Erreur upload', description: uploadError.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
+        return;
+      }
+
+      const { data: res, error } = await supabase.functions.invoke('update-client-action', {
+        body: { token, action_id: actionId, file_name: file.name, file_size: file.size, storage_path: path },
+      });
+
+      if (error || res?.error) {
+        toast({ title: 'Erreur', description: res?.error || "Fichier uploadé mais non enregistré.", variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Fichier ajouté ✓' });
+      fetchData();
+    } catch (err: any) {
+      toast({ title: 'Erreur upload', description: err?.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
     }
-    toast({ title: 'Fichier ajouté ✓' });
-    fetchData();
   };
 
   const handleGlobalFileUpload = async (file: globalThis.File) => {
-    if (file.size > 4.5 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 4.5 Mo pour les uploads depuis l\'espace client. Pour les fichiers plus lourds, envoie-les directement à Laetitia.', variant: 'destructive' });
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
       return;
     }
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const { data: res, error } = await supabase.functions.invoke('upload-client-file', {
-      body: { token, file_name: file.name, file_size: file.size, file_base64: base64, content_type: file.type },
-    });
-    if (error || res?.error) {
-      toast({ title: 'Erreur upload', description: res?.error || "Impossible d'envoyer le fichier.", variant: 'destructive' });
-      return;
+
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const clientFolder = (data?.mission.client_name || 'client').replace(/\s+/g, '_');
+      const path = `${clientFolder}/uploads/${Date.now()}_${safeName}`;
+
+      const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file, {
+        contentType: file.type || 'application/octet-stream',
+      });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        toast({ title: 'Erreur upload', description: uploadError.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
+        return;
+      }
+
+      const { data: res, error } = await supabase.functions.invoke('upload-client-file', {
+        body: { token, file_name: file.name, file_size: file.size, storage_path: path },
+      });
+
+      if (error || res?.error) {
+        toast({ title: 'Erreur', description: res?.error || "Fichier uploadé mais non enregistré.", variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Fichier envoyé ✓' });
+      fetchData();
+    } catch (err: any) {
+      toast({ title: 'Erreur upload', description: err?.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
     }
-    toast({ title: 'Fichier envoyé ✓' });
-    fetchData();
   };
 
   const handleDrop = (e: React.DragEvent) => {

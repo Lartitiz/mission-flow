@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action_id, status, client_comment, file_name, file_size, file_base64, content_type } = await req.json();
+    const { token, action_id, status, client_comment, file_name, file_size, file_base64, content_type, storage_path } = await req.json();
 
     if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "Token requis" }), {
@@ -71,7 +71,7 @@ serve(async (req) => {
       if (error) throw error;
     }
 
-    // Upload file if base64 provided
+    // Upload file if base64 provided (legacy)
     if (file_name && file_base64) {
       const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${mission.id}/actions/${action_id}/${Date.now()}_${safeName}`;
@@ -90,6 +90,18 @@ serve(async (req) => {
         file_name,
         file_size: file_size ?? null,
         storage_path: storagePath,
+        category: `action_${action_id}`,
+        uploaded_by: "client",
+      });
+      if (fileError) throw fileError;
+    }
+    // Or record file if already uploaded directly (new: direct upload from client)
+    else if (file_name && storage_path) {
+      const { error: fileError } = await supabase.from("files").insert({
+        mission_id: mission.id,
+        file_name,
+        file_size: file_size ?? null,
+        storage_path,
         category: `action_${action_id}`,
         uploaded_by: "client",
       });

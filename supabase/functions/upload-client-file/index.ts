@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, file_name, file_size, file_base64, content_type } = await req.json();
+    const { token, file_name, file_size, file_base64, content_type, storage_path } = await req.json();
 
     if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "Token requis" }), {
@@ -41,36 +41,56 @@ serve(async (req) => {
       });
     }
 
-    if (!file_name || !file_base64) {
-      return new Response(JSON.stringify({ error: "file_name et file_base64 requis" }), {
+    if (!file_name) {
+      return new Response(JSON.stringify({ error: "file_name requis" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const clientFolder = (mission.client_name || 'client').replace(/\s+/g, '_');
-    const storagePath = `${clientFolder}/uploads/${Date.now()}_${safeName}`;
+    // Legacy mode: base64 upload
+    if (file_base64) {
+      const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const clientFolder = (mission.client_name || 'client').replace(/\s+/g, '_');
+      const storagePath = `${clientFolder}/uploads/${Date.now()}_${safeName}`;
 
-    const fileBytes = decode(file_base64);
-    const { error: uploadError } = await supabase.storage
-      .from("mission-files")
-      .upload(storagePath, fileBytes, {
-        contentType: content_type || "application/octet-stream",
-        upsert: false,
+      const fileBytes = decode(file_base64);
+      const { error: uploadError } = await supabase.storage
+        .from("mission-files")
+        .upload(storagePath, fileBytes, {
+          contentType: content_type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase.from("files").insert({
+        mission_id: mission.id,
+        file_name,
+        file_size: file_size ?? null,
+        storage_path: storagePath,
+        category: "client_upload",
+        uploaded_by: "client",
       });
-
-    if (uploadError) throw uploadError;
-
-    const { error: insertError } = await supabase.from("files").insert({
-      mission_id: mission.id,
-      file_name,
-      file_size: file_size ?? null,
-      storage_path: storagePath,
-      category: "client_upload",
-      uploaded_by: "client",
-    });
-    if (insertError) throw insertError;
+      if (insertError) throw insertError;
+    }
+    // New mode: file already uploaded directly, just record it
+    else if (storage_path) {
+      const { error: insertError } = await supabase.from("files").insert({
+        mission_id: mission.id,
+        file_name,
+        file_size: file_size ?? null,
+        storage_path,
+        category: "client_upload",
+        uploaded_by: "client",
+      });
+      if (insertError) throw insertError;
+    } else {
+      return new Response(JSON.stringify({ error: "file_base64 ou storage_path requis" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ success: true, storage_path: storagePath }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
