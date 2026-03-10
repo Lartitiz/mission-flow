@@ -8,6 +8,7 @@ import { ClientLinkDialog } from '@/components/mission/ClientLinkDialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MoreHorizontal, Trash2, Globe, Mail } from 'lucide-react';
 import { LaunchEmailDialog } from '@/components/mission/LaunchEmailDialog';
+import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
