@@ -20,6 +20,7 @@ export type Database = {
           budget_ht: number | null
           category: string | null
           channel: string | null
+          client_comment: string | null
           created_at: string
           description: string | null
           hours_estimated: number | null
@@ -36,6 +37,7 @@ export type Database = {
           budget_ht?: number | null
           category?: string | null
           channel?: string | null
+          client_comment?: string | null
           created_at?: string
           description?: string | null
           hours_estimated?: number | null
@@ -52,6 +54,7 @@ export type Database = {
           budget_ht?: number | null
           category?: string | null
           channel?: string | null
+          client_comment?: string | null
           created_at?: string
           description?: string | null
           hours_estimated?: number | null

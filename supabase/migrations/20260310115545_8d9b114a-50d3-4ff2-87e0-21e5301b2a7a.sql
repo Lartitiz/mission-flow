@@ -1,0 +1,1 @@
+ALTER TABLE public.actions ADD COLUMN client_comment text DEFAULT NULL;
