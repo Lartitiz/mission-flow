@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, file_name, file_size, storage_path } = await req.json();
+    const { token, file_name, file_size, file_base64, content_type } = await req.json();
 
     if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "Token requis" }), {
@@ -29,7 +30,7 @@ serve(async (req) => {
 
     const { data: mission, error: missionError } = await supabase
       .from("missions")
-      .select("id")
+      .select("id, client_name")
       .eq("client_token", token)
       .single();
 
@@ -40,24 +41,38 @@ serve(async (req) => {
       });
     }
 
-    if (!file_name || !storage_path) {
-      return new Response(JSON.stringify({ error: "file_name et storage_path requis" }), {
+    if (!file_name || !file_base64) {
+      return new Response(JSON.stringify({ error: "file_name et file_base64 requis" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { error } = await supabase.from("files").insert({
+    const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const clientFolder = (mission.client_name || 'client').replace(/\s+/g, '_');
+    const storagePath = `${clientFolder}/uploads/${Date.now()}_${safeName}`;
+
+    const fileBytes = decode(file_base64);
+    const { error: uploadError } = await supabase.storage
+      .from("mission-files")
+      .upload(storagePath, fileBytes, {
+        contentType: content_type || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: insertError } = await supabase.from("files").insert({
       mission_id: mission.id,
       file_name,
       file_size: file_size ?? null,
-      storage_path,
+      storage_path: storagePath,
       category: "client_upload",
       uploaded_by: "client",
     });
-    if (error) throw error;
+    if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, storage_path: storagePath }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
