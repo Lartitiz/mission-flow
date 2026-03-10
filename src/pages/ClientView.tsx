@@ -192,7 +192,7 @@ const ClientView = () => {
     }
   };
 
-
+  const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
     if (file.size > 50 * 1024 * 1024) {
       toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
       return;
