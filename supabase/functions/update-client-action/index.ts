@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action_id, status, file_name, file_size, file_base64, content_type } = await req.json();
+    const { token, action_id, status, client_comment, file_name, file_size, file_base64, content_type } = await req.json();
 
     if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "Token requis" }), {
