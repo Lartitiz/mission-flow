@@ -58,11 +58,15 @@ serve(async (req) => {
       });
     }
 
-    // Update status
-    if (status) {
+    // Update status and/or client_comment
+    const updates: Record<string, unknown> = {};
+    if (status) updates.status = status;
+    if (typeof client_comment === "string") updates.client_comment = client_comment;
+
+    if (Object.keys(updates).length > 0) {
       const { error } = await supabase
         .from("actions")
-        .update({ status })
+        .update(updates)
         .eq("id", action_id);
       if (error) throw error;
     }
