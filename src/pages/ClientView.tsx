@@ -17,6 +17,7 @@ interface ClientAction {
   status: string;
   assignee: string;
   sort_order: number;
+  client_comment: string | null;
 }
 interface ClientSession {
   id: string;
