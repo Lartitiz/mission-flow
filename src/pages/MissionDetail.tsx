@@ -8,6 +8,7 @@ import { ClientLinkDialog } from '@/components/mission/ClientLinkDialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MoreHorizontal, Trash2, Globe, Mail } from 'lucide-react';
 import { LaunchEmailDialog } from '@/components/mission/LaunchEmailDialog';
+import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,8 @@ const MissionDetail = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  const canFollowUp = mission?.status === 'proposal_sent' || mission?.status === 'signed';
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch kickoff for questionnaire info
@@ -152,6 +155,18 @@ const MissionDetail = () => {
             Espace client
           </Button>
 
+          {canFollowUp && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFollowUpOpen(true)}
+              className="font-body gap-2 text-xs"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Relancer
+            </Button>
+          )}
+
           {(mission.status === 'signed' || mission.status === 'active') && (
             <Button
               variant="outline"
@@ -231,6 +246,20 @@ const MissionDetail = () => {
         amount={mission.amount}
         clientToken={mission.client_token}
       />
+
+      {canFollowUp && (
+        <FollowUpEmailDialog
+          open={followUpOpen}
+          onOpenChange={setFollowUpOpen}
+          clientName={mission.client_name}
+          clientEmail={mission.client_email ?? null}
+          missionType={mission.mission_type}
+          missionStatus={mission.status}
+          amount={mission.amount}
+          clientToken={mission.client_token}
+          missionId={mission.id}
+        />
+      )}
     </div>
   );
 };
