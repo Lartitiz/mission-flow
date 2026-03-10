@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action_id, status, file_name, file_size, storage_path } = await req.json();
+    const { token, action_id, status, file_name, file_size, file_base64, content_type } = await req.json();
 
     if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "Token requis" }), {
@@ -66,17 +67,29 @@ serve(async (req) => {
       if (error) throw error;
     }
 
-    // Record file if provided
-    if (file_name && storage_path) {
-      const { error } = await supabase.from("files").insert({
+    // Upload file if base64 provided
+    if (file_name && file_base64) {
+      const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `${mission.id}/actions/${action_id}/${Date.now()}_${safeName}`;
+
+      const fileBytes = decode(file_base64);
+      const { error: uploadError } = await supabase.storage
+        .from("mission-files")
+        .upload(storagePath, fileBytes, {
+          contentType: content_type || "application/octet-stream",
+          upsert: false,
+        });
+      if (uploadError) throw uploadError;
+
+      const { error: fileError } = await supabase.from("files").insert({
         mission_id: mission.id,
         file_name,
         file_size: file_size ?? null,
-        storage_path,
+        storage_path: storagePath,
         category: `action_${action_id}`,
         uploaded_by: "client",
       });
-      if (error) throw error;
+      if (fileError) throw fileError;
     }
 
     return new Response(JSON.stringify({ success: true }), {
