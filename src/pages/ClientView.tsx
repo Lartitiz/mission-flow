@@ -193,8 +193,8 @@ const ClientView = () => {
   };
 
   const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
+    if (file.size > 4.5 * 1024 * 1024) {
+      toast({ title: 'Fichier trop volumineux', description: 'Maximum 4.5 Mo pour les uploads depuis l\'espace client. Pour les fichiers plus lourds, envoie-les directement à Laetitia.', variant: 'destructive' });
       return;
     }
     const base64 = await new Promise<string>((resolve, reject) => {
