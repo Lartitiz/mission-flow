@@ -22,6 +22,23 @@ export function useActions(missionId: string) {
     enabled: !!missionId,
   });
 
+  // Realtime: auto-refresh when actions change (e.g. client updates status)
+  useEffect(() => {
+    if (!missionId) return;
+    const channel = supabase
+      .channel(`actions-${missionId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'actions',
+        filter: `mission_id=eq.${missionId}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [missionId, queryClient]);
+
   const createMutation = useMutation({
     mutationFn: async (action: TablesInsert<'actions'>) => {
       const { data, error } = await supabase
