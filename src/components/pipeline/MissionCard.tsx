@@ -90,6 +90,18 @@ export function MissionCard({ mission }: MissionCardProps) {
               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              {canFollowUp && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFollowUpOpen(true);
+                  }}
+                  className="font-body text-sm"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Relancer
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
