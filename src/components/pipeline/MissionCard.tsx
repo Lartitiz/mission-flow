@@ -22,7 +22,9 @@ interface MissionCardProps {
 export function MissionCard({ mission }: MissionCardProps) {
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
   const deleteMission = useDeleteMission();
+  const canFollowUp = mission.status === 'proposal_sent' || mission.status === 'signed';
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: mission.id,
     data: { mission },
