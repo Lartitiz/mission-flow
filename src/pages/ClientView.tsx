@@ -113,6 +113,8 @@ const ClientView = () => {
   const [updatingAction, setUpdatingAction] = useState<string | null>(null);
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [savingComment, setSavingComment] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
