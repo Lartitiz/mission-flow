@@ -11,6 +11,12 @@ export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) 
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance>(null);
+  const onResultRef = useRef(onResult);
+
+  // Always keep the latest callback in the ref
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
 
   useEffect(() => {
     const SpeechRecognitionAPI =
@@ -36,7 +42,8 @@ export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) 
         }
       }
       if (transcript) {
-        onResult(transcript);
+        // Use the ref to always call the latest callback
+        onResultRef.current(transcript);
       }
     };
 
@@ -45,18 +52,26 @@ export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) 
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      // Auto-restart if still supposed to be listening (browser stops after ~60s)
+      if (recognitionRef.current === recognition) {
+        try {
+          recognition.start();
+        } catch {
+          setIsListening(false);
+        }
+      }
     };
 
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
-  }, [onResult]);
+  }, []);
 
   const stop = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (recognition) {
+      recognition.stop();
     }
     setIsListening(false);
   }, []);
@@ -72,8 +87,10 @@ export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+      const recognition = recognitionRef.current;
+      recognitionRef.current = null;
+      if (recognition) {
+        recognition.stop();
       }
     };
   }, []);
