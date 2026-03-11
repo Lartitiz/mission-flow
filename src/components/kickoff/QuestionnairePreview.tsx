@@ -63,7 +63,6 @@ export function QuestionnairePreview({
 
       <Button
         onClick={onSend}
-        disabled={isSaving}
         className="w-full font-body gap-2 bg-[hsl(var(--badge-rose))] hover:bg-[hsl(var(--badge-rose)/0.9)] text-white"
       >
         <Send className="h-4 w-4" />
