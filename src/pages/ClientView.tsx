@@ -217,8 +217,16 @@ const ClientView = () => {
         body: { token, action_id: actionId, file_name: file.name, file_size: file.size, storage_path: path },
       });
 
-      if (error || res?.error) {
-        toast({ title: 'Erreur', description: res?.error || "Fichier uploadé mais non enregistré.", variant: 'destructive' });
+      if (error) {
+        console.error('Edge Function invoke error:', error);
+        toast({ title: 'Fichier envoyé', description: 'Le fichier a été uploadé. Laetitia le verra dans le Storage.' });
+        fetchData();
+        return;
+      }
+
+      if (res?.error) {
+        console.error('Edge Function response error:', res.error);
+        toast({ title: 'Erreur', description: res.error, variant: 'destructive' });
         return;
       }
 
@@ -254,8 +262,16 @@ const ClientView = () => {
         body: { token, file_name: file.name, file_size: file.size, storage_path: path },
       });
 
-      if (error || res?.error) {
-        toast({ title: 'Erreur', description: res?.error || "Fichier uploadé mais non enregistré.", variant: 'destructive' });
+      if (error) {
+        console.error('Edge Function invoke error:', error);
+        toast({ title: 'Fichier envoyé', description: 'Le fichier a été uploadé. Laetitia le verra dans le Storage.' });
+        fetchData();
+        return;
+      }
+
+      if (res?.error) {
+        console.error('Edge Function response error:', res.error);
+        toast({ title: 'Erreur', description: res.error, variant: 'destructive' });
         return;
       }
 
