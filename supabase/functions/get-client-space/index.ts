@@ -102,6 +102,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         mission: {
+          id: missionId,
           client_name: mission.client_name,
           mission_type: mission.mission_type,
           status: mission.status,

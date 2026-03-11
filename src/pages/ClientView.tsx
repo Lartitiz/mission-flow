@@ -35,7 +35,7 @@ interface ClientFile {
   download_url: string | null;
 }
 interface ClientData {
-  mission: { client_name: string; mission_type: string; status: string };
+  mission: { id: string; client_name: string; mission_type: string; status: string };
   actions: ClientAction[];
   sessions: ClientSession[];
   next_session: { date: string; agenda: string | null } | null;
@@ -213,20 +213,19 @@ const ClientView = () => {
         return;
       }
 
-      const { data: res, error } = await supabase.functions.invoke('update-client-action', {
-        body: { token, action_id: actionId, file_name: file.name, file_size: file.size, storage_path: path },
+      // Insert direct dans la table files (policy anon)
+      const { error: insertError } = await supabase.from('files').insert({
+        mission_id: data!.mission.id,
+        file_name: file.name,
+        file_size: file.size,
+        storage_path: path,
+        category: `action_${actionId}`,
+        uploaded_by: 'client',
       });
 
-      if (error) {
-        console.error('Edge Function invoke error:', error);
-        toast({ title: 'Fichier envoyé', description: 'Le fichier a été uploadé. Laetitia le verra dans le Storage.' });
-        fetchData();
-        return;
-      }
-
-      if (res?.error) {
-        console.error('Edge Function response error:', res.error);
-        toast({ title: 'Erreur', description: res.error, variant: 'destructive' });
+      if (insertError) {
+        console.error('File record insert error:', insertError);
+        toast({ title: 'Erreur', description: "Le fichier a été uploadé mais l'enregistrement a échoué. Contacte Laetitia.", variant: 'destructive' });
         return;
       }
 
@@ -258,20 +257,19 @@ const ClientView = () => {
         return;
       }
 
-      const { data: res, error } = await supabase.functions.invoke('upload-client-file', {
-        body: { token, file_name: file.name, file_size: file.size, storage_path: path },
+      // Insert direct dans la table files (policy anon)
+      const { error: insertError } = await supabase.from('files').insert({
+        mission_id: data!.mission.id,
+        file_name: file.name,
+        file_size: file.size,
+        storage_path: path,
+        category: 'client_upload',
+        uploaded_by: 'client',
       });
 
-      if (error) {
-        console.error('Edge Function invoke error:', error);
-        toast({ title: 'Fichier envoyé', description: 'Le fichier a été uploadé. Laetitia le verra dans le Storage.' });
-        fetchData();
-        return;
-      }
-
-      if (res?.error) {
-        console.error('Edge Function response error:', res.error);
-        toast({ title: 'Erreur', description: res.error, variant: 'destructive' });
+      if (insertError) {
+        console.error('File record insert error:', insertError);
+        toast({ title: 'Erreur', description: "Le fichier a été uploadé mais l'enregistrement a échoué.", variant: 'destructive' });
         return;
       }
 
