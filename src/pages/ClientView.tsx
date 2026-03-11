@@ -35,7 +35,7 @@ interface ClientFile {
   download_url: string | null;
 }
 interface ClientData {
-  mission: { client_name: string; mission_type: string; status: string };
+  mission: { id: string; client_name: string; mission_type: string; status: string };
   actions: ClientAction[];
   sessions: ClientSession[];
   next_session: { date: string; agenda: string | null } | null;
