@@ -33,6 +33,7 @@ const MissionDetail = () => {
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [showDefaultActions, setShowDefaultActions] = useState(false);
   const canFollowUp = mission?.status === 'proposal_sent' || mission?.status === 'signed';
   const amountInputRef = useRef<HTMLInputElement>(null);
 
