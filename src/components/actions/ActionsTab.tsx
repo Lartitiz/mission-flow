@@ -17,6 +17,8 @@ import { DefaultActionsDialog } from './DefaultActionsDialog';
 interface ActionsTabProps {
   missionId: string;
   clientName: string;
+  showDefaultActions?: boolean;
+  onDefaultActionsDismissed?: () => void;
 }
 
 interface AiNewAction {
