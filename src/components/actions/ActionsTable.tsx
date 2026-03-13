@@ -28,6 +28,15 @@ import { CSS } from '@dnd-kit/utilities';
 
 const CATEGORIES = ['Cadrage', 'Messages', 'Site web', 'Social media', 'Emailing', 'Branding', 'Cross-posting', 'Influence/Presse', 'Formation', 'Commercial', 'Support', 'Préparation session', 'Finalisation', 'Autre'];
 
+const PHASE_OPTIONS = [
+  { value: '', label: '(aucune)' },
+  { value: 'mois_1_2', label: 'Mois 1-2' },
+  { value: 'mois_3', label: 'Mois 3' },
+  { value: 'mois_4_5', label: 'Mois 4-5' },
+  { value: 'mois_6', label: 'Mois 6' },
+  { value: 'continu', label: 'Continu' },
+];
+
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333', order: 0 },
   { value: 'in_progress', label: 'En cours', bg: '#4A90D9', text: '#fff', order: 1 },
