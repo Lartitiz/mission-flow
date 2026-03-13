@@ -26,6 +26,7 @@ export type Database = {
           hours_estimated: number | null
           id: string
           mission_id: string
+          phase: string | null
           sort_order: number
           status: string
           target_date: string | null
@@ -43,6 +44,7 @@ export type Database = {
           hours_estimated?: number | null
           id?: string
           mission_id: string
+          phase?: string | null
           sort_order?: number
           status?: string
           target_date?: string | null
@@ -60,6 +62,7 @@ export type Database = {
           hours_estimated?: number | null
           id?: string
           mission_id?: string
+          phase?: string | null
           sort_order?: number
           status?: string
           target_date?: string | null
