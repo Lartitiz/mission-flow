@@ -23,6 +23,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Logo principal + déclinaisons si tu en as (monochrome, icône, horizontal, vertical). Formats PNG ou SVG de préférence.',
     category: 'Accès',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'charte',
