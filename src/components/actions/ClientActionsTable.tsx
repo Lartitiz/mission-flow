@@ -240,6 +240,21 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
           </PopoverContent>
         </Popover>
       </td>
+      <td className="px-1 py-1 w-[100px]">
+        <Select
+          value={(action as any).phase ?? ''}
+          onValueChange={(v) => onUpdate(action.id, { phase: v || null })}
+        >
+          <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            {PHASE_OPTIONS.map((p) => (
+              <SelectItem key={p.value || 'none'} value={p.value || 'none'} className="font-body text-xs">{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </td>
       <td className="px-2 py-1 w-[120px]">
         <Select value={action.status} onValueChange={(s) => onUpdate(action.id, { status: s })}>
           <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 w-auto">
