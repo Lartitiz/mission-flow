@@ -57,6 +57,23 @@ const MissionDetail = () => {
     }
   }, [editingAmount]);
 
+  // Auto-trigger default actions dialog when mission is signed and no client actions exist
+  useEffect(() => {
+    if (mission?.status === 'signed' && mission?.id) {
+      supabase
+        .from('actions')
+        .select('id')
+        .eq('mission_id', mission.id)
+        .eq('assignee', 'client')
+        .limit(1)
+        .then(({ data }) => {
+          if (!data || data.length === 0) {
+            setShowDefaultActions(true);
+          }
+        });
+    }
+  }, [mission?.status, mission?.id]);
+
   if (isLoading || !mission) {
     return (
       <div className="flex items-center justify-center h-64">
