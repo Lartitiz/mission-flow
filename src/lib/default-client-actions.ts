@@ -48,6 +48,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Qui est ton audience idéale ? Quelle est ta mission ? Ton combat ? Ce qui te différencie ? Écris tes premières réflexions librement, on les structurera ensemble.',
     category: 'Réflexion',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'inspirations',
