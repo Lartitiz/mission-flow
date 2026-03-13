@@ -338,16 +338,56 @@ const ClientView = () => {
     return a.sort_order - b.sort_order;
   });
 
-  // Sort laetitia actions: done first, then in_progress, then not_started
-  const sortedLaetitiaActions = [...laetitiaActions].sort((a, b) => {
-    const order = (s: string) => {
-      if (['done', 'delivered', 'validated'].includes(s)) return 0;
-      if (s === 'in_progress') return 1;
-      if (s === 'to_validate') return 2;
-      return 3;
-    };
-    return order(a.status) - order(b.status);
-  });
+  // Phase timeline config
+  const PHASE_CONFIG: Record<string, { label: string; description: string }> = {
+    'mois_1_2': { label: 'Mois 1-2 : Stratégie', description: 'Je construis toute ta stratégie de com\' : positionnement, branding, plan d\'actions.' },
+    'mois_1': { label: 'Mois 1', description: '' },
+    'mois_2': { label: 'Mois 2', description: '' },
+    'mois_3': { label: 'Mois 3 : Application', description: 'On met en place les premiers outils et contenus ensemble.' },
+    'mois_4_5': { label: 'Mois 4-5 : Déploiement', description: 'On déploie la stratégie sur tes canaux et on ajuste en continu.' },
+    'mois_4': { label: 'Mois 4', description: '' },
+    'mois_5': { label: 'Mois 5', description: '' },
+    'mois_6': { label: 'Mois 6 : Bilan & autonomie', description: 'On fait le point sur les résultats et je te donne ta feuille de route pour la suite.' },
+    'phase_1': { label: 'Phase 1', description: '' },
+    'phase_2': { label: 'Phase 2', description: '' },
+    'continu': { label: 'Tout au long de la mission', description: '' },
+  };
+  const PHASE_ORDER = ['mois_1_2', 'mois_1', 'mois_2', 'mois_3', 'mois_4_5', 'mois_4', 'mois_5', 'mois_6', 'phase_1', 'phase_2', 'continu', '__other__'];
+  const DONE_STATUSES = ['validated', 'delivered', 'done'];
+  const ACTIVE_STATUSES = ['in_progress', 'to_validate'];
+
+  const laetitiaByPhase = (() => {
+    const map = new Map<string, ClientAction[]>();
+    laetitiaActions.forEach(a => {
+      const key = a.phase?.trim() || '__other__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(a);
+    });
+    return PHASE_ORDER
+      .filter(k => map.has(k))
+      .map(k => ({
+        key: k,
+        label: k === '__other__' ? 'Autre' : (PHASE_CONFIG[k]?.label || k),
+        description: k === '__other__' ? '' : (PHASE_CONFIG[k]?.description || ''),
+        actions: [...map.get(k)!].sort((a, b) => a.sort_order - b.sort_order),
+      }));
+  })();
+
+  const phaseGroupStatus = (actions: ClientAction[]) => {
+    if (actions.every(a => DONE_STATUSES.includes(a.status))) return 'done';
+    if (actions.some(a => ACTIVE_STATUSES.includes(a.status))) return 'active';
+    return 'upcoming';
+  };
+
+  const isCollabKeyword = (task: string) => /visio|atelier|bilan|session|ensemble/i.test(task);
+
+  const togglePhaseCollapse = (key: string) => {
+    setCollapsedPhases(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   // Conditions
   const hasClientActions = clientActions.length > 0;
