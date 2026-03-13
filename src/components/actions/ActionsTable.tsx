@@ -28,6 +28,15 @@ import { CSS } from '@dnd-kit/utilities';
 
 const CATEGORIES = ['Cadrage', 'Messages', 'Site web', 'Social media', 'Emailing', 'Branding', 'Cross-posting', 'Influence/Presse', 'Formation', 'Commercial', 'Support', 'Préparation session', 'Finalisation', 'Autre'];
 
+const PHASE_OPTIONS = [
+  { value: '', label: '(aucune)' },
+  { value: 'mois_1_2', label: 'Mois 1-2' },
+  { value: 'mois_3', label: 'Mois 3' },
+  { value: 'mois_4_5', label: 'Mois 4-5' },
+  { value: 'mois_6', label: 'Mois 6' },
+  { value: 'continu', label: 'Continu' },
+];
+
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333', order: 0 },
   { value: 'in_progress', label: 'En cours', bg: '#4A90D9', text: '#fff', order: 1 },
@@ -205,6 +214,21 @@ function SortableRow({ action, onUpdate, onDelete }: {
           onDateChange={(d) => onUpdate(action.id, { target_date: d })}
         />
       </td>
+      <td className="px-1 py-1 w-[100px]">
+        <Select
+          value={(action as any).phase ?? ''}
+          onValueChange={(v) => onUpdate(action.id, { phase: v || null })}
+        >
+          <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            {PHASE_OPTIONS.map((p) => (
+              <SelectItem key={p.value || 'none'} value={p.value || 'none'} className="font-body text-xs">{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </td>
       <td className="px-2 py-1 w-[120px]">
         <StatusBadge
           status={action.status}
@@ -337,6 +361,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                 <SortHeader label="Tâche" sortKey="task" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Description" sortKey="description" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Date cible" sortKey="target_date" currentSort={sort} onSort={handleSort} />
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phase</th>
                 <SortHeader label="Statut" sortKey="status" currentSort={sort} onSort={handleSort} />
                 <th className="px-3 py-2 w-10"></th>
               </tr>

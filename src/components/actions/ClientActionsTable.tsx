@@ -35,6 +35,15 @@ const CLIENT_STATUS_OPTIONS = [
   { value: 'done', label: 'Fait', bg: '#4CAF50', text: '#fff' },
 ];
 
+const PHASE_OPTIONS = [
+  { value: '', label: '(aucune)' },
+  { value: 'mois_1_2', label: 'Mois 1-2' },
+  { value: 'mois_3', label: 'Mois 3' },
+  { value: 'mois_4_5', label: 'Mois 4-5' },
+  { value: 'mois_6', label: 'Mois 6' },
+  { value: 'continu', label: 'Continu' },
+];
+
 interface ClientActionsTableProps {
   actions: Action[];
   missionId: string;
@@ -231,6 +240,21 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
           </PopoverContent>
         </Popover>
       </td>
+      <td className="px-1 py-1 w-[100px]">
+        <Select
+          value={(action as any).phase ?? ''}
+          onValueChange={(v) => onUpdate(action.id, { phase: v || null })}
+        >
+          <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            {PHASE_OPTIONS.map((p) => (
+              <SelectItem key={p.value || 'none'} value={p.value || 'none'} className="font-body text-xs">{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </td>
       <td className="px-2 py-1 w-[120px]">
         <Select value={action.status} onValueChange={(s) => onUpdate(action.id, { status: s })}>
           <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 w-auto">
@@ -332,6 +356,7 @@ export function ClientActionsTable({ actions, missionId, onUpdate, onDelete, onR
                 <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
                 <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
                 <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
+                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phase</th>
                 <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
                 <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fichiers</th>
                 <th className="px-3 py-2 w-10"></th>
