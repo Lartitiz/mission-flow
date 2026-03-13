@@ -83,6 +83,7 @@ export function ActionsFromProposalCard({
           description: action.description || null,
           category: action.category || null,
           channel: action.channel || null,
+          phase: (action as any).phase || null,
           sort_order: sortOrder++,
           status: 'not_started',
         });

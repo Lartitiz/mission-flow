@@ -86,6 +86,7 @@ export function DefaultActionsDialog({
         task: a.task,
         description: a.description,
         category: a.category,
+        phase: a.phase || null,
         status: 'not_started',
         sort_order: sortOrder++,
       }));
