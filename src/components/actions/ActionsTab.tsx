@@ -38,7 +38,7 @@ interface AiUpdate {
   reason: string;
 }
 
-export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
+export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaultActionsDismissed }: ActionsTabProps) {
   const { actions, isLoading, addAction, updateAction, deleteAction, reorderActions, isSaving } =
     useActions(missionId);
   const { toast } = useToast();
