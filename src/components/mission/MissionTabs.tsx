@@ -13,6 +13,8 @@ interface MissionTabsProps {
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
+  showDefaultActions?: boolean;
+  onDefaultActionsDismissed?: () => void;
 }
 
 interface TabDef {
@@ -47,7 +49,7 @@ function EmptyState() {
   );
 }
 
-export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
+export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType, showDefaultActions, onDefaultActionsDismissed }: MissionTabsProps) {
   const [activeTab, setActiveTab] = useState(() => defaultTabForStatus(statusIndex));
 
   const renderContent = () => {
@@ -60,7 +62,7 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
       case 'kickoff':
         return <KickoffTab missionId={missionId} clientName={clientName} />;
       case 'actions':
-        return <ActionsTab missionId={missionId} clientName={clientName} />;
+        return <ActionsTab missionId={missionId} clientName={clientName} showDefaultActions={showDefaultActions} onDefaultActionsDismissed={onDefaultActionsDismissed} />;
       case 'follow-up':
         return <FollowUpTab missionId={missionId} clientName={clientName} missionType={currentMissionType} amount={amount} />;
       default:

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useActions, type Action } from '@/hooks/useActions';
 import { ActionsStats } from './ActionsStats';
 import { ActionsTable } from './ActionsTable';
@@ -7,15 +7,18 @@ import { AiExtractionResults } from './AiExtractionResults';
 import { ActionsFromProposalCard } from './ActionsFromProposalCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Loader2, Plus, Upload, Wand2 } from 'lucide-react';
+import { Sparkles, Loader2, Plus, Upload, Wand2, ListChecks } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExcelImportDialog } from './ExcelImportDialog';
+import { DefaultActionsDialog } from './DefaultActionsDialog';
 
 interface ActionsTabProps {
   missionId: string;
   clientName: string;
+  showDefaultActions?: boolean;
+  onDefaultActionsDismissed?: () => void;
 }
 
 interface AiNewAction {
@@ -35,7 +38,7 @@ interface AiUpdate {
   reason: string;
 }
 
-export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
+export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaultActionsDismissed }: ActionsTabProps) {
   const { actions, isLoading, addAction, updateAction, deleteAction, reorderActions, isSaving } =
     useActions(missionId);
   const { toast } = useToast();
@@ -50,6 +53,14 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
     updates: AiUpdate[];
   } | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [defaultActionsOpen, setDefaultActionsOpen] = useState(false);
+
+  // Auto-open default actions dialog when triggered from parent
+  useEffect(() => {
+    if (showDefaultActions) {
+      setDefaultActionsOpen(true);
+    }
+  }, [showDefaultActions]);
 
   const { data: mission } = useQuery({
     queryKey: ['mission-type-actions', missionId],
@@ -231,6 +242,15 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setDefaultActionsOpen(true)}
+            className="font-body gap-2"
+          >
+            <ListChecks className="h-3.5 w-3.5" />
+            Actions de base
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setImportOpen(true)}
             className="font-body gap-2"
           >
@@ -398,6 +418,17 @@ export function ActionsTab({ missionId, clientName }: ActionsTabProps) {
           isApplying={isApplying}
         />
       )}
+
+      <DefaultActionsDialog
+        open={defaultActionsOpen}
+        onOpenChange={(v) => {
+          setDefaultActionsOpen(v);
+          if (!v && onDefaultActionsDismissed) onDefaultActionsDismissed();
+        }}
+        missionId={missionId}
+        existingClientTasks={clientActions.map((a) => a.task)}
+        maxSortOrder={maxSort}
+      />
     </div>
   );
 }

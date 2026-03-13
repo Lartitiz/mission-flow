@@ -33,6 +33,7 @@ const MissionDetail = () => {
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [showDefaultActions, setShowDefaultActions] = useState(false);
   const canFollowUp = mission?.status === 'proposal_sent' || mission?.status === 'signed';
   const amountInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,6 +56,23 @@ const MissionDetail = () => {
       amountInputRef.current.focus();
     }
   }, [editingAmount]);
+
+  // Auto-trigger default actions dialog when mission is signed and no client actions exist
+  useEffect(() => {
+    if (mission?.status === 'signed' && mission?.id) {
+      supabase
+        .from('actions')
+        .select('id')
+        .eq('mission_id', mission.id)
+        .eq('assignee', 'client')
+        .limit(1)
+        .then(({ data }) => {
+          if (!data || data.length === 0) {
+            setShowDefaultActions(true);
+          }
+        });
+    }
+  }, [mission?.status, mission?.id]);
 
   if (isLoading || !mission) {
     return (
@@ -213,6 +231,8 @@ const MissionDetail = () => {
         statusIndex={si}
         hasStructuredNotes={!!hasStructuredNotes}
         currentMissionType={mission.mission_type}
+        showDefaultActions={showDefaultActions}
+        onDefaultActionsDismissed={() => setShowDefaultActions(false)}
       />
 
       <DeleteMissionDialog
