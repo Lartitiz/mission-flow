@@ -223,7 +223,20 @@ export function SessionHistory({
   const handleApplyExtraction = async (selectedNew: AiNewAction[], selectedUpdates: AiUpdate[]) => {
     setIsApplying(true);
     try {
-      for (const action of selectedNew) {
+      // Définir l'ordre des phases
+      const PHASE_SORT: Record<string, number> = {
+        'mois_1_2': 1, 'mois_1': 2, 'mois_2': 3, 'mois_3': 4,
+        'mois_4_5': 5, 'mois_4': 6, 'mois_5': 7, 'mois_6': 8,
+        'phase_1': 1, 'phase_2': 2, 'continu': 99,
+      };
+
+      const sortedNew = [...selectedNew].sort((a, b) => {
+        const phaseA = PHASE_SORT[(a as any).phase || ''] ?? 50;
+        const phaseB = PHASE_SORT[(b as any).phase || ''] ?? 50;
+        return phaseA - phaseB;
+      });
+
+      for (const action of sortedNew) {
         const maxSort =
           actions.length > 0
             ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
@@ -235,6 +248,7 @@ export function SessionHistory({
           description: action.description || null,
           category: action.category || null,
           channel: action.channel || null,
+          phase: (action as any).phase || null,
           target_date: action.target_date || null,
           sort_order: maxSort,
           status: 'not_started',
@@ -248,7 +262,7 @@ export function SessionHistory({
       }
       toast({
         title: 'Changements appliqués',
-        description: `${selectedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
+        description: `${sortedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
       });
       setExtractionResults(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });

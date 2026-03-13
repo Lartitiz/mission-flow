@@ -72,10 +72,23 @@ export function ActionsFromProposalCard({
       return;
     }
 
+    // Définir l'ordre des phases
+    const PHASE_SORT: Record<string, number> = {
+      'mois_1_2': 1, 'mois_1': 2, 'mois_2': 3, 'mois_3': 4,
+      'mois_4_5': 5, 'mois_4': 6, 'mois_5': 7, 'mois_6': 8,
+      'phase_1': 1, 'phase_2': 2, 'continu': 99,
+    };
+
+    const sortedActions = [...selected].sort((a, b) => {
+      const phaseA = PHASE_SORT[(a as any).phase || ''] ?? 50;
+      const phaseB = PHASE_SORT[(b as any).phase || ''] ?? 50;
+      return phaseA - phaseB;
+    });
+
     setIsCreating(true);
     try {
       let sortOrder = maxSortOrder + 1;
-      for (const action of selected) {
+      for (const action of sortedActions) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
@@ -93,11 +106,11 @@ export function ActionsFromProposalCard({
       // Journal entry
       await supabase.from('journal_entries').insert({
         mission_id: missionId,
-        content: `Plan d'actions initialisé à partir de la proposition (${selected.length} actions)`,
+        content: `Plan d'actions initialisé à partir de la proposition (${sortedActions.length} actions)`,
         source: 'auto',
       });
 
-      toast.success(`${selected.length} actions créées depuis la proposition`);
+      toast.success(`${sortedActions.length} actions créées depuis la proposition`);
       setGeneratedActions(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['journal', missionId] });
