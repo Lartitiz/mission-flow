@@ -18,6 +18,7 @@ interface ClientAction {
   assignee: string;
   sort_order: number;
   client_comment: string | null;
+  phase: string | null;
 }
 interface ClientSession {
   id: string;
@@ -119,6 +120,7 @@ const ClientView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -336,16 +338,56 @@ const ClientView = () => {
     return a.sort_order - b.sort_order;
   });
 
-  // Sort laetitia actions: done first, then in_progress, then not_started
-  const sortedLaetitiaActions = [...laetitiaActions].sort((a, b) => {
-    const order = (s: string) => {
-      if (['done', 'delivered', 'validated'].includes(s)) return 0;
-      if (s === 'in_progress') return 1;
-      if (s === 'to_validate') return 2;
-      return 3;
-    };
-    return order(a.status) - order(b.status);
-  });
+  // Phase timeline config
+  const PHASE_CONFIG: Record<string, { label: string; description: string }> = {
+    'mois_1_2': { label: 'Mois 1-2 : Stratégie', description: 'Je construis toute ta stratégie de com\' : positionnement, branding, plan d\'actions.' },
+    'mois_1': { label: 'Mois 1', description: '' },
+    'mois_2': { label: 'Mois 2', description: '' },
+    'mois_3': { label: 'Mois 3 : Application', description: 'On met en place les premiers outils et contenus ensemble.' },
+    'mois_4_5': { label: 'Mois 4-5 : Déploiement', description: 'On déploie la stratégie sur tes canaux et on ajuste en continu.' },
+    'mois_4': { label: 'Mois 4', description: '' },
+    'mois_5': { label: 'Mois 5', description: '' },
+    'mois_6': { label: 'Mois 6 : Bilan & autonomie', description: 'On fait le point sur les résultats et je te donne ta feuille de route pour la suite.' },
+    'phase_1': { label: 'Phase 1', description: '' },
+    'phase_2': { label: 'Phase 2', description: '' },
+    'continu': { label: 'Tout au long de la mission', description: '' },
+  };
+  const PHASE_ORDER = ['mois_1_2', 'mois_1', 'mois_2', 'mois_3', 'mois_4_5', 'mois_4', 'mois_5', 'mois_6', 'phase_1', 'phase_2', 'continu', '__other__'];
+  const DONE_STATUSES = ['validated', 'delivered', 'done'];
+  const ACTIVE_STATUSES = ['in_progress', 'to_validate'];
+
+  const laetitiaByPhase = (() => {
+    const map = new Map<string, ClientAction[]>();
+    laetitiaActions.forEach(a => {
+      const key = a.phase?.trim() || '__other__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(a);
+    });
+    return PHASE_ORDER
+      .filter(k => map.has(k))
+      .map(k => ({
+        key: k,
+        label: k === '__other__' ? 'Autre' : (PHASE_CONFIG[k]?.label || k),
+        description: k === '__other__' ? '' : (PHASE_CONFIG[k]?.description || ''),
+        actions: [...map.get(k)!].sort((a, b) => a.sort_order - b.sort_order),
+      }));
+  })();
+
+  const phaseGroupStatus = (actions: ClientAction[]) => {
+    if (actions.every(a => DONE_STATUSES.includes(a.status))) return 'done';
+    if (actions.some(a => ACTIVE_STATUSES.includes(a.status))) return 'active';
+    return 'upcoming';
+  };
+
+  const isCollabKeyword = (task: string) => /visio|atelier|bilan|session|ensemble/i.test(task);
+
+  const togglePhaseCollapse = (key: string) => {
+    setCollapsedPhases(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   // Conditions
   const hasClientActions = clientActions.length > 0;
@@ -372,21 +414,7 @@ const ClientView = () => {
   const laetitiaUpcoming = laetitiaActions.filter(a => a.status === 'not_started');
   const sortByOrder = (arr: ClientAction[]) => [...arr].sort((a, b) => a.sort_order - b.sort_order);
 
-  // Build category map for laetitia actions
-  const laetitiaByCategory = (() => {
-    const map = new Map<string, ClientAction[]>();
-    laetitiaActions.forEach(a => {
-      const cat = a.category?.trim() || 'Autre';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(a);
-    });
-    const sortedCats = [...map.keys()].sort((a, b) => {
-      if (a === 'Cadrage') return -1;
-      if (b === 'Cadrage') return 1;
-      return a.localeCompare(b, 'fr');
-    });
-    return sortedCats.map(cat => ({ cat, actions: sortByOrder(map.get(cat)!) }));
-  })();
+  // (phase grouping moved above)
 
   const actionStatusColor = (status: string) => {
     if (['validated', 'delivered', 'done'].includes(status)) return { color: '#D1D5DB', weight: 400, strike: true };
@@ -443,7 +471,7 @@ const ClientView = () => {
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
       <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
 
-      {/* Stats bar */}
+      {/* Stats bar — unchanged */}
       <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#F3F4F6', gap: 1, marginBottom: 16 }}>
         {[
           { count: laetitiaDelivered.length, label: 'Livrées', color: '#10B981' },
@@ -457,32 +485,139 @@ const ClientView = () => {
         ))}
       </div>
 
-      {/* Category cards grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8 }}>
-        {laetitiaByCategory.map(({ cat, actions: catActions }) => {
-          const doneCount = catActions.filter(a => ['validated', 'delivered', 'done'].includes(a.status)).length;
-          const allDone = doneCount === catActions.length;
+      {/* Phase timeline */}
+      <div style={{ position: 'relative', paddingLeft: 28 }}>
+        {/* Vertical line */}
+        <div style={{ position: 'absolute', left: 8, top: 9, bottom: 9, width: 2, background: '#FFD6E8' }} />
+
+        {laetitiaByPhase.map((group, gIdx) => {
+          const gStatus = phaseGroupStatus(group.actions);
+          const isOther = group.key === '__other__';
+          const collapsed = collapsedPhases.has(group.key);
+
+          // Pastille config
+          const pastilleColor = gStatus === 'done' ? '#10B981' : gStatus === 'active' ? '#4A90D9' : '#D1D5DB';
+          const pastilleContent = gStatus === 'done' ? '✓' : '';
+          const pastilleShadow = gStatus === 'active' ? '0 0 0 4px rgba(74,144,217,0.15)' : 'none';
+
+          // Badge config
+          const badgeCfg = gStatus === 'done'
+            ? { label: 'Terminé', bg: '#ECFDF5', color: '#059669' }
+            : gStatus === 'active'
+            ? { label: 'En cours', bg: '#EFF6FF', color: '#2563EB' }
+            : { label: 'À venir', bg: '#F3F4F6', color: '#6B7280' };
+
+          // Condensation: done groups with >3 actions
+          const shouldCondense = gStatus === 'done' && group.actions.length > 3;
+          const visibleActions = shouldCondense && !collapsed
+            ? group.actions.slice(0, 2)
+            : group.actions;
+          const hiddenCount = shouldCondense ? group.actions.length - 2 : 0;
+
           return (
-            <div key={cat} style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
-              {/* Card header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#91014b', textTransform: 'uppercase', letterSpacing: 0.3 }}>{cat}</span>
-                <span style={{ fontSize: 11, color: '#9CA3AF' }}>{doneCount}/{catActions.length}{allDone ? ' ✓' : ''}</span>
+            <div key={group.key} style={{ position: 'relative', marginBottom: gIdx < laetitiaByPhase.length - 1 ? 20 : 0 }}>
+              {/* Pastille */}
+              <div style={{
+                position: 'absolute', left: -28 + (isOther ? 3 : 0), top: 0,
+                width: isOther ? 12 : 18, height: isOther ? 12 : 18,
+                borderRadius: isOther ? 99 : 6,
+                background: isOther ? '#D1D5DB' : pastilleColor,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: isOther ? 'none' : pastilleShadow,
+                marginTop: isOther ? 3 : 0,
+              }}>
+                {!isOther && (
+                  <span style={{ color: '#fff', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>{pastilleContent}</span>
+                )}
               </div>
-              {/* Action list */}
-              <div style={{ marginBottom: 10 }}>
-                {catActions.map(a => {
-                  const s = actionStatusColor(a.status);
+
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{
+                  fontFamily: "'Libre Baskerville', serif",
+                  fontSize: 14,
+                  color: gStatus === 'done' ? '#9CA3AF' : '#1A1A2E',
+                }}>
+                  {group.label}
+                </span>
+                <span style={{
+                  fontSize: 10, fontWeight: 600, borderRadius: 99,
+                  padding: '2px 8px',
+                  background: badgeCfg.bg, color: badgeCfg.color,
+                }}>
+                  {badgeCfg.label}
+                </span>
+              </div>
+
+              {/* Description */}
+              {group.description && gStatus !== 'done' && (
+                <p style={{ fontSize: 12, fontStyle: 'italic', color: '#9CA3AF', marginBottom: 8 }}>{group.description}</p>
+              )}
+
+              {/* Actions */}
+              <div>
+                {visibleActions.map(a => {
+                  const isDone = DONE_STATUSES.includes(a.status);
+                  const isWip = ACTIVE_STATUSES.includes(a.status);
+                  const dotColor = isDone ? '#10B981' : isWip ? '#4A90D9' : '#D1D5DB';
+                  const textColor = isDone ? '#D1D5DB' : isWip ? '#4A90D9' : '#9CA3AF';
+                  const isCollab = isCollabKeyword(a.task);
+
                   return (
-                    <p key={a.id} style={{ fontSize: 12, lineHeight: 1.6, color: s.color, fontWeight: s.weight, textDecoration: s.strike ? 'line-through' : 'none' }}>{a.task}</p>
+                    <div key={a.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '7px 12px', background: '#fff', borderRadius: 8,
+                      marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                    }}>
+                      <span style={{ width: 5, height: 5, borderRadius: 99, background: dotColor, flexShrink: 0 }} />
+                      <span style={{
+                        flex: 1, fontSize: 12,
+                        color: textColor,
+                        fontWeight: isWip ? 700 : 400,
+                        textDecoration: isDone ? 'line-through' : 'none',
+                      }}>
+                        {a.task}
+                      </span>
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                        {isCollab && (
+                          <span style={{ fontSize: 10, borderRadius: 99, padding: '1px 6px', background: '#FFF4F8', color: '#91014b' }}>🤝 ensemble</span>
+                        )}
+                        {isDone && (
+                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#ECFDF5', color: '#059669' }}>Livré</span>
+                        )}
+                        {isWip && (
+                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#EFF6FF', color: '#2563EB' }}>En cours</span>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
-              </div>
-              {/* Mini progress bar */}
-              <div style={{ display: 'flex', gap: 3 }}>
-                {catActions.map(a => (
-                  <span key={a.id} style={{ width: 8, height: 4, borderRadius: 2, background: actionBarColor(a.status) }} />
-                ))}
+
+                {/* Condensed expand link */}
+                {shouldCondense && !collapsed && hiddenCount > 0 && (
+                  <button
+                    onClick={() => togglePhaseCollapse(group.key)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 11, color: '#91014b', fontWeight: 500,
+                      padding: '4px 12px', marginTop: 2,
+                    }}
+                  >
+                    + {hiddenCount} autres actions terminées
+                  </button>
+                )}
+                {shouldCondense && collapsed && (
+                  <button
+                    onClick={() => togglePhaseCollapse(group.key)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 11, color: '#91014b', fontWeight: 500,
+                      padding: '4px 12px', marginTop: 2,
+                    }}
+                  >
+                    Réduire
+                  </button>
+                )}
               </div>
             </div>
           );
