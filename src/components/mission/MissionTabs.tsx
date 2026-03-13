@@ -13,6 +13,8 @@ interface MissionTabsProps {
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
+  showDefaultActions?: boolean;
+  onDefaultActionsDismissed?: () => void;
 }
 
 interface TabDef {
