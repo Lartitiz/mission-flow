@@ -242,6 +242,15 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setDefaultActionsOpen(true)}
+            className="font-body gap-2"
+          >
+            <ListChecks className="h-3.5 w-3.5" />
+            Actions de base
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setImportOpen(true)}
             className="font-body gap-2"
           >
