@@ -53,6 +53,14 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
     updates: AiUpdate[];
   } | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [defaultActionsOpen, setDefaultActionsOpen] = useState(false);
+
+  // Auto-open default actions dialog when triggered from parent
+  useEffect(() => {
+    if (showDefaultActions) {
+      setDefaultActionsOpen(true);
+    }
+  }, [showDefaultActions]);
 
   const { data: mission } = useQuery({
     queryKey: ['mission-type-actions', missionId],
