@@ -56,6 +56,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: "Des comptes Instagram, des sites, des marques dont tu aimes la communication. Et surtout : dis-moi pourquoi. C'est ce qui m'intéresse.",
     category: 'Réflexion',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'concurrents',
