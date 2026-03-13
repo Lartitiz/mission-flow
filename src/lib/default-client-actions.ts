@@ -64,6 +64,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Les liens de leurs sites ou comptes Instagram. Pas pour copier, pour comprendre comment tu te positionnes par rapport à eux.',
     category: 'Réflexion',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'offres',
