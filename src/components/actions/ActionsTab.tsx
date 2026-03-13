@@ -418,6 +418,17 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           isApplying={isApplying}
         />
       )}
+
+      <DefaultActionsDialog
+        open={defaultActionsOpen}
+        onOpenChange={(v) => {
+          setDefaultActionsOpen(v);
+          if (!v && onDefaultActionsDismissed) onDefaultActionsDismissed();
+        }}
+        missionId={missionId}
+        existingClientTasks={clientActions.map((a) => a.task)}
+        maxSortOrder={maxSort}
+      />
     </div>
   );
 }
