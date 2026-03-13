@@ -414,21 +414,7 @@ const ClientView = () => {
   const laetitiaUpcoming = laetitiaActions.filter(a => a.status === 'not_started');
   const sortByOrder = (arr: ClientAction[]) => [...arr].sort((a, b) => a.sort_order - b.sort_order);
 
-  // Build category map for laetitia actions
-  const laetitiaByCategory = (() => {
-    const map = new Map<string, ClientAction[]>();
-    laetitiaActions.forEach(a => {
-      const cat = a.category?.trim() || 'Autre';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(a);
-    });
-    const sortedCats = [...map.keys()].sort((a, b) => {
-      if (a === 'Cadrage') return -1;
-      if (b === 'Cadrage') return 1;
-      return a.localeCompare(b, 'fr');
-    });
-    return sortedCats.map(cat => ({ cat, actions: sortByOrder(map.get(cat)!) }));
-  })();
+  // (phase grouping moved above)
 
   const actionStatusColor = (status: string) => {
     if (['validated', 'delivered', 'done'].includes(status)) return { color: '#D1D5DB', weight: 400, strike: true };
