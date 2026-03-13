@@ -18,6 +18,7 @@ interface ClientAction {
   assignee: string;
   sort_order: number;
   client_comment: string | null;
+  phase: string | null;
 }
 interface ClientSession {
   id: string;
