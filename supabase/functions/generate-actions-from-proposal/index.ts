@@ -39,6 +39,7 @@ Pour chaque action, détermine :
 - task : intitulé court et clair (max 60 caractères)
 - description : détail de ce qui est à faire
 - channel : le canal concerné si applicable (Instagram, LinkedIn, Site web, Brevo, etc.) ou null
+- phase : la phase temporelle de l'action. Pour un accompagnement Binôme 6 mois : "mois_1_2" (stratégie, audits, positionnement), "mois_3" (application, premiers outils), "mois_4_5" (déploiement opérationnel), "mois_6" (bilan, feuille de route). Pour un accompagnement Agency : adapte selon la durée. Si 3 mois : "mois_1", "mois_2", "mois_3". Pour une mission courte : "phase_1", "phase_2". Pour les actions récurrentes (visios mensuelles, support WhatsApp) : "continu". Les audits et analyses sont toujours en début, les bilans toujours en fin.
 
 RÈGLES :
 - Sépare bien les actions Laetitia (livrables, analyses, créations) et les actions client (fournir des accès, envoyer des documents, valider des livrables, etc.)
@@ -46,7 +47,7 @@ RÈGLES :
 - Organise les actions dans l'ordre chronologique (ce qui vient en premier en haut)
 - Sois concret : pas de "travailler sur la stratégie" mais "Rédiger le document stratégique (10-15 pages)"
 
-Réponds UNIQUEMENT en JSON valide : { "actions": [ { "assignee": "laetitia", "category": "Cadrage", "task": "Audit communication existante", "description": "Analyser le site web, les réseaux sociaux, le référencement et la concurrence", "channel": null } ] }`;
+Réponds UNIQUEMENT en JSON valide : { "actions": [ { "assignee": "laetitia", "category": "Cadrage", "task": "Audit communication existante", "description": "Analyser le site web, les réseaux sociaux, le référencement et la concurrence", "channel": null, "phase": "mois_1_2" } ] }`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

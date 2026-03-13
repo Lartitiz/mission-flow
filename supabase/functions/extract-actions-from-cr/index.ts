@@ -22,8 +22,9 @@ Pour chaque nouvelle action, détermine :
 - description : détail
 - channel : si applicable, parmi : Instagram, LinkedIn, Pinterest, Site web, Brevo, Facebook, Telegram/WhatsApp, Identité, Orga, Autre
 - target_date : si mentionnée (format YYYY-MM-DD)
+- phase : la phase temporelle de l'action. Pour un accompagnement Binôme 6 mois : "mois_1_2" (stratégie, audits, positionnement), "mois_3" (application, premiers outils), "mois_4_5" (déploiement opérationnel), "mois_6" (bilan, feuille de route). Pour un accompagnement Agency : adapte selon la durée. Si 3 mois : "mois_1", "mois_2", "mois_3". Pour une mission courte : "phase_1", "phase_2". Pour les actions récurrentes (visios mensuelles, support WhatsApp) : "continu". Les audits et analyses sont toujours en début, les bilans toujours en fin.
 
-Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "..." }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
+Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "...", "phase": "mois_1_2" }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
