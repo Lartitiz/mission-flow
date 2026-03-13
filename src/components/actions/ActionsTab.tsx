@@ -7,7 +7,7 @@ import { AiExtractionResults } from './AiExtractionResults';
 import { ActionsFromProposalCard } from './ActionsFromProposalCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Loader2, Plus, Upload, Wand2 } from 'lucide-react';
+import { Sparkles, Loader2, Plus, Upload, Wand2, ListChecks } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
