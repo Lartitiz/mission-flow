@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useActions, type Action } from '@/hooks/useActions';
 import { ActionsStats } from './ActionsStats';
 import { ActionsTable } from './ActionsTable';
