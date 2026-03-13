@@ -120,6 +120,7 @@ const ClientView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     if (!token) return;
