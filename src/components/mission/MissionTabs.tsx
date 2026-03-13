@@ -62,7 +62,7 @@ export function MissionTabs({ missionId, clientName, clientEmail, amount, status
       case 'kickoff':
         return <KickoffTab missionId={missionId} clientName={clientName} />;
       case 'actions':
-        return <ActionsTab missionId={missionId} clientName={clientName} />;
+        return <ActionsTab missionId={missionId} clientName={clientName} showDefaultActions={showDefaultActions} onDefaultActionsDismissed={onDefaultActionsDismissed} />;
       case 'follow-up':
         return <FollowUpTab missionId={missionId} clientName={clientName} missionType={currentMissionType} amount={amount} />;
       default:

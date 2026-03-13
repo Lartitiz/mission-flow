@@ -231,6 +231,8 @@ const MissionDetail = () => {
         statusIndex={si}
         hasStructuredNotes={!!hasStructuredNotes}
         currentMissionType={mission.mission_type}
+        showDefaultActions={showDefaultActions}
+        onDefaultActionsDismissed={() => setShowDefaultActions(false)}
       />
 
       <DeleteMissionDialog
