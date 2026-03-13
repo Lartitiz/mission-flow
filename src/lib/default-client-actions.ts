@@ -4,6 +4,7 @@ export interface DefaultClientAction {
   description: string;
   category: string;
   checked: boolean;
+  phase: string;
 }
 
 export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
