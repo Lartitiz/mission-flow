@@ -49,7 +49,7 @@ function EmptyState() {
   );
 }
 
-export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType }: MissionTabsProps) {
+export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType, showDefaultActions, onDefaultActionsDismissed }: MissionTabsProps) {
   const [activeTab, setActiveTab] = useState(() => defaultTabForStatus(statusIndex));
 
   const renderContent = () => {
