@@ -35,6 +35,15 @@ const CLIENT_STATUS_OPTIONS = [
   { value: 'done', label: 'Fait', bg: '#4CAF50', text: '#fff' },
 ];
 
+const PHASE_OPTIONS = [
+  { value: '', label: '(aucune)' },
+  { value: 'mois_1_2', label: 'Mois 1-2' },
+  { value: 'mois_3', label: 'Mois 3' },
+  { value: 'mois_4_5', label: 'Mois 4-5' },
+  { value: 'mois_6', label: 'Mois 6' },
+  { value: 'continu', label: 'Continu' },
+];
+
 interface ClientActionsTableProps {
   actions: Action[];
   missionId: string;
