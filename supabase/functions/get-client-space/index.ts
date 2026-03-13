@@ -56,7 +56,7 @@ serve(async (req) => {
     const [actionsRes, sessionsRes, filesRes, nextSessionRes] = await Promise.all([
       supabase
         .from("actions")
-        .select("id, task, description, category, channel, target_date, status, assignee, sort_order, client_comment")
+        .select("id, task, description, category, channel, target_date, status, assignee, sort_order, client_comment, phase")
         .eq("mission_id", missionId)
         .order("sort_order"),
       supabase
