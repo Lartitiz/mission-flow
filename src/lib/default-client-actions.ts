@@ -80,5 +80,6 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Les posts, articles, vidéos qui ont le mieux marché. Ceux dont tu es fière. Ceux qui ont généré des ventes ou des messages.',
     category: 'Réflexion',
     checked: true,
+    phase: 'mois_1_2',
   },
 ];
