@@ -31,6 +31,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Si tu as une charte ou un guide de style (couleurs, typos, éléments visuels). Sinon, pas de souci, on construira ensemble.',
     category: 'Accès',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'photos',
