@@ -72,6 +72,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Toutes tes offres, même celles que tu ne communiques pas encore. Avec les prix, les formats, ce qui est inclus.',
     category: 'Réflexion',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'best_content',
