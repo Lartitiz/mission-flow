@@ -214,6 +214,21 @@ function SortableRow({ action, onUpdate, onDelete }: {
           onDateChange={(d) => onUpdate(action.id, { target_date: d })}
         />
       </td>
+      <td className="px-1 py-1 w-[100px]">
+        <Select
+          value={(action as any).phase ?? ''}
+          onValueChange={(v) => onUpdate(action.id, { phase: v || null })}
+        >
+          <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            {PHASE_OPTIONS.map((p) => (
+              <SelectItem key={p.value || 'none'} value={p.value || 'none'} className="font-body text-xs">{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </td>
       <td className="px-2 py-1 w-[120px]">
         <StatusBadge
           status={action.status}
