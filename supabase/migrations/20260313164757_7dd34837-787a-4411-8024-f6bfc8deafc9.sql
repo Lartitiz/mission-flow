@@ -1,0 +1,1 @@
+ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS phase text DEFAULT NULL;
