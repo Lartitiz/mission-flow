@@ -39,6 +39,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: "Photos de toi, de tes produits, de ton atelier, de tes créations. Tout ce qui me permettra d'illustrer ta communication.",
     category: 'Accès',
     checked: true,
+    phase: 'mois_1_2',
   },
   // Réflexion stratégique
   {
