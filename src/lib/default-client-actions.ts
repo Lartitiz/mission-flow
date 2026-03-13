@@ -15,6 +15,7 @@ export const DEFAULT_CLIENT_ACTIONS: DefaultClientAction[] = [
     description: 'Identifiants site web, Instagram (rôle collaborateur), Facebook, Google Analytics, emailing, etc. Tout ce qui me permet de travailler sur tes canaux.',
     category: 'Accès',
     checked: true,
+    phase: 'mois_1_2',
   },
   {
     id: 'logo',
