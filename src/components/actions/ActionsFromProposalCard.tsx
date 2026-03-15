@@ -111,6 +111,19 @@ export function ActionsFromProposalCard({
       });
 
       toast.success(`${sortedActions.length} actions créées depuis la proposition`);
+
+      // Auto-assign phases for any actions that don't have one
+      try {
+        const { data: phaseResult } = await supabase.functions.invoke('assign-phases', {
+          body: { mission_id: missionId },
+        });
+        if (phaseResult?.updated > 0) {
+          toast.success(`${phaseResult.updated} phase(s) assignée(s) automatiquement`);
+        }
+      } catch (e) {
+        console.error('Auto-assign phases error:', e);
+      }
+
       setGeneratedActions(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['journal', missionId] });

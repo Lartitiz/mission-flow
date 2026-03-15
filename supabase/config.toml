@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.generate-actions-from-proposal]
 verify_jwt = false
+
+[functions.assign-phases]
+verify_jwt = false
