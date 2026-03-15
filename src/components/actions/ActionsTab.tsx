@@ -260,6 +260,18 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
               variant="complement"
             />
           )}
+          {actionsWithoutPhase.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAssignPhases}
+              disabled={isAssigningPhases}
+              className="font-body gap-2"
+            >
+              {isAssigningPhases ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              Assigner les phases ({actionsWithoutPhase.length})
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
