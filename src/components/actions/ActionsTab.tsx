@@ -54,6 +54,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
   } | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [defaultActionsOpen, setDefaultActionsOpen] = useState(false);
+  const [isAssigningPhases, setIsAssigningPhases] = useState(false);
 
   // Auto-open default actions dialog when triggered from parent
   useEffect(() => {
