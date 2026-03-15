@@ -93,6 +93,26 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
 
   const myActions = actions.filter((a) => a.assignee === 'laetitia');
   const clientActions = actions.filter((a) => a.assignee === 'client');
+  const actionsWithoutPhase = actions.filter((a) => !a.phase);
+
+  const handleAssignPhases = async () => {
+    setIsAssigningPhases(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('assign-phases', {
+        body: { mission_id: missionId },
+      });
+      if (error || data?.error) {
+        toast({ title: 'Erreur', description: data?.error || "Impossible d'assigner les phases.", variant: 'destructive' });
+        return;
+      }
+      toast({ title: `${data.updated || 0} phase(s) assignée(s) ✓` });
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+    } catch {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    } finally {
+      setIsAssigningPhases(false);
+    }
+  };
 
   const handleExtractAi = async () => {
     if (!aiText.trim()) return;
