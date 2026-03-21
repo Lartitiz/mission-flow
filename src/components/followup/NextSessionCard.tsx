@@ -84,6 +84,25 @@ export function NextSessionCard({ session, onUpdate, onCreate, missionId, missio
               </PopoverContent>
             </Popover>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSuggestAgenda}
+            disabled={isSuggesting}
+            className="font-body gap-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {isSuggesting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Génération...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" />
+                Suggérer l'agenda
+              </>
+            )}
+          </Button>
           <Textarea
             value={agenda}
             onChange={(e) => setAgenda(e.target.value)}
