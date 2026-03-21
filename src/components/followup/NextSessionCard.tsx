@@ -24,6 +24,9 @@ interface NextSessionCardProps {
 export function NextSessionCard({ session, onUpdate, onCreate, missionId, missionType, isSaving }: NextSessionCardProps) {
   const { toast } = useToast();
   const [agenda, setAgenda] = useState(session?.next_session_agenda ?? '');
+  const [date, setDate] = useState<Date | undefined>(
+    session?.next_session_date ? new Date(session.next_session_date) : undefined
+  );
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [creating, setCreating] = useState(false);
 
