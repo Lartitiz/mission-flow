@@ -164,7 +164,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 3000,
+        max_tokens: 4096,
         system: PHASE_PROMPTS[phase],
         messages: [{ role: "user", content: userPrompt }],
       }),
