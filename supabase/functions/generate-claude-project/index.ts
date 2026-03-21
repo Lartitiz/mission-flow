@@ -77,36 +77,16 @@ Liste issue de la proposition commerciale et du plan d'actions, avec format (.do
 
 Génère une liste de prompts de travail adaptés à CETTE cliente et à SES missions spécifiques. Pas des templates génériques.
 
-### Règles de construction du chain
-
 Structure en 3 phases :
-- Phase A (Recherche) : audits, analyse concurrentielle, vérification de l'existant. Les prompts DOIVENT demander des recherches web réelles.
-- Phase B (Stratégie) : positionnement, messages clés, ligne éditoriale. Les prompts DOIVENT poser des questions à Laetitia pour qu'elle tranche. Proposer 2 directions opposées quand pertinent.
+- Phase A (Recherche) : audits, analyse concurrentielle, vérification de l'existant.
+- Phase B (Stratégie) : positionnement, messages clés, ligne éditoriale.
 - Phase C (Production) : livrables dans l'ordre des dépendances. Un prompt = un livrable = un fichier.
 
-Règles par prompt :
-- Chaque prompt rappelle le contexte (qui est la cliente, où on en est)
-- Chaque prompt spécifie le format de sortie (.docx, .xlsx, .pptx)
-- Chaque prompt spécifie le ton
-- Chaque prompt rappelle les red flags
-- Chaque prompt identifie le matériau source (quel document validé à l'étape précédente)
-- Prévoir des étapes de preview (texte dans le chat) avant les fichiers finaux quand pertinent
-- Les prompts doivent être intelligents : poser des questions, challenger, pas juste exécuter
-
-Adaptation au profil cliente :
-- Si cliente débutante/débordée : prompts qui produisent du prêt-à-publier
-- Si cliente avancée : prompts en mode co-création (affiner ce qu'elle a déjà écrit)
-- Si structure avec équipe : prompts qui produisent des livrables modulaires pour que l'équipe pioche
-
-Le chain est une boussole, pas un rail. Ajoute une note en début de chain : "Ce plan évolue au terrain. Si un besoin non prévu émerge, on le signale et on adapte."
+Chaque prompt doit rappeler le contexte, spécifier le format de sortie, le ton, et les red flags.
 
 ## 3. WARNINGS (alertes pour Laetitia)
 
-Signale :
-- Les informations manquantes (charte visuelle non abordée, persona non défini, etc.)
-- Les risques de surproduction (si le volume de livrables estimé dépasse le budget horaire)
-- Les dépendances bloquantes (livrable qui dépend d'un élément que la cliente n'a pas encore fourni)
-- Les incohérences entre la proposition et le kick-off
+Signale : infos manquantes, risques de surproduction, dépendances bloquantes, incohérences.
 
 ## FORMAT DE SORTIE
 
@@ -168,9 +148,9 @@ serve(async (req) => {
       });
     }
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
-      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY non configurée" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY non configurée" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -182,14 +162,13 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch all mission data in parallel (including sessions)
-    const [missionRes, discoveryRes, proposalRes, kickoffRes, actionsRes, sessionsRes] = await Promise.all([
+    // Fetch all mission data in parallel
+    const [missionRes, discoveryRes, proposalRes, kickoffRes, actionsRes] = await Promise.all([
       supabase.from("missions").select("*").eq("id", mission_id).single(),
       supabase.from("discovery_calls").select("*").eq("mission_id", mission_id).maybeSingle(),
       supabase.from("proposals").select("*").eq("mission_id", mission_id).order("version", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("kickoffs").select("*").eq("mission_id", mission_id).maybeSingle(),
-      supabase.from("actions").select("*").eq("mission_id", mission_id).order("sort_order"),
-      supabase.from("sessions").select("*").eq("mission_id", mission_id).order("session_date", { ascending: false }).limit(5),
+      supabase.from("actions").select("task, description, category, channel, status, assignee, phase, hours_estimated").eq("mission_id", mission_id).order("sort_order"),
     ]);
 
     if (missionRes.error || !missionRes.data) {
@@ -204,124 +183,78 @@ serve(async (req) => {
     const proposal = proposalRes.data;
     const kickoff = kickoffRes.data;
     const actions = actionsRes.data ?? [];
-    const sessions = sessionsRes.data ?? [];
 
-    // Build user prompt with all context
-    let userPrompt = `## MISSION\n`;
-    userPrompt += `- Client : ${mission.client_name}\n`;
-    userPrompt += `- Type de mission : ${mission.mission_type}\n`;
-    userPrompt += `- Montant : ${mission.amount ? mission.amount + '€ HT' : 'Non défini'}\n`;
-    userPrompt += `- Statut : ${mission.status}\n`;
-    userPrompt += `- Email client : ${mission.client_email || 'Non renseigné'}\n\n`;
+    // Build compact user prompt
+    let userPrompt = `## MISSION\nClient : ${mission.client_name} | Type : ${mission.mission_type} | Montant : ${mission.amount ? mission.amount + '€' : 'N/A'} | Statut : ${mission.status}\n\n`;
 
-    if (discovery) {
+    if (discovery?.structured_notes) {
       userPrompt += `## APPEL DÉCOUVERTE\n`;
-      if (discovery.structured_notes) {
-        const notes = discovery.structured_notes as { sections?: { title: string; content: string }[] };
-        if (notes.sections) {
-          notes.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
-        }
-      }
-      if (discovery.raw_notes) {
-        userPrompt += `### Notes brutes\n${discovery.raw_notes}\n\n`;
-      }
-      if (discovery.ai_suggested_type) {
-        userPrompt += `### Type suggéré par l'IA\n${discovery.ai_suggested_type}\n\n`;
+      const notes = discovery.structured_notes as { sections?: { title: string; content: string }[] };
+      if (notes.sections) {
+        notes.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
       }
     }
 
-    if (proposal) {
-      userPrompt += `## PROPOSITION COMMERCIALE (v${proposal.version})\n`;
+    if (proposal?.content) {
+      userPrompt += `## PROPOSITION COMMERCIALE\n`;
       const content = proposal.content as { sections?: { title: string; content: string }[] } | null;
       if (content?.sections) {
         content.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
       }
     }
 
-    if (kickoff) {
+    if (kickoff?.structured_notes) {
       userPrompt += `## KICK-OFF\n`;
-      if (kickoff.structured_notes) {
-        const notes = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
-        if (notes.sections) {
-          notes.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
-        }
-      }
-      if (kickoff.raw_notes) {
-        userPrompt += `### Notes brutes du kick-off\n${kickoff.raw_notes}\n\n`;
+      const notes = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
+      if (notes.sections) {
+        notes.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
       }
     }
 
     if (actions.length > 0) {
-      userPrompt += `## PLAN D'ACTIONS (${actions.length} actions)\n\n`;
-      const laetitia = actions.filter((a: any) => a.assignee === 'laetitia');
-      const client = actions.filter((a: any) => a.assignee === 'client');
-      if (laetitia.length) {
-        userPrompt += `### Actions Laetitia\n`;
-        laetitia.forEach((a: any) => {
-          userPrompt += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (catégorie: ' + a.category + ')' : ''}${a.channel ? ' [canal: ' + a.channel + ']' : ''}${a.hours_estimated ? ' (~' + a.hours_estimated + 'h)' : ''}\n`;
-        });
-        userPrompt += '\n';
-      }
-      if (client.length) {
-        userPrompt += `### Actions client·e\n`;
-        client.forEach((a: any) => {
-          userPrompt += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (catégorie: ' + a.category + ')' : ''}${a.channel ? ' [canal: ' + a.channel + ']' : ''}${a.hours_estimated ? ' (~' + a.hours_estimated + 'h)' : ''}\n`;
-        });
-        userPrompt += '\n';
-      }
-    }
-
-    if (sessions.length > 0) {
-      userPrompt += `## SESSIONS DE SUIVI (${sessions.length} dernières)\n\n`;
-      sessions.forEach((s: any) => {
-        userPrompt += `### Session du ${s.session_date} (${s.session_type})\n`;
-        if (s.structured_notes) {
-          const notes = s.structured_notes as { sections?: { title: string; content: string }[] };
-          if (notes.sections) {
-            notes.sections.forEach((sec: any) => { userPrompt += `#### ${sec.title}\n${sec.content}\n\n`; });
-          }
-        } else if (s.raw_notes) {
-          userPrompt += `${s.raw_notes}\n\n`;
-        }
+      userPrompt += `## ACTIONS (${actions.length})\n`;
+      actions.forEach((a: any) => {
+        userPrompt += `- [${a.assignee}/${a.status}] ${a.task}${a.category ? ' (' + a.category + ')' : ''}${a.phase ? ' {' + a.phase + '}' : ''}\n`;
       });
+      userPrompt += '\n';
     }
 
-    console.log("Calling Claude Sonnet for project kit generation...");
+    console.log("Calling Gemini 2.5 Pro for project kit generation...");
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 12000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
+        model: "google/gemini-2.5-pro",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
       }),
-      signal: controller.signal,
     });
-
-    clearTimeout(timeout);
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic API error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "Erreur API Claude" }), {
+      console.error("AI Gateway error:", response.status, errText);
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Trop de requêtes, réessaie dans quelques minutes." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "Erreur API IA" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const result = await response.json();
-    const textContent = result.content?.[0]?.text;
+    const textContent = result.choices?.[0]?.message?.content;
     if (!textContent) {
-      return new Response(JSON.stringify({ error: "Réponse Claude vide" }), {
+      return new Response(JSON.stringify({ error: "Réponse IA vide" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -335,8 +268,8 @@ serve(async (req) => {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      console.error("Invalid JSON from Claude:", textContent.slice(0, 500));
-      return new Response(JSON.stringify({ error: "Réponse JSON invalide de Claude" }), {
+      console.error("Invalid JSON from AI:", textContent.slice(0, 500));
+      return new Response(JSON.stringify({ error: "Réponse JSON invalide" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -347,10 +280,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("generate-claude-project error:", e);
-    const message = e instanceof Error && e.name === "AbortError"
-      ? "Timeout : la génération a pris trop de temps (max 3 min)"
-      : "Erreur interne";
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "Erreur interne" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
