@@ -146,6 +146,20 @@ serve(async (req) => {
       });
     }
 
+    // Validate user with anon key
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { mission_id } = await req.json();
     if (!mission_id) {
       return new Response(JSON.stringify({ error: "mission_id requis" }), {
@@ -162,18 +176,20 @@ serve(async (req) => {
       });
     }
 
+    // Use service role for data fetching
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch all mission data in parallel
-    const [missionRes, discoveryRes, proposalRes, kickoffRes, actionsRes] = await Promise.all([
+    // Fetch all mission data in parallel (including sessions)
+    const [missionRes, discoveryRes, proposalRes, kickoffRes, actionsRes, sessionsRes] = await Promise.all([
       supabase.from("missions").select("*").eq("id", mission_id).single(),
       supabase.from("discovery_calls").select("*").eq("mission_id", mission_id).maybeSingle(),
       supabase.from("proposals").select("*").eq("mission_id", mission_id).order("version", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("kickoffs").select("*").eq("mission_id", mission_id).maybeSingle(),
       supabase.from("actions").select("*").eq("mission_id", mission_id).order("sort_order"),
+      supabase.from("sessions").select("*").eq("mission_id", mission_id).order("session_date", { ascending: false }).limit(5),
     ]);
 
     if (missionRes.error || !missionRes.data) {
@@ -188,6 +204,7 @@ serve(async (req) => {
     const proposal = proposalRes.data;
     const kickoff = kickoffRes.data;
     const actions = actionsRes.data ?? [];
+    const sessions = sessionsRes.data ?? [];
 
     // Build user prompt with all context
     let userPrompt = `## MISSION\n`;
@@ -241,17 +258,32 @@ serve(async (req) => {
       if (laetitia.length) {
         userPrompt += `### Actions Laetitia\n`;
         laetitia.forEach((a: any) => {
-          userPrompt += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (catégorie: ' + a.category + ')' : ''}${a.channel ? ' [canal: ' + a.channel + ']' : ''}${a.phase ? ' {phase: ' + a.phase + '}' : ''}\n`;
+          userPrompt += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (catégorie: ' + a.category + ')' : ''}${a.channel ? ' [canal: ' + a.channel + ']' : ''}${a.hours_estimated ? ' (~' + a.hours_estimated + 'h)' : ''}\n`;
         });
         userPrompt += '\n';
       }
       if (client.length) {
         userPrompt += `### Actions client·e\n`;
         client.forEach((a: any) => {
-          userPrompt += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}\n`;
+          userPrompt += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (catégorie: ' + a.category + ')' : ''}${a.channel ? ' [canal: ' + a.channel + ']' : ''}${a.hours_estimated ? ' (~' + a.hours_estimated + 'h)' : ''}\n`;
         });
         userPrompt += '\n';
       }
+    }
+
+    if (sessions.length > 0) {
+      userPrompt += `## SESSIONS DE SUIVI (${sessions.length} dernières)\n\n`;
+      sessions.forEach((s: any) => {
+        userPrompt += `### Session du ${s.session_date} (${s.session_type})\n`;
+        if (s.structured_notes) {
+          const notes = s.structured_notes as { sections?: { title: string; content: string }[] };
+          if (notes.sections) {
+            notes.sections.forEach((sec: any) => { userPrompt += `#### ${sec.title}\n${sec.content}\n\n`; });
+          }
+        } else if (s.raw_notes) {
+          userPrompt += `${s.raw_notes}\n\n`;
+        }
+      });
     }
 
     console.log("Calling Claude Opus for project kit generation...");
