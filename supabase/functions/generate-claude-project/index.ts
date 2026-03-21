@@ -251,6 +251,17 @@ serve(async (req) => {
       contextSummary += "\n";
     }
 
+    const kickoff = kickoffRes.data;
+    if (kickoff?.structured_notes) {
+      const kn = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
+      if (kn?.sections) {
+        contextSummary += "## KICK-OFF (structuré)\n\n";
+        kn.sections.forEach((s: any) => {
+          contextSummary += "### " + s.title + "\n" + s.content.slice(0, 600) + (s.content.length > 600 ? "..." : "") + "\n\n";
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ prompt_system: promptSystem, context_summary: contextSummary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
