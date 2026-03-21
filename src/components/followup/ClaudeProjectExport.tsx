@@ -91,32 +91,65 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     setData(null);
     try {
       // Step 1: Generate prompt system
-      setStep('step1');
+      setStep('system');
       const { data: step1, error: err1 } = await supabase.functions.invoke('generate-claude-project', {
         body: { mission_id: missionId },
       });
       if (err1 || step1?.error) {
-        toast({ title: 'Erreur étape 1', description: step1?.error || "Échec de la génération du prompt système.", variant: 'destructive' });
+        toast({ title: 'Erreur', description: step1?.error || "Échec du prompt système.", variant: 'destructive' });
         return;
       }
 
-      // Step 2: Generate prompt chain
-      setStep('step2');
-      const { data: step2, error: err2 } = await supabase.functions.invoke('generate-claude-project-chain', {
-        body: { context: step1.context, prompt_system: step1.prompt_system },
+      const allPrompts: PromptChainItem[] = [];
+      const allWarnings: Warning[] = [];
+      let orderOffset = 0;
+
+      // Step 2: Phase A (Recherche)
+      setStep('phase_a');
+      const { data: phaseA, error: errA } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'A', previous_prompts: [] },
       });
-      if (err2 || step2?.error) {
-        toast({ title: 'Erreur étape 2', description: step2?.error || "Échec de la génération de la chaîne.", variant: 'destructive' });
-        setData({ prompt_system: step1.prompt_system, prompt_chain: [], warnings: [{ type: 'inconsistency' as const, message: "La chaîne de prompts n'a pas pu être générée. Le prompt système est disponible. Réessaie pour la chaîne." }] });
-        return;
+      if (!errA && !phaseA?.error && phaseA?.prompts) {
+        const mapped = phaseA.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'A' as const }));
+        allPrompts.push(...mapped);
+        orderOffset += mapped.length;
+        if (phaseA.warnings) allWarnings.push(...phaseA.warnings);
+      }
+
+      // Step 3: Phase B (Stratégie)
+      setStep('phase_b');
+      const { data: phaseB, error: errB } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'B', previous_prompts: allPrompts },
+      });
+      if (!errB && !phaseB?.error && phaseB?.prompts) {
+        const mapped = phaseB.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'B' as const }));
+        allPrompts.push(...mapped);
+        orderOffset += mapped.length;
+        if (phaseB.warnings) allWarnings.push(...phaseB.warnings);
+      }
+
+      // Step 4: Phase C (Production)
+      setStep('phase_c');
+      const { data: phaseC, error: errC } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'C', previous_prompts: allPrompts },
+      });
+      if (!errC && !phaseC?.error && phaseC?.prompts) {
+        const mapped = phaseC.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'C' as const }));
+        allPrompts.push(...mapped);
+        if (phaseC.warnings) allWarnings.push(...phaseC.warnings);
       }
 
       setData({
         prompt_system: step1.prompt_system,
-        prompt_chain: step2.prompt_chain || [],
-        warnings: step2.warnings || [],
+        prompt_chain: allPrompts,
+        warnings: allWarnings,
       });
-      toast({ title: 'Kit projet Claude généré ✓' });
+
+      if (allPrompts.length > 0) {
+        toast({ title: 'Kit projet Claude généré ✓', description: allPrompts.length + ' prompts en ' + new Set(allPrompts.map(p => p.phase)).size + ' phases.' });
+      } else {
+        toast({ title: 'Prompt système généré', description: 'Les phases n\'ont pas pu être générées. Le prompt système est disponible.', variant: 'destructive' });
+      }
     } catch {
       toast({ title: 'Erreur', description: "Erreur inattendue.", variant: 'destructive' });
     } finally {
