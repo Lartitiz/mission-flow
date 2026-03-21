@@ -198,7 +198,7 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-20250514",
         max_tokens: 6000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: context }],
@@ -235,11 +235,10 @@ serve(async (req) => {
     if (proposal?.content) {
       const pc = proposal.content as { sections?: { title: string; content: string }[] };
       if (pc?.sections) {
-        contextSummary += "## PROPOSITION (résumé)\n";
+        contextSummary += "## PROPOSITION (résumé)\n\n";
         pc.sections.forEach((s: any) => {
-          contextSummary += "- " + s.title + " : " + s.content.slice(0, 200) + (s.content.length > 200 ? "..." : "") + "\n";
+          contextSummary += "### " + s.title + "\n" + s.content.slice(0, 500) + (s.content.length > 500 ? "..." : "") + "\n\n";
         });
-        contextSummary += "\n";
       }
     }
 
@@ -250,6 +249,17 @@ serve(async (req) => {
         contextSummary += "- [" + a.assignee + "] " + a.task + (a.channel ? " [" + a.channel + "]" : "") + "\n";
       });
       contextSummary += "\n";
+    }
+
+    const kickoff = kickoffRes.data;
+    if (kickoff?.structured_notes) {
+      const kn = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
+      if (kn?.sections) {
+        contextSummary += "## KICK-OFF (structuré)\n\n";
+        kn.sections.forEach((s: any) => {
+          contextSummary += "### " + s.title + "\n" + s.content.slice(0, 600) + (s.content.length > 600 ? "..." : "") + "\n\n";
+        });
+      }
     }
 
     return new Response(JSON.stringify({ prompt_system: promptSystem, context_summary: contextSummary }), {
