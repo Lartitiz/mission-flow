@@ -244,10 +244,10 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         <div className="flex items-center gap-3 py-6">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span className="font-body text-sm text-muted-foreground">
-            {step === 'system' && 'Étape 1/4 : génération du prompt système...'}
-            {step === 'phase_a' && 'Étape 2/4 : prompts recherche (phase A)...'}
-            {step === 'phase_b' && 'Étape 3/4 : prompts stratégie (phase B)...'}
-            {step === 'phase_c' && 'Étape 4/4 : prompts production (phase C)...'}
+            {step === 'system' && 'Génération du prompt système...'}
+            {step === 'phase_a' && 'Phase A : prompts de recherche...'}
+            {step === 'phase_b' && 'Phase B : prompts stratégiques...'}
+            {step === 'phase_c' && 'Phase C : prompts de production (le plus long)...'}
           </span>
         </div>
       )}
