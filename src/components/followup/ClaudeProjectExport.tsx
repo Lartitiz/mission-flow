@@ -119,7 +119,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       // Step 3: Phase B (Stratégie)
       setStep('phase_b');
       const { data: phaseB, error: errB } = await supabase.functions.invoke('generate-claude-project-chain', {
-        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'B', previous_prompts: allPrompts },
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'B', previous_prompts: allPrompts.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })) },
       });
       if (!errB && !phaseB?.error && phaseB?.prompts) {
         const mapped = phaseB.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'B' as const }));
@@ -131,7 +131,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       // Step 4: Phase C (Production)
       setStep('phase_c');
       const { data: phaseC, error: errC } = await supabase.functions.invoke('generate-claude-project-chain', {
-        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'C', previous_prompts: allPrompts },
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'C', previous_prompts: allPrompts.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })) },
       });
       if (!errC && !phaseC?.error && phaseC?.prompts) {
         const mapped = phaseC.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'C' as const }));
