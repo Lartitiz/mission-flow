@@ -224,7 +224,35 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ prompt_system: promptSystem, context }), {
+    // Build condensed summary for step 2 phases
+    const mission = missionRes.data;
+    let contextSummary = "## MISSION\n";
+    contextSummary += "- Client : " + mission.client_name + "\n";
+    contextSummary += "- Type : " + mission.mission_type + "\n";
+    contextSummary += "- Montant : " + (mission.amount ? mission.amount + "€ HT" : "Non défini") + "\n\n";
+
+    const proposal = proposalRes.data;
+    if (proposal?.content) {
+      const pc = proposal.content as { sections?: { title: string; content: string }[] };
+      if (pc?.sections) {
+        contextSummary += "## PROPOSITION (résumé)\n";
+        pc.sections.forEach((s: any) => {
+          contextSummary += "- " + s.title + " : " + s.content.slice(0, 200) + (s.content.length > 200 ? "..." : "") + "\n";
+        });
+        contextSummary += "\n";
+      }
+    }
+
+    const actions = actionsRes.data ?? [];
+    if (actions.length > 0) {
+      contextSummary += "## ACTIONS (" + actions.length + ")\n";
+      actions.forEach((a: any) => {
+        contextSummary += "- [" + a.assignee + "] " + a.task + (a.channel ? " [" + a.channel + "]" : "") + "\n";
+      });
+      contextSummary += "\n";
+    }
+
+    return new Response(JSON.stringify({ prompt_system: promptSystem, context_summary: contextSummary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
