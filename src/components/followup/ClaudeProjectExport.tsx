@@ -57,6 +57,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [data, setData] = useState<ClaudeProjectData | null>(null);
+  const [step, setStep] = useState<'idle' | 'step1' | 'step2'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
 
   const { data: readiness } = useQuery({
@@ -89,24 +90,38 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     setIsGenerating(true);
     setData(null);
     try {
-      const { data: res, error } = await supabase.functions.invoke('generate-claude-project', {
+      // Step 1: Generate prompt system
+      setStep('step1');
+      const { data: step1, error: err1 } = await supabase.functions.invoke('generate-claude-project', {
         body: { mission_id: missionId },
       });
-      if (error) {
-        console.error('Edge function error:', error);
-        toast({ title: 'Erreur', description: "Impossible de générer le kit.", variant: 'destructive' });
+      if (err1 || step1?.error) {
+        toast({ title: 'Erreur étape 1', description: step1?.error || "Échec de la génération du prompt système.", variant: 'destructive' });
         return;
       }
-      if (res?.error) {
-        toast({ title: 'Erreur', description: res.error, variant: 'destructive' });
+
+      // Step 2: Generate prompt chain
+      setStep('step2');
+      const { data: step2, error: err2 } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: { context: step1.context, prompt_system: step1.prompt_system },
+      });
+      if (err2 || step2?.error) {
+        toast({ title: 'Erreur étape 2', description: step2?.error || "Échec de la génération de la chaîne.", variant: 'destructive' });
+        setData({ prompt_system: step1.prompt_system, prompt_chain: [], warnings: [{ type: 'inconsistency' as const, message: "La chaîne de prompts n'a pas pu être générée. Le prompt système est disponible. Réessaie pour la chaîne." }] });
         return;
       }
-      setData(res as ClaudeProjectData);
+
+      setData({
+        prompt_system: step1.prompt_system,
+        prompt_chain: step2.prompt_chain || [],
+        warnings: step2.warnings || [],
+      });
       toast({ title: 'Kit projet Claude généré ✓' });
     } catch {
       toast({ title: 'Erreur', description: "Erreur inattendue.", variant: 'destructive' });
     } finally {
       setIsGenerating(false);
+      setStep('idle');
     }
   };
 
@@ -164,7 +179,8 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         <div className="flex items-center gap-3 py-6">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span className="font-body text-sm text-muted-foreground">
-            Génération en cours... (jusqu'à 3 minutes)
+            {step === 'step1' && 'Étape 1/2 : génération du prompt système...'}
+            {step === 'step2' && 'Étape 2/2 : génération de la chaîne de prompts...'}
           </span>
         </div>
       )}

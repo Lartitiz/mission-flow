@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT_STEP1 = `Tu es l'assistante de Laetitia Mattioli (Nowadays Agency). Tu génères le prompt système (instructions permanentes) pour un nouveau projet Claude client.
+const SYSTEM_PROMPT = `Tu es l'assistante de Laetitia Mattioli (Nowadays Agency). Tu génères le prompt système (instructions permanentes) pour un nouveau projet Claude client.
 
 Tu reçois le contexte complet d'une mission. Tu dois produire un prompt système prêt à copier-coller dans les "Project Instructions" d'un projet Claude.
 
@@ -60,107 +60,67 @@ Validation :
 
 Réponds avec LE PROMPT SYSTÈME COMPLET uniquement. Pas de JSON, pas de backticks, pas de commentaire. Juste le texte du prompt, prêt à copier.`;
 
-const SYSTEM_PROMPT_STEP2 = `Tu es l'assistante de Laetitia Mattioli (Nowadays Agency). Tu génères la chaîne de prompts de travail pour un projet client.
+function buildContext(mission: any, discovery: any, proposal: any, kickoff: any, actions: any[], sessions: any[]): string {
+  let ctx = "## MISSION\n";
+  ctx += "- Client : " + mission.client_name + "\n";
+  ctx += "- Type : " + mission.mission_type + "\n";
+  ctx += "- Montant : " + (mission.amount ? mission.amount + "€ HT" : "Non défini") + "\n";
+  ctx += "- Statut : " + mission.status + "\n";
+  ctx += "- Email : " + (mission.client_email || "Non renseigné") + "\n\n";
 
-Tu reçois : le contexte de la mission ET le prompt système déjà généré (étape précédente).
-
-Génère une liste de prompts de travail adaptés à CETTE cliente. Pas des templates génériques.
-
-Structure en 3 phases :
-- Phase A (Recherche) : audits, analyse concurrentielle. Les prompts DOIVENT demander des recherches web.
-- Phase B (Stratégie) : positionnement, messages clés. Les prompts DOIVENT poser des questions à Laetitia pour trancher. Proposer 2 directions opposées quand pertinent.
-- Phase C (Production) : livrables dans l'ordre des dépendances. Un prompt = un livrable = un fichier.
-
-Règles par prompt :
-- Rappeler le contexte (qui, où on en est)
-- Spécifier le format de sortie (.docx, .xlsx, .pptx)
-- Spécifier le ton et les red flags
-- Identifier le matériau source (quel livrable précédent)
-- Prévoir des previews avant fichiers finaux quand pertinent
-- Les prompts doivent poser des questions et challenger, pas juste exécuter
-
-Adaptation au profil :
-- Cliente débutante/débordée : du prêt-à-publier
-- Cliente avancée : co-création
-- Structure avec équipe : livrables modulaires
-
-Génère aussi des WARNINGS :
-- Infos manquantes
-- Risques de surproduction (volume vs budget)
-- Dépendances bloquantes
-- Incohérences proposition/kick-off
-
-Réponds UNIQUEMENT en JSON valide :
-{
-  "prompt_chain": [
-    {
-      "order": 1,
-      "phase": "A",
-      "title": "Titre court",
-      "prompt": "Le prompt complet",
-      "output_format": ".docx",
-      "depends_on": null,
-      "is_pause": false
+  if (discovery) {
+    ctx += "## APPEL DÉCOUVERTE\n";
+    const notes = discovery.structured_notes as { sections?: { title: string; content: string }[] } | null;
+    if (notes?.sections) {
+      notes.sections.forEach((s: any) => { ctx += "### " + s.title + "\n" + s.content + "\n\n"; });
     }
-  ],
-  "warnings": [
-    {
-      "type": "missing_info",
-      "message": "Description"
-    }
-  ]
-}`;
-
-async function callClaude(apiKey: string, system: string, user: string, maxTokens: number): Promise<string> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000);
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-    signal: controller.signal,
-  });
-
-  clearTimeout(timeout);
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error("Anthropic API error:", response.status, errText);
-    if (response.status === 429) {
-      throw new Error("Trop de requêtes, réessaie dans quelques minutes.");
-    }
-    throw new Error(`API Claude erreur ${response.status}`);
+    if (discovery.raw_notes) ctx += "### Notes brutes\n" + discovery.raw_notes + "\n\n";
   }
 
-  const result = await response.json();
-  const text = result.content?.[0]?.text;
-  if (!text) throw new Error("Réponse Claude vide");
-  return text;
-}
-
-function extractJson(text: string): any {
-  let jsonStr = text.trim();
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch) {
-    jsonStr = jsonMatch[1].trim();
-  } else {
-    const firstBrace = jsonStr.indexOf('{');
-    const lastBrace = jsonStr.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace > firstBrace) {
-      jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+  if (proposal) {
+    ctx += "## PROPOSITION COMMERCIALE (v" + proposal.version + ")\n";
+    const content = proposal.content as { sections?: { title: string; content: string }[] } | null;
+    if (content?.sections) {
+      content.sections.forEach((s: any) => { ctx += "### " + s.title + "\n" + s.content + "\n\n"; });
     }
   }
-  return JSON.parse(jsonStr);
+
+  if (kickoff) {
+    ctx += "## KICK-OFF\n";
+    const notes = kickoff.structured_notes as { sections?: { title: string; content: string }[] } | null;
+    if (notes?.sections) {
+      notes.sections.forEach((s: any) => { ctx += "### " + s.title + "\n" + s.content + "\n\n"; });
+    }
+    if (kickoff.raw_notes) ctx += "### Notes brutes\n" + kickoff.raw_notes + "\n\n";
+  }
+
+  if (actions.length > 0) {
+    ctx += "## PLAN D'ACTIONS (" + actions.length + " actions)\n\n";
+    actions.forEach((a: any) => {
+      ctx += "- [" + a.assignee + "] [" + a.status + "] " + a.task;
+      if (a.description) ctx += " — " + a.description;
+      if (a.category) ctx += " (" + a.category + ")";
+      if (a.channel) ctx += " [" + a.channel + "]";
+      if (a.hours_estimated) ctx += " ~" + a.hours_estimated + "h";
+      ctx += "\n";
+    });
+    ctx += "\n";
+  }
+
+  if (sessions.length > 0) {
+    ctx += "## SESSIONS (" + sessions.length + " dernières)\n\n";
+    sessions.forEach((s: any) => {
+      ctx += "### " + s.session_date + " (" + s.session_type + ")\n";
+      const notes = s.structured_notes as { sections?: { title: string; content: string }[] } | null;
+      if (notes?.sections) {
+        notes.sections.forEach((sec: any) => { ctx += sec.title + " : " + sec.content + "\n\n"; });
+      } else if (s.raw_notes) {
+        ctx += s.raw_notes + "\n\n";
+      }
+    });
+  }
+
+  return ctx;
 }
 
 serve(async (req) => {
@@ -172,8 +132,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -185,24 +144,21 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { mission_id } = await req.json();
     if (!mission_id) {
       return new Response(JSON.stringify({ error: "mission_id requis" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
       return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY non configurée" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -222,132 +178,60 @@ serve(async (req) => {
 
     if (missionRes.error || !missionRes.data) {
       return new Response(JSON.stringify({ error: "Mission introuvable" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const mission = missionRes.data;
-    const discovery = discoveryRes.data;
-    const proposal = proposalRes.data;
-    const kickoff = kickoffRes.data;
-    const actions = actionsRes.data ?? [];
-    const sessions = sessionsRes.data ?? [];
-
-    // Build context shared between both calls
-    let context = `## MISSION\n`;
-    context += `- Client : ${mission.client_name}\n`;
-    context += `- Type : ${mission.mission_type}\n`;
-    context += `- Montant : ${mission.amount ? mission.amount + '€ HT' : 'Non défini'}\n`;
-    context += `- Statut : ${mission.status}\n`;
-    context += `- Email : ${mission.client_email || 'Non renseigné'}\n\n`;
-
-    if (discovery) {
-      context += `## APPEL DÉCOUVERTE\n`;
-      if (discovery.structured_notes) {
-        const notes = discovery.structured_notes as { sections?: { title: string; content: string }[] };
-        if (notes.sections) {
-          notes.sections.forEach((s: any) => { context += `### ${s.title}\n${s.content}\n\n`; });
-        }
-      }
-      if (discovery.raw_notes) {
-        context += `### Notes brutes\n${discovery.raw_notes}\n\n`;
-      }
-    }
-
-    if (proposal) {
-      context += `## PROPOSITION COMMERCIALE (v${proposal.version})\n`;
-      const content = proposal.content as { sections?: { title: string; content: string }[] } | null;
-      if (content?.sections) {
-        content.sections.forEach((s: any) => { context += `### ${s.title}\n${s.content}\n\n`; });
-      }
-    }
-
-    if (kickoff) {
-      context += `## KICK-OFF\n`;
-      if (kickoff.structured_notes) {
-        const notes = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
-        if (notes.sections) {
-          notes.sections.forEach((s: any) => { context += `### ${s.title}\n${s.content}\n\n`; });
-        }
-      }
-      if (kickoff.raw_notes) {
-        context += `### Notes brutes\n${kickoff.raw_notes}\n\n`;
-      }
-    }
-
-    if (actions.length > 0) {
-      context += `## PLAN D'ACTIONS (${actions.length} actions)\n\n`;
-      actions.forEach((a: any) => {
-        context += `- [${a.assignee}] [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (' + a.category + ')' : ''}${a.channel ? ' [' + a.channel + ']' : ''}${a.hours_estimated ? ' ~' + a.hours_estimated + 'h' : ''}\n`;
-      });
-      context += '\n';
-    }
-
-    if (sessions.length > 0) {
-      context += `## SESSIONS (${sessions.length} dernières)\n\n`;
-      sessions.forEach((s: any) => {
-        context += `### ${s.session_date} (${s.session_type})\n`;
-        if (s.structured_notes) {
-          const notes = s.structured_notes as { sections?: { title: string; content: string }[] };
-          if (notes.sections) {
-            notes.sections.forEach((sec: any) => { context += `${sec.title} : ${sec.content}\n\n`; });
-          }
-        } else if (s.raw_notes) {
-          context += `${s.raw_notes}\n\n`;
-        }
-      });
-    }
-
-    // STEP 1: Generate prompt system (plain text, no JSON)
-    console.log("Step 1/2: Generating prompt system...");
-    const promptSystem = await callClaude(
-      ANTHROPIC_API_KEY,
-      SYSTEM_PROMPT_STEP1,
-      context,
-      6000
+    const context = buildContext(
+      missionRes.data, discoveryRes.data, proposalRes.data,
+      kickoffRes.data, actionsRes.data ?? [], sessionsRes.data ?? []
     );
 
-    // STEP 2: Generate prompt chain + warnings (JSON)
-    console.log("Step 2/2: Generating prompt chain...");
-    const step2Input = `${context}\n\n## PROMPT SYSTÈME DÉJÀ GÉNÉRÉ (pour référence)\n\n${promptSystem}`;
-    const chainRaw = await callClaude(
-      ANTHROPIC_API_KEY,
-      SYSTEM_PROMPT_STEP2,
-      step2Input,
-      8000
-    );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000);
 
-    let chainParsed;
-    try {
-      chainParsed = extractJson(chainRaw);
-    } catch {
-      console.error("Failed to parse chain JSON. First 500 chars:", chainRaw.slice(0, 500));
-      return new Response(JSON.stringify({ error: "Erreur de parsing de la chaîne. Réessaie." }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 6000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: context }],
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Anthropic error:", response.status, errText);
+      return new Response(JSON.stringify({ error: "Erreur API Claude" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const result = {
-      prompt_system: promptSystem,
-      prompt_chain: Array.isArray(chainParsed.prompt_chain) ? chainParsed.prompt_chain : [],
-      warnings: Array.isArray(chainParsed.warnings) ? chainParsed.warnings : [],
-    };
+    const result = await response.json();
+    const promptSystem = result.content?.[0]?.text;
+    if (!promptSystem) {
+      return new Response(JSON.stringify({ error: "Réponse Claude vide" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    console.log(`Done. System: ${promptSystem.length} chars, Chain: ${result.prompt_chain.length} steps, Warnings: ${result.warnings.length}`);
-
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({ prompt_system: promptSystem, context }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-claude-project error:", e);
-    const message = e instanceof Error && e.name === "AbortError"
-      ? "Timeout : un des appels a pris trop de temps. Réessaie."
-      : e instanceof Error ? e.message : "Erreur interne";
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = e instanceof Error && e.name === "AbortError" ? "Timeout étape 1" : "Erreur interne";
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
