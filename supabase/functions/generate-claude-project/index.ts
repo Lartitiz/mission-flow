@@ -286,10 +286,10 @@ serve(async (req) => {
       });
     }
 
-    console.log("Calling Claude Opus for project kit generation...");
+    console.log("Calling Claude Sonnet for project kit generation...");
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -299,8 +299,8 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-20250514",
-        max_tokens: 16000,
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 12000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
       }),
