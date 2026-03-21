@@ -10,6 +10,7 @@ import { SessionHistory } from './SessionHistory';
 import { JournalSection } from './JournalSection';
 import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
+import { ClaudeProjectExport } from './ClaudeProjectExport';
 
 interface FollowUpTabProps {
   missionId: string;
