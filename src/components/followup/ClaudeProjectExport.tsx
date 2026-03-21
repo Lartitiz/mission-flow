@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -57,6 +58,23 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [isGenerating, setIsGenerating] = useState(false);
   const [data, setData] = useState<ClaudeProjectData | null>(null);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
+
+  const { data: readiness } = useQuery({
+    queryKey: ['claude-project-readiness', missionId],
+    queryFn: async () => {
+      const [proposalRes, kickoffRes] = await Promise.all([
+        supabase.from('proposals').select('id').eq('mission_id', missionId).limit(1).maybeSingle(),
+        supabase.from('kickoffs').select('id, structured_notes').eq('mission_id', missionId).maybeSingle(),
+      ]);
+      return {
+        hasProposal: !!proposalRes.data,
+        hasKickoff: !!kickoffRes.data,
+        hasStructuredKickoff: !!kickoffRes.data?.structured_notes,
+      };
+    },
+  });
+
+  const canGenerate = readiness?.hasProposal || readiness?.hasStructuredKickoff;
 
   const toggleSection = (key: string) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -129,10 +147,17 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       </div>
 
       {!data && !isGenerating && (
-        <Button onClick={handleGenerate} className="font-body gap-2">
-          <Sparkles className="h-4 w-4" />
-          Générer le kit projet Claude
-        </Button>
+        <div className="space-y-3">
+          {!canGenerate && readiness && (
+            <p className="font-body text-sm text-muted-foreground bg-muted rounded-lg p-3">
+              Il faut au minimum une proposition commerciale ou un kick-off structuré pour générer le kit.
+            </p>
+          )}
+          <Button onClick={handleGenerate} disabled={!canGenerate} className="font-body gap-2">
+            <Sparkles className="h-4 w-4" />
+            Générer le kit projet Claude
+          </Button>
+        </div>
       )}
 
       {isGenerating && (
@@ -172,6 +197,20 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                 {openSections.chain ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 Prompt chain ({data.prompt_chain.length} étapes)
               </CollapsibleTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const fullChain = data.prompt_chain
+                    .map(item => `--- ÉTAPE ${item.order} [Phase ${item.phase}] : ${item.title} (${item.output_format}) ---\n\n${item.prompt}`)
+                    .join('\n\n');
+                  copyToClipboard(fullChain, 'Chaîne complète');
+                }}
+                className="font-body gap-1.5 h-7 text-xs"
+              >
+                <Copy className="h-3 w-3" />
+                Copier toute la chaîne
+              </Button>
             </div>
             <CollapsibleContent>
               <div className="mt-2 space-y-2">
