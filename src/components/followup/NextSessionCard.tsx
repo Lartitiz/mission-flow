@@ -42,6 +42,32 @@ export function NextSessionCard({ session, onUpdate, onCreate, missionId, missio
     }
   };
 
+  const handleSuggestAgenda = async () => {
+    setIsSuggesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-session-agenda', {
+        body: { mission_id: missionId },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+      if (data?.agenda) {
+        setAgenda(data.agenda);
+        if (session) {
+          onUpdate(session.id, { next_session_agenda: data.agenda });
+        }
+        toast({ title: 'Agenda suggéré ✓' });
+      }
+    } catch (err) {
+      console.error('Suggest agenda error:', err);
+      toast({ title: 'Erreur', description: "Impossible de générer l'agenda.", variant: 'destructive' });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
   const handlePlan = async () => {
     setCreating(true);
     try {
