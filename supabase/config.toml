@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.assign-phases]
 verify_jwt = false
+
+[functions.generate-claude-project]
+verify_jwt = false
