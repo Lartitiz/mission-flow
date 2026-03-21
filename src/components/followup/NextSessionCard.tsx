@@ -4,25 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { TablesInsert } from '@/integrations/supabase/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface NextSessionCardProps {
   session: Session | null;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onCreate: (session: TablesInsert<'sessions'>) => Promise<Session>;
   missionId: string;
+  missionType?: string;
   isSaving: boolean;
 }
 
-export function NextSessionCard({ session, onUpdate, onCreate, missionId, isSaving }: NextSessionCardProps) {
+export function NextSessionCard({ session, onUpdate, onCreate, missionId, missionType, isSaving }: NextSessionCardProps) {
+  const { toast } = useToast();
   const [agenda, setAgenda] = useState(session?.next_session_agenda ?? '');
-  const [date, setDate] = useState<Date | undefined>(
-    session?.next_session_date ? new Date(session.next_session_date) : undefined
-  );
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const hasNextSession = !!date;
