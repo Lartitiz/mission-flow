@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.generate-claude-project]
 verify_jwt = false
+
+[functions.suggest-session-agenda]
+verify_jwt = false

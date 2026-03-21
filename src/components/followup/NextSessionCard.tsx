@@ -4,25 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { TablesInsert } from '@/integrations/supabase/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface NextSessionCardProps {
   session: Session | null;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onCreate: (session: TablesInsert<'sessions'>) => Promise<Session>;
   missionId: string;
+  missionType?: string;
   isSaving: boolean;
 }
 
-export function NextSessionCard({ session, onUpdate, onCreate, missionId, isSaving }: NextSessionCardProps) {
+export function NextSessionCard({ session, onUpdate, onCreate, missionId, missionType, isSaving }: NextSessionCardProps) {
+  const { toast } = useToast();
   const [agenda, setAgenda] = useState(session?.next_session_agenda ?? '');
   const [date, setDate] = useState<Date | undefined>(
     session?.next_session_date ? new Date(session.next_session_date) : undefined
   );
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const hasNextSession = !!date;
@@ -37,6 +42,32 @@ export function NextSessionCard({ session, onUpdate, onCreate, missionId, isSavi
   const handleAgendaBlur = () => {
     if (session && agenda !== (session.next_session_agenda ?? '')) {
       onUpdate(session.id, { next_session_agenda: agenda });
+    }
+  };
+
+  const handleSuggestAgenda = async () => {
+    setIsSuggesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-session-agenda', {
+        body: { mission_id: missionId },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'Erreur', description: data.error, variant: 'destructive' });
+        return;
+      }
+      if (data?.agenda) {
+        setAgenda(data.agenda);
+        if (session) {
+          onUpdate(session.id, { next_session_agenda: data.agenda });
+        }
+        toast({ title: 'Agenda suggéré ✓' });
+      }
+    } catch (err) {
+      console.error('Suggest agenda error:', err);
+      toast({ title: 'Erreur', description: "Impossible de générer l'agenda.", variant: 'destructive' });
+    } finally {
+      setIsSuggesting(false);
     }
   };
 
@@ -82,6 +113,25 @@ export function NextSessionCard({ session, onUpdate, onCreate, missionId, isSavi
               </PopoverContent>
             </Popover>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSuggestAgenda}
+            disabled={isSuggesting}
+            className="font-body gap-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {isSuggesting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Génération...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" />
+                Suggérer l'agenda
+              </>
+            )}
+          </Button>
           <Textarea
             value={agenda}
             onChange={(e) => setAgenda(e.target.value)}

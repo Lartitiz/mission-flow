@@ -88,6 +88,7 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
         onUpdate={updateSession}
         onCreate={createSession}
         missionId={missionId}
+        missionType={missionType}
         isSaving={sessionsSaving}
       />
 
