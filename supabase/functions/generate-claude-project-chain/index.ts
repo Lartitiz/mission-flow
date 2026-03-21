@@ -82,6 +82,10 @@ Règles :
 
 Signale en WARNING si le volume de livrables semble dépasser le budget horaire de la mission.
 
+IMPORTANT : sois concis dans les prompts. Chaque prompt fait 150-250 mots maximum. Ne développe pas les instructions évidentes (le prompt système du projet contient déjà les règles de ton, les red flags, etc. — ne les répète pas dans chaque prompt). Concentre-toi sur ce qui est SPÉCIFIQUE à ce livrable.
+
+Si la mission a plus de 6 livrables de production, regroupe les livrables similaires (par exemple : 4 posts Instagram = 1 seul prompt "batch contenus Instagram", pas 4 prompts séparés).
+
 Réponds UNIQUEMENT en JSON valide :
 {
   "prompts": [
@@ -149,7 +153,7 @@ serve(async (req) => {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 50000);
+    const timeout = setTimeout(() => controller.abort(), 90000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -160,7 +164,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 3000,
+        max_tokens: 4096,
         system: PHASE_PROMPTS[phase],
         messages: [{ role: "user", content: userPrompt }],
       }),
@@ -214,7 +218,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("generate-claude-project-chain error:", e);
     const msg = e instanceof Error && e.name === "AbortError"
-      ? "Timeout sur cette phase. Réessaie."
+      ? "La génération a pris trop de temps (phase " + phase + "). Réessaie — ça fonctionne souvent au 2e essai."
       : "Erreur interne";
     return new Response(JSON.stringify({ error: msg }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
