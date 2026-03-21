@@ -107,6 +107,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
       <DocumentsSection missionId={missionId} />
 
       <ContextExport missionId={missionId} clientName={clientName} />
+
+      <ClaudeProjectExport missionId={missionId} clientName={clientName} />
     </div>
   );
 }
