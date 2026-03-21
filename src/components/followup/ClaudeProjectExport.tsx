@@ -128,15 +128,47 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         if (phaseB.warnings) allWarnings.push(...phaseB.warnings);
       }
 
-      // Step 4: Phase C (Production)
+      // Step 4: Phase C (Production) — avec retry automatique
       setStep('phase_c');
-      const { data: phaseC, error: errC } = await supabase.functions.invoke('generate-claude-project-chain', {
-        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'C', previous_prompts: allPrompts.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })) },
-      });
-      if (!errC && !phaseC?.error && phaseC?.prompts) {
-        const mapped = phaseC.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'C' as const }));
+      let phaseC = null;
+      let phaseCError = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const { data: result, error: err } = await supabase.functions.invoke('generate-claude-project-chain', {
+          body: {
+            context_summary: step1.context_summary,
+            prompt_system: step1.prompt_system,
+            phase: 'C',
+            previous_prompts: allPrompts.map(p => ({
+              order: p.order,
+              phase: p.phase,
+              title: p.title,
+              output_format: p.output_format,
+            })),
+          },
+        });
+        if (!err && !result?.error && result?.prompts) {
+          phaseC = result;
+          break;
+        }
+        phaseCError = result?.error || err?.message;
+        if (attempt === 0) {
+          console.warn('Phase C attempt 1 failed, retrying...', phaseCError);
+        }
+      }
+
+      if (phaseC?.prompts) {
+        const mapped = phaseC.prompts.map((p: any, i: number) => ({
+          ...p,
+          order: orderOffset + i + 1,
+          phase: 'C' as const,
+        }));
         allPrompts.push(...mapped);
         if (phaseC.warnings) allWarnings.push(...phaseC.warnings);
+      } else {
+        allWarnings.push({
+          type: 'dependency' as const,
+          message: 'La phase C (Production) n\'a pas pu être générée après 2 tentatives. Tu peux la relancer séparément ou rédiger les prompts de production manuellement à partir du prompt système.',
+        });
       }
 
       setData({
