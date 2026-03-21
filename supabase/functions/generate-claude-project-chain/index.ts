@@ -82,6 +82,10 @@ Règles :
 
 Signale en WARNING si le volume de livrables semble dépasser le budget horaire de la mission.
 
+IMPORTANT : sois concis dans les prompts. Chaque prompt fait 150-250 mots maximum. Ne développe pas les instructions évidentes (le prompt système du projet contient déjà les règles de ton, les red flags, etc. — ne les répète pas dans chaque prompt). Concentre-toi sur ce qui est SPÉCIFIQUE à ce livrable.
+
+Si la mission a plus de 6 livrables de production, regroupe les livrables similaires (par exemple : 4 posts Instagram = 1 seul prompt "batch contenus Instagram", pas 4 prompts séparés).
+
 Réponds UNIQUEMENT en JSON valide :
 {
   "prompts": [
