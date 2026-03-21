@@ -57,7 +57,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [data, setData] = useState<ClaudeProjectData | null>(null);
-  const [step, setStep] = useState<'idle' | 'step1' | 'step2'>('idle');
+  const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
 
   const { data: readiness } = useQuery({
