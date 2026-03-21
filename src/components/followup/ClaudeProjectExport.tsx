@@ -1,0 +1,259 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { saveAs } from 'file-saver';
+
+interface PromptChainItem {
+  order: number;
+  phase: 'A' | 'B' | 'C';
+  title: string;
+  prompt: string;
+  output_format: string;
+  depends_on: number | null;
+  is_pause: boolean;
+}
+
+interface Warning {
+  type: 'missing_info' | 'overscope' | 'dependency' | 'inconsistency';
+  message: string;
+}
+
+interface ClaudeProjectData {
+  prompt_system: string;
+  prompt_chain: PromptChainItem[];
+  warnings: Warning[];
+}
+
+interface ClaudeProjectExportProps {
+  missionId: string;
+  clientName: string;
+}
+
+const PHASE_COLORS: Record<string, string> = {
+  A: 'bg-blue-100 text-blue-800',
+  B: 'bg-purple-100 text-purple-800',
+  C: 'bg-green-100 text-green-800',
+};
+
+const PHASE_LABELS: Record<string, string> = {
+  A: 'Recherche',
+  B: 'Stratégie',
+  C: 'Production',
+};
+
+const WARNING_CONFIG: Record<string, { icon: typeof AlertTriangle; color: string; label: string }> = {
+  missing_info: { icon: AlertTriangle, color: 'bg-yellow-100 text-yellow-800', label: 'Info manquante' },
+  overscope: { icon: AlertCircle, color: 'bg-red-100 text-red-800', label: 'Surproduction' },
+  dependency: { icon: Link2, color: 'bg-blue-100 text-blue-800', label: 'Dépendance' },
+  inconsistency: { icon: Info, color: 'bg-orange-100 text-orange-800', label: 'Incohérence' },
+};
+
+export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExportProps) {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [data, setData] = useState<ClaudeProjectData | null>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    await navigator.clipboard.writeText(text);
+    toast({ title: `${label} copié ✓` });
+  };
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setData(null);
+    try {
+      const { data: res, error } = await supabase.functions.invoke('generate-claude-project', {
+        body: { mission_id: missionId },
+      });
+      if (error) {
+        console.error('Edge function error:', error);
+        toast({ title: 'Erreur', description: "Impossible de générer le kit.", variant: 'destructive' });
+        return;
+      }
+      if (res?.error) {
+        toast({ title: 'Erreur', description: res.error, variant: 'destructive' });
+        return;
+      }
+      setData(res as ClaudeProjectData);
+      toast({ title: 'Kit projet Claude généré ✓' });
+    } catch {
+      toast({ title: 'Erreur', description: "Erreur inattendue.", variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const exportFullMd = () => {
+    if (!data) return;
+    let md = `# Kit projet Claude — ${clientName}\n\n`;
+    md += `---\n\n`;
+    md += `## Prompt système\n\n${data.prompt_system}\n\n`;
+    md += `---\n\n`;
+    md += `## Prompt chain\n\n`;
+    md += `> Ce plan évolue au terrain. Si un besoin non prévu émerge, on le signale et on adapte.\n\n`;
+    data.prompt_chain.forEach((item) => {
+      md += `### ${item.order}. [Phase ${item.phase}] ${item.title}${item.is_pause ? ' ⏸️ PAUSE STRATÉGIQUE' : ''}\n\n`;
+      md += `Format de sortie : ${item.output_format}\n`;
+      if (item.depends_on) md += `Dépend de : étape ${item.depends_on}\n`;
+      md += `\n${item.prompt}\n\n---\n\n`;
+    });
+    if (data.warnings.length > 0) {
+      md += `## Alertes\n\n`;
+      data.warnings.forEach((w) => {
+        md += `- **[${w.type}]** ${w.message}\n`;
+      });
+    }
+    saveAs(new Blob([md], { type: 'text/markdown' }), `Kit_Claude_${clientName.replace(/\s+/g, '_')}.md`);
+    toast({ title: 'Export .md téléchargé ✓' });
+  };
+
+  return (
+    <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
+        {data && (
+          <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
+            <Download className="h-3.5 w-3.5" />
+            Exporter en .md
+          </Button>
+        )}
+      </div>
+
+      {!data && !isGenerating && (
+        <Button onClick={handleGenerate} className="font-body gap-2">
+          <Sparkles className="h-4 w-4" />
+          Générer le kit projet Claude
+        </Button>
+      )}
+
+      {isGenerating && (
+        <div className="flex items-center gap-3 py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span className="font-body text-sm text-muted-foreground">
+            Génération en cours... (jusqu'à 3 minutes)
+          </span>
+        </div>
+      )}
+
+      {data && (
+        <div className="space-y-3">
+          {/* Prompt système */}
+          <Collapsible open={openSections.system} onOpenChange={() => toggleSection('system')}>
+            <div className="flex items-center justify-between">
+              <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
+                {openSections.system ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                Prompt système
+              </CollapsibleTrigger>
+              <Button variant="ghost" size="sm" onClick={() => copyToClipboard(data.prompt_system, 'Prompt système')} className="font-body gap-1.5 h-7 text-xs">
+                <Copy className="h-3 w-3" />
+                Copier
+              </Button>
+            </div>
+            <CollapsibleContent>
+              <pre className="mt-2 p-4 bg-muted rounded-lg text-xs font-body whitespace-pre-wrap max-h-96 overflow-y-auto leading-relaxed">
+                {data.prompt_system}
+              </pre>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Prompt chain */}
+          <Collapsible open={openSections.chain} onOpenChange={() => toggleSection('chain')}>
+            <div className="flex items-center justify-between">
+              <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
+                {openSections.chain ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                Prompt chain ({data.prompt_chain.length} étapes)
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+              <div className="mt-2 space-y-2">
+                {data.prompt_chain.map((item) => (
+                  <div key={item.order} className="border rounded-lg p-3 bg-background">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-body text-xs font-bold text-muted-foreground">
+                          #{item.order}
+                        </span>
+                        <Badge className={`text-[10px] font-semibold ${PHASE_COLORS[item.phase] || 'bg-muted text-muted-foreground'}`}>
+                          {PHASE_LABELS[item.phase] || item.phase}
+                        </Badge>
+                        <span className="font-body text-sm font-medium text-foreground">
+                          {item.title}
+                        </span>
+                        {item.is_pause && (
+                          <Badge className="text-[10px] font-semibold bg-orange-100 text-orange-800">
+                            ⏸ Pause stratégique
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-[10px]">
+                          {item.output_format}
+                        </Badge>
+                        {item.depends_on && (
+                          <span className="text-[10px] text-muted-foreground font-body">
+                            dépend de #{item.depends_on}
+                          </span>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => copyToClipboard(item.prompt, `Prompt #${item.order}`)} className="font-body gap-1.5 h-7 text-xs shrink-0">
+                        <Copy className="h-3 w-3" />
+                        Copier
+                      </Button>
+                    </div>
+                    <pre className="p-3 bg-muted rounded text-xs font-body whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+                      {item.prompt}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Warnings */}
+          {data.warnings.length > 0 && (
+            <Collapsible open={openSections.warnings} onOpenChange={() => toggleSection('warnings')}>
+              <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
+                {openSections.warnings ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                Alertes ({data.warnings.length})
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 space-y-2">
+                  {data.warnings.map((w, i) => {
+                    const config = WARNING_CONFIG[w.type] || WARNING_CONFIG.missing_info;
+                    const Icon = config.icon;
+                    return (
+                      <div key={i} className="flex items-start gap-3 p-3 border rounded-lg bg-background">
+                        <Icon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                        <div className="flex-1">
+                          <Badge className={`text-[10px] font-semibold mb-1 ${config.color}`}>
+                            {config.label}
+                          </Badge>
+                          <p className="font-body text-sm text-foreground">{w.message}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Regenerate */}
+          <div className="pt-2">
+            <Button variant="outline" size="sm" onClick={handleGenerate} disabled={isGenerating} className="font-body gap-2">
+              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Regénérer
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
