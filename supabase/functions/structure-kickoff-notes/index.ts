@@ -92,13 +92,20 @@ serve(async (req) => {
       });
     }
 
+    // Truncate very long notes to avoid timeout (max ~30000 chars ≈ 8000 tokens)
+    const truncatedNotes = raw_notes.length > 30000 ? raw_notes.slice(0, 30000) + "\n\n[... notes tronquées pour des raisons de longueur]" : raw_notes;
+
+    // Truncate proposal context too
+    const proposalCtx = proposal_content ? JSON.stringify(proposal_content, null, 2) : "";
+    const truncatedProposal = proposalCtx.length > 5000 ? proposalCtx.slice(0, 5000) + "..." : proposalCtx;
+
     const userPrompt = `Notes brutes du kick-off :
 
-${raw_notes}
+${truncatedNotes}
 
 Type de mission : ${mission_type || "non_determine"}
 
-${proposal_content ? `Contexte (proposition commerciale) :\n${JSON.stringify(proposal_content, null, 2)}` : ""}`;
+${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal}` : ""}`;
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
@@ -109,7 +116,7 @@ ${proposal_content ? `Contexte (proposition commerciale) :\n${JSON.stringify(pro
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    const timeout = setTimeout(() => controller.abort(), 140000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
