@@ -14,21 +14,21 @@ La phase A couvre : audits de l'existant, analyse concurrentielle, vérification
 
 RÈGLE FONDAMENTALE : les prompts que tu génères sont des INSTRUCTIONS DE TRAVAIL pour un autre Claude dans un projet dédié. Ils doivent demander à Claude de FAIRE le travail de recherche, pas de deviner les résultats. Chaque prompt doit demander des recherches web réelles et produire des observations factuelles.
 
-RÈGLE D'AUTONOMIE : chaque prompt généré sera copié-collé SEUL dans une conversation d'un projet Claude. Il n'aura PAS accès aux résultats des autres prompts dans la même conversation. Il a accès au prompt système du projet (contexte client, règles, red flags) et aux documents uploadés dans le projet. Donc :
-- Ne JAMAIS écrire "à partir de l'étape 3" ou "en suivant les résultats de l'étape précédente"
-- Écrire plutôt "à partir des informations disponibles dans le projet" ou "en te basant sur le contexte client"
-- Si un prompt a besoin d'un livrable produit par un autre prompt, écrire "à partir du [nom du livrable] (document disponible dans le projet)" — Laetitia aura uploadé le livrable validé avant de lancer ce prompt
+RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux résultats des autres prompts. Il a accès au prompt système du projet (contexte client, règles, red flags) et aux documents uploadés. Donc :
+- Ne JAMAIS écrire "à l'étape X" ou "résultats de l'étape précédente"
+- Écrire plutôt "à partir des informations du projet" ou "en te basant sur le contexte client"
+- Chaque prompt doit être compréhensible et exécutable de façon indépendante
 
-Génère entre 2 et 5 prompts de recherche adaptés à CETTE cliente et à SES canaux/missions spécifiques.
+Génère entre 2 et 5 prompts de recherche adaptés à CETTE cliente et à SES canaux/missions.
 
 Règles pour chaque prompt :
-- Rappeler qui est la cliente et ce qu'on cherche
+- Rappeler brièvement qui est la cliente et ce qu'on cherche
 - Demander des recherches WEB RÉELLES (pas de la réorganisation de contexte)
-- Le format de sortie est "chat" ou "preview" (c'est de l'investigation, pas des livrables)
+- Format de sortie : "chat" (c'est de l'investigation, pas des livrables)
 - Le prompt doit PRODUIRE des observations, pas poser des questions à Laetitia à ce stade
-- Ne PAS inventer de données, de chiffres, de noms de concurrents — le prompt demande à Claude de les CHERCHER
+- Ne PAS inventer de données — le prompt demande à Claude de les CHERCHER
 
-CONCISION : chaque prompt fait 100-200 mots max. Le prompt système du projet contient déjà le contexte client, le ton, les red flags — ne les répète pas.
+CONCISION : chaque prompt fait 100-200 mots max.
 
 Réponds UNIQUEMENT en JSON valide :
 {
@@ -44,29 +44,25 @@ Réponds UNIQUEMENT en JSON valide :
 
 La phase B couvre : positionnement, messages clés, ligne éditoriale, choix structurants. C'est la phase où Laetitia TRANCHE.
 
-RÈGLE FONDAMENTALE : les prompts phase B s'appuient sur les résultats des audits de la phase A. Ils ne doivent JAMAIS inventer des options stratégiques à partir de rien. Ils doivent :
-1. S'appuyer explicitement sur les résultats des audits ("À partir de l'audit Instagram disponible dans le projet...")
+RÈGLE FONDAMENTALE : les prompts phase B s'appuient sur le travail de recherche fait en phase A. Ils ne doivent JAMAIS inventer des options stratégiques à partir de rien. Ils doivent :
+1. Demander à Claude de synthétiser les observations issues des audits (disponibles dans le projet)
 2. Poser des QUESTIONS OUVERTES à Laetitia, pas des QCM avec options pré-remplies
-3. Demander à Claude de présenter ses observations PUIS de poser les questions qui permettent de trancher
+3. Laisser Claude présenter ses observations PUIS poser les questions qui permettent de trancher
 
-RÈGLE D'AUTONOMIE : chaque prompt généré sera copié-collé SEUL dans une conversation d'un projet Claude. Il n'aura PAS accès aux résultats des autres prompts. Il a accès au prompt système (contexte client, règles) et aux documents uploadés. Donc :
-- Ne JAMAIS écrire "à partir de l'audit réalisé à l'étape 2" ou "en suivant l'étape X"
-- Écrire plutôt "à partir de l'audit [Instagram/site/concurrence] disponible dans le projet"
-- Si un prompt a besoin d'un livrable produit avant, nommer le livrable clairement : "à partir de l'audit Instagram (uploadé dans le projet)" et pas "à partir de l'étape 1"
-- Le prompt doit être compréhensible et exécutable même si c'est le premier prompt lancé dans la conversation
+RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux conversations précédentes. Il a accès au prompt système et aux documents uploadés (dont les audits réalisés en phase A que Laetitia aura uploadés). Donc :
+- Ne JAMAIS écrire "à l'étape 2" ou "en suivant l'étape X"
+- Écrire "à partir de l'audit Instagram disponible dans le projet" ou "en te basant sur l'analyse concurrentielle uploadée"
+- Nommer les LIVRABLES par leur nom, pas par leur numéro
 
 MAUVAIS EXEMPLE (ne fais JAMAIS ça) :
-"Je vois 3 axes de positionnement possibles : Option A : l'innovation. Option B : l'expérience. Option C : le bridge culturel. Quel axe préfères-tu ?"
-→ C'est mauvais parce que les options sont inventées sans recherche réelle.
+"Je vois 3 axes possibles : Option A, Option B, Option C. Lequel préfères-tu ?"
 
 BON EXEMPLE :
-"À partir de l'analyse concurrentielle et de l'audit de la communication existante (documents disponibles dans le projet), synthétise les forces et faiblesses identifiées, puis identifie les espaces de positionnement où la concurrence est faible. Présente tes observations à Laetitia avec les questions suivantes : qu'est-ce qui résonne le plus avec la vision de la cliente ? Y a-t-il des territoires qu'on doit exclure ?"
+"À partir de l'analyse concurrentielle et de l'audit de communication (documents disponibles dans le projet), synthétise les forces, faiblesses et espaces libres identifiés. Puis pose à Laetitia les questions qui permettent de trancher le positionnement : qu'est-ce qui résonne avec la vision de la cliente ? Quels territoires exclure ? Quels critères prioriser (budget, délai, cible) ?"
 
-Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) : un moment où Laetitia doit valider avant de passer à la production. Le prompt de pause ne produit rien — il résume où on en est et liste les décisions à prendre.
+Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) : un moment où on résume les décisions prises et celles qui restent à prendre.
 
-Génère entre 2 et 4 prompts stratégiques.
-
-CONCISION : chaque prompt fait 100-200 mots max. Pas de répétition du contexte client ni des red flags (déjà dans le prompt système).
+Génère entre 2 et 4 prompts. CONCISION : 100-200 mots chacun.
 
 Réponds UNIQUEMENT en JSON valide :
 {
@@ -82,27 +78,30 @@ Réponds UNIQUEMENT en JSON valide :
 
 La phase C couvre : tous les livrables concrets. Un prompt = un livrable (ou un batch de livrables similaires) = un fichier.
 
-RÈGLE FONDAMENTALE : chaque prompt de production s'appuie sur les décisions stratégiques validées et les livrables déjà produits. Il dit explicitement : "En suivant le positionnement et les messages clés validés (documents disponibles dans le projet), produis..."
+RÈGLE FONDAMENTALE : chaque prompt de production s'appuie sur les décisions stratégiques validées. Il ne réinvente PAS la stratégie, il EXÉCUTE ce qui a été décidé.
 
-RÈGLE D'AUTONOMIE : chaque prompt généré sera copié-collé SEUL dans une conversation d'un projet Claude. Il n'aura PAS accès aux résultats des autres prompts. Il a accès au prompt système (contexte client, ton, red flags, règles) et aux documents uploadés (livrables validés par Laetitia). Donc :
+RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux conversations précédentes. Il a accès au prompt système (contexte, ton, red flags) et aux documents uploadés (audits, positionnement validé, ligne éditoriale, etc.). Donc :
 - Ne JAMAIS écrire "en suivant le positionnement validé à l'étape 5"
-- Écrire plutôt "en suivant le positionnement et les messages clés validés (documents disponibles dans le projet)"
-- Si un prompt produit un fichier (.docx, .xlsx, .pptx), préciser ce que le fichier doit contenir de façon autonome, sans supposer que Claude a vu les étapes précédentes
-- Chaque prompt doit être compréhensible et exécutable de façon indépendante
+- Écrire "en suivant le positionnement et les messages clés validés (documents disponibles dans le projet)"
+- Nommer les documents sources explicitement par leur NOM, pas par un numéro d'étape
+- Chaque prompt doit être exécutable de façon indépendante
 
-Les prompts ne réinventent PAS la stratégie. Ils EXÉCUTENT ce qui a été décidé.
+RÈGLE DU DESTINATAIRE : chaque prompt précise QUI va utiliser le livrable et COMMENT. Un calendrier éditorial pour une solopreneuse débutante (qui va l'appliquer seule) n'est pas structuré pareil qu'un document stratégique pour une coopérative (qui sera présenté en CA). Le profil de la cliente est dans le kick-off — l'utiliser.
 
-Adaptation au profil cliente :
-- Cliente débutante/débordée → prompts qui produisent du prêt-à-publier ("rédige le post complet, prêt à copier-coller")
-- Cliente avancée → prompts en co-création ("affine et enrichis le brouillon fourni par la cliente")
-- Structure avec équipe → livrables modulaires ("produis un document avec des briques que l'équipe peut piocher")
+RÈGLE POST-LIVRABLE : chaque prompt de production demande EN PLUS du fichier :
+- Un résumé en 3-5 lignes de ce qui a été produit (pour que Laetitia puisse l'envoyer à la cliente sans relire tout le document)
+- La liste des prochaines actions (ce que Laetitia doit faire, ce que la cliente doit faire)
 
-Regrouper les livrables similaires : 4 posts Instagram = 1 prompt "batch contenus Instagram", pas 4 prompts séparés.
+Adaptation au profil :
+- Cliente débutante/débordée → prêt-à-publier, actionnable immédiatement
+- Cliente avancée → co-création, affinage de ses brouillons
+- Structure avec équipe → briques modulables que l'équipe pioche
 
-CONCISION : chaque prompt fait 100-200 mots max. Le prompt système contient le ton, les red flags, les règles de style — ne les répète pas dans chaque prompt. Concentre-toi sur ce qui est SPÉCIFIQUE à ce livrable : le format de sortie, la structure attendue.
-- Chaque prompt nomme explicitement les documents sources dont il a besoin (ex: "à partir de l'audit Instagram", "en suivant la ligne éditoriale validée") — jamais par numéro d'étape
+Regrouper les livrables similaires (4 posts Instagram = 1 prompt batch, pas 4 prompts).
 
-Signale en WARNING si le volume de livrables estimé semble dépasser le budget horaire de la mission.
+CONCISION : chaque prompt fait 100-200 mots max. Ne pas répéter le ton, les red flags, les règles de style (déjà dans le prompt système). Se concentrer sur : le format de sortie, la structure du livrable, les documents sources nécessaires, le destinataire final.
+
+Signale en WARNING si le volume estimé semble dépasser le budget horaire.
 
 Réponds UNIQUEMENT en JSON valide :
 {
