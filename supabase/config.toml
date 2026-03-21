@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.suggest-session-agenda]
 verify_jwt = false
+
+[functions.generate-claude-project-chain]
+verify_jwt = false

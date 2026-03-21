@@ -179,7 +179,8 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         <div className="flex items-center gap-3 py-6">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span className="font-body text-sm text-muted-foreground">
-            Génération en cours... (jusqu'à 3 minutes)
+            {step === 'step1' && 'Étape 1/2 : génération du prompt système...'}
+            {step === 'step2' && 'Étape 2/2 : génération de la chaîne de prompts...'}
           </span>
         </div>
       )}
