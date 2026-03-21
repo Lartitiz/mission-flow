@@ -7,98 +7,97 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Tu es l'assistante de Laetitia Mattioli (Nowadays Agency). Tu génères le kit de démarrage d'un projet Claude pour une nouvelle mission client.
+const SYSTEM_PROMPT_STEP1 = `Tu es l'assistante de Laetitia Mattioli (Nowadays Agency). Tu génères le prompt système (instructions permanentes) pour un nouveau projet Claude client.
 
-Tu reçois en entrée : les notes de l'appel découverte, la proposition commerciale validée, les notes structurées du kick-off, et le plan d'actions.
+Tu reçois le contexte complet d'une mission. Tu dois produire un prompt système prêt à copier-coller dans les "Project Instructions" d'un projet Claude.
 
-Tu dois produire DEUX choses :
+Le prompt système doit contenir ces sections (remplies avec les données réelles, pas des placeholders) :
 
-## 1. LE PROMPT SYSTÈME (instructions permanentes du projet Claude)
+1. IDENTITÉ : "Tu travailles pour Laetitia Mattioli, fondatrice de Nowadays Agency, consultante en communication stratégique et éditoriale. Laetitia pilote la stratégie ; Claude produit les livrables."
 
-Ce prompt sera collé dans les "Project Instructions" d'un projet Claude. Il doit contenir :
+2. CONTEXTE CLIENT : nom, activité (dans les mots de la cliente), type de mission (done_for_you | done_with_you | co_creation — déduis-le), budget, durée, canaux prioritaires, ton (tu/vous + registre), contact principal.
 
-### Identité
-- Tu travailles pour Laetitia Mattioli, fondatrice de Nowadays Agency, consultante en communication stratégique et éditoriale. Laetitia pilote la stratégie ; Claude produit les livrables rédactionnels, les maquettes, le code, et les documents de suivi.
+3. RED FLAGS : extraits des notes (sujets sensibles, termes interdits, données non confirmées). Si aucun : "Aucun red flag identifié — à confirmer avec Laetitia."
 
-### Contexte client (à remplir depuis les données)
-- Nom / Structure
-- Activité (dans les mots de la cliente, extraits du kick-off)
-- Type de mission (done_for_you | done_with_you | co_creation) — déduis-le depuis le type de mission et la maturité de la cliente
-- Budget et durée
-- Canaux prioritaires
-- Ton (tu/vous + registre) — déduis-le depuis le type de mission et les notes
-- Contact principal
+4. CHARTE VISUELLE : si mentionnée. Sinon : "[NON ABORDÉ — à confirmer]".
 
-### Red flags spécifiques au projet
-Extrais-les des notes du kick-off et de l'appel découverte : sujets sensibles, choses à ne jamais mentionner, termes interdits, données non confirmées. Si aucun red flag n'est identifiable, écris "Aucun red flag identifié au kick-off — à confirmer avec Laetitia."
-
-### Charte visuelle (si mentionnée)
-Couleurs, typographies, règles spécifiques. Si non abordé, écris "[NON ABORDÉ — à confirmer]".
-
-### Règles de travail fondamentales (fixes, ne changent jamais)
+5. RÈGLES DE TRAVAIL (toujours les mêmes, copie-les telles quelles) :
 
 Cadrage :
-1. Ne JAMAIS produire sans cadrage. S'il manque du contexte, poser les questions AVANT de produire.
-2. Vérifier l'existant avant de créer (comptes, visuels, contenus).
+1. Ne JAMAIS produire sans cadrage. S'il manque du contexte, poser les questions AVANT.
+2. Vérifier l'existant avant de créer.
 3. Le périmètre est fixé par Laetitia. Ne pas élargir sans demander.
 
 Production :
-4. Un thème = une session complète. Ne pas mélanger les sujets.
+4. Un thème = une session complète.
 5. Format de sortie : TOUJOURS des fichiers (.docx, .xlsx, .pptx). Le chat sert à piloter, pas à livrer.
-6. Penser en briques modulables : chaque document doit pouvoir être découpé et réutilisé.
-7. Architecture d'abord, rédaction ensuite. Valider la structure avant de rédiger.
+6. Briques modulables : chaque document doit pouvoir être découpé.
+7. Architecture d'abord, rédaction ensuite.
 
 Ton et style :
 8. Jamais de jargon corporate (ROI, tunnel, lead magnet, growth hacking, synergies, disruption, scalabilité).
 9. Jamais de promesses exagérées, de ton « mindset », d'injonctions.
-10. Écriture inclusive avec point médian (créateur·ices).
-11. Si un sujet est complexe, ne JAMAIS le réduire à une question simple. Embrasser la complexité.
-12. Privilégier des phrases complètes. L'oral c'est fluide, pas des rafales de 3 mots.
+10. Écriture inclusive avec point médian.
+11. Ne JAMAIS réduire un sujet complexe à une question simple.
+12. Phrases complètes, pas des rafales de 3 mots.
 
 Vérification :
-13. Vérifier TOUTE donnée factuelle (dates, chiffres, noms). Si incertitude, mettre entre [crochets].
-14. Signaler immédiatement toute incohérence entre documents.
+13. Vérifier TOUTE donnée factuelle. Si incertitude, mettre entre [crochets].
+14. Signaler les incohérences entre documents.
 15. Ne jamais présenter une info incertaine comme définitive.
 
 Relation client :
-16. Les communications client sont TOUJOURS en 2 variantes de ton (structurée/pro + conversationnelle/chaleureuse).
-17. Chaque livrable doit fonctionner pour un lecteur froid, sans contexte préalable.
-18. Séquence post-échange : synthèse → actions (séparées Laetitia/client·e) → message client → livrable formel.
+16. Communications client TOUJOURS en 2 variantes (structurée/pro + conversationnelle/chaleureuse).
+17. Chaque livrable doit fonctionner pour un lecteur froid.
+18. Séquence post-échange : synthèse → actions → message client → livrable.
 
 Validation :
-19. "Oui" = validé + passer au suivant.
-20. Absence de correction = c'est bon. Ne pas sur-interpréter.
-21. Quand Laetitia corrige, elle reformule. Suivre la reformulation, pas revenir à la version précédente.
+19. "Oui" = validé + suivant.
+20. Absence de correction = c'est bon.
+21. Quand Laetitia corrige par reformulation, suivre la reformulation.
 
-### Livrables attendus
-Liste issue de la proposition commerciale et du plan d'actions, avec format (.docx, .xlsx, .pptx) pour chacun.
+6. LIVRABLES ATTENDUS : liste issue de la proposition et du plan d'actions, avec format pour chacun.
 
-## 2. LE PROMPT CHAIN (liste ordonnée de prompts de travail)
+Réponds avec LE PROMPT SYSTÈME COMPLET uniquement. Pas de JSON, pas de backticks, pas de commentaire. Juste le texte du prompt, prêt à copier.`;
 
-Génère une liste de prompts de travail adaptés à CETTE cliente et à SES missions spécifiques. Pas des templates génériques.
+const SYSTEM_PROMPT_STEP2 = `Tu es l'assistante de Laetitia Mattioli (Nowadays Agency). Tu génères la chaîne de prompts de travail pour un projet client.
+
+Tu reçois : le contexte de la mission ET le prompt système déjà généré (étape précédente).
+
+Génère une liste de prompts de travail adaptés à CETTE cliente. Pas des templates génériques.
 
 Structure en 3 phases :
-- Phase A (Recherche) : audits, analyse concurrentielle, vérification de l'existant.
-- Phase B (Stratégie) : positionnement, messages clés, ligne éditoriale.
+- Phase A (Recherche) : audits, analyse concurrentielle. Les prompts DOIVENT demander des recherches web.
+- Phase B (Stratégie) : positionnement, messages clés. Les prompts DOIVENT poser des questions à Laetitia pour trancher. Proposer 2 directions opposées quand pertinent.
 - Phase C (Production) : livrables dans l'ordre des dépendances. Un prompt = un livrable = un fichier.
 
-Chaque prompt doit rappeler le contexte, spécifier le format de sortie, le ton, et les red flags.
+Règles par prompt :
+- Rappeler le contexte (qui, où on en est)
+- Spécifier le format de sortie (.docx, .xlsx, .pptx)
+- Spécifier le ton et les red flags
+- Identifier le matériau source (quel livrable précédent)
+- Prévoir des previews avant fichiers finaux quand pertinent
+- Les prompts doivent poser des questions et challenger, pas juste exécuter
 
-## 3. WARNINGS (alertes pour Laetitia)
+Adaptation au profil :
+- Cliente débutante/débordée : du prêt-à-publier
+- Cliente avancée : co-création
+- Structure avec équipe : livrables modulaires
 
-Signale : infos manquantes, risques de surproduction, dépendances bloquantes, incohérences.
-
-## FORMAT DE SORTIE
+Génère aussi des WARNINGS :
+- Infos manquantes
+- Risques de surproduction (volume vs budget)
+- Dépendances bloquantes
+- Incohérences proposition/kick-off
 
 Réponds UNIQUEMENT en JSON valide :
 {
-  "prompt_system": "Le prompt système complet, prêt à copier",
   "prompt_chain": [
     {
       "order": 1,
       "phase": "A",
-      "title": "Titre court du prompt",
-      "prompt": "Le prompt complet, prêt à copier",
+      "title": "Titre court",
+      "prompt": "Le prompt complet",
       "output_format": ".docx",
       "depends_on": null,
       "is_pause": false
@@ -107,10 +106,62 @@ Réponds UNIQUEMENT en JSON valide :
   "warnings": [
     {
       "type": "missing_info",
-      "message": "Description de l'alerte"
+      "message": "Description"
     }
   ]
 }`;
+
+async function callClaude(apiKey: string, system: string, user: string, maxTokens: number): Promise<string> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000);
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: "user", content: user }],
+    }),
+    signal: controller.signal,
+  });
+
+  clearTimeout(timeout);
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Anthropic API error:", response.status, errText);
+    if (response.status === 429) {
+      throw new Error("Trop de requêtes, réessaie dans quelques minutes.");
+    }
+    throw new Error(`API Claude erreur ${response.status}`);
+  }
+
+  const result = await response.json();
+  const text = result.content?.[0]?.text;
+  if (!text) throw new Error("Réponse Claude vide");
+  return text;
+}
+
+function extractJson(text: string): any {
+  let jsonStr = text.trim();
+  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    jsonStr = jsonMatch[1].trim();
+  } else {
+    const firstBrace = jsonStr.indexOf('{');
+    const lastBrace = jsonStr.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+    }
+  }
+  return JSON.parse(jsonStr);
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -126,7 +177,6 @@ serve(async (req) => {
       });
     }
 
-    // Validate user with anon key
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -148,27 +198,26 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY non configurée" }), {
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY non configurée" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Use service role for data fetching
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch all mission data in parallel
-    const [missionRes, discoveryRes, proposalRes, kickoffRes, actionsRes] = await Promise.all([
+    const [missionRes, discoveryRes, proposalRes, kickoffRes, actionsRes, sessionsRes] = await Promise.all([
       supabase.from("missions").select("*").eq("id", mission_id).single(),
       supabase.from("discovery_calls").select("*").eq("mission_id", mission_id).maybeSingle(),
       supabase.from("proposals").select("*").eq("mission_id", mission_id).order("version", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("kickoffs").select("*").eq("mission_id", mission_id).maybeSingle(),
-      supabase.from("actions").select("task, description, category, channel, status, assignee, phase, hours_estimated").eq("mission_id", mission_id).order("sort_order"),
+      supabase.from("actions").select("*").eq("mission_id", mission_id).order("sort_order"),
+      supabase.from("sessions").select("*").eq("mission_id", mission_id).order("session_date", { ascending: false }).limit(5),
     ]);
 
     if (missionRes.error || !missionRes.data) {
@@ -183,104 +232,120 @@ serve(async (req) => {
     const proposal = proposalRes.data;
     const kickoff = kickoffRes.data;
     const actions = actionsRes.data ?? [];
+    const sessions = sessionsRes.data ?? [];
 
-    // Build compact user prompt
-    let userPrompt = `## MISSION\nClient : ${mission.client_name} | Type : ${mission.mission_type} | Montant : ${mission.amount ? mission.amount + '€' : 'N/A'} | Statut : ${mission.status}\n\n`;
+    // Build context shared between both calls
+    let context = `## MISSION\n`;
+    context += `- Client : ${mission.client_name}\n`;
+    context += `- Type : ${mission.mission_type}\n`;
+    context += `- Montant : ${mission.amount ? mission.amount + '€ HT' : 'Non défini'}\n`;
+    context += `- Statut : ${mission.status}\n`;
+    context += `- Email : ${mission.client_email || 'Non renseigné'}\n\n`;
 
-    if (discovery?.structured_notes) {
-      userPrompt += `## APPEL DÉCOUVERTE\n`;
-      const notes = discovery.structured_notes as { sections?: { title: string; content: string }[] };
-      if (notes.sections) {
-        notes.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
+    if (discovery) {
+      context += `## APPEL DÉCOUVERTE\n`;
+      if (discovery.structured_notes) {
+        const notes = discovery.structured_notes as { sections?: { title: string; content: string }[] };
+        if (notes.sections) {
+          notes.sections.forEach((s: any) => { context += `### ${s.title}\n${s.content}\n\n`; });
+        }
+      }
+      if (discovery.raw_notes) {
+        context += `### Notes brutes\n${discovery.raw_notes}\n\n`;
       }
     }
 
-    if (proposal?.content) {
-      userPrompt += `## PROPOSITION COMMERCIALE\n`;
+    if (proposal) {
+      context += `## PROPOSITION COMMERCIALE (v${proposal.version})\n`;
       const content = proposal.content as { sections?: { title: string; content: string }[] } | null;
       if (content?.sections) {
-        content.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
+        content.sections.forEach((s: any) => { context += `### ${s.title}\n${s.content}\n\n`; });
       }
     }
 
-    if (kickoff?.structured_notes) {
-      userPrompt += `## KICK-OFF\n`;
-      const notes = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
-      if (notes.sections) {
-        notes.sections.forEach((s: any) => { userPrompt += `### ${s.title}\n${s.content}\n\n`; });
+    if (kickoff) {
+      context += `## KICK-OFF\n`;
+      if (kickoff.structured_notes) {
+        const notes = kickoff.structured_notes as { sections?: { title: string; content: string }[] };
+        if (notes.sections) {
+          notes.sections.forEach((s: any) => { context += `### ${s.title}\n${s.content}\n\n`; });
+        }
+      }
+      if (kickoff.raw_notes) {
+        context += `### Notes brutes\n${kickoff.raw_notes}\n\n`;
       }
     }
 
     if (actions.length > 0) {
-      userPrompt += `## ACTIONS (${actions.length})\n`;
+      context += `## PLAN D'ACTIONS (${actions.length} actions)\n\n`;
       actions.forEach((a: any) => {
-        userPrompt += `- [${a.assignee}/${a.status}] ${a.task}${a.category ? ' (' + a.category + ')' : ''}${a.phase ? ' {' + a.phase + '}' : ''}\n`;
+        context += `- [${a.assignee}] [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.category ? ' (' + a.category + ')' : ''}${a.channel ? ' [' + a.channel + ']' : ''}${a.hours_estimated ? ' ~' + a.hours_estimated + 'h' : ''}\n`;
       });
-      userPrompt += '\n';
+      context += '\n';
     }
 
-    console.log("Calling Gemini 2.5 Pro for project kit generation...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("AI Gateway error:", response.status, errText);
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Trop de requêtes, réessaie dans quelques minutes." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: "Erreur API IA" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (sessions.length > 0) {
+      context += `## SESSIONS (${sessions.length} dernières)\n\n`;
+      sessions.forEach((s: any) => {
+        context += `### ${s.session_date} (${s.session_type})\n`;
+        if (s.structured_notes) {
+          const notes = s.structured_notes as { sections?: { title: string; content: string }[] };
+          if (notes.sections) {
+            notes.sections.forEach((sec: any) => { context += `${sec.title} : ${sec.content}\n\n`; });
+          }
+        } else if (s.raw_notes) {
+          context += `${s.raw_notes}\n\n`;
+        }
       });
     }
 
-    const result = await response.json();
-    const textContent = result.choices?.[0]?.message?.content;
-    if (!textContent) {
-      return new Response(JSON.stringify({ error: "Réponse IA vide" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // STEP 1: Generate prompt system (plain text, no JSON)
+    console.log("Step 1/2: Generating prompt system...");
+    const promptSystem = await callClaude(
+      ANTHROPIC_API_KEY,
+      SYSTEM_PROMPT_STEP1,
+      context,
+      6000
+    );
 
-    let jsonStr = textContent.trim();
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) jsonStr = jsonMatch[1].trim();
+    // STEP 2: Generate prompt chain + warnings (JSON)
+    console.log("Step 2/2: Generating prompt chain...");
+    const step2Input = `${context}\n\n## PROMPT SYSTÈME DÉJÀ GÉNÉRÉ (pour référence)\n\n${promptSystem}`;
+    const chainRaw = await callClaude(
+      ANTHROPIC_API_KEY,
+      SYSTEM_PROMPT_STEP2,
+      step2Input,
+      8000
+    );
 
-    let parsed;
+    let chainParsed;
     try {
-      parsed = JSON.parse(jsonStr);
+      chainParsed = extractJson(chainRaw);
     } catch {
-      console.error("Invalid JSON from AI:", textContent.slice(0, 500));
-      return new Response(JSON.stringify({ error: "Réponse JSON invalide" }), {
+      console.error("Failed to parse chain JSON. First 500 chars:", chainRaw.slice(0, 500));
+      return new Response(JSON.stringify({ error: "Erreur de parsing de la chaîne. Réessaie." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify(parsed), {
+    const result = {
+      prompt_system: promptSystem,
+      prompt_chain: Array.isArray(chainParsed.prompt_chain) ? chainParsed.prompt_chain : [],
+      warnings: Array.isArray(chainParsed.warnings) ? chainParsed.warnings : [],
+    };
+
+    console.log(`Done. System: ${promptSystem.length} chars, Chain: ${result.prompt_chain.length} steps, Warnings: ${result.warnings.length}`);
+
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-claude-project error:", e);
-    return new Response(JSON.stringify({ error: "Erreur interne" }), {
+    const message = e instanceof Error && e.name === "AbortError"
+      ? "Timeout : un des appels a pris trop de temps. Réessaie."
+      : e instanceof Error ? e.message : "Erreur interne";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
