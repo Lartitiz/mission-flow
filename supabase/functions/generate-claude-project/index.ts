@@ -235,11 +235,10 @@ serve(async (req) => {
     if (proposal?.content) {
       const pc = proposal.content as { sections?: { title: string; content: string }[] };
       if (pc?.sections) {
-        contextSummary += "## PROPOSITION (résumé)\n";
+        contextSummary += "## PROPOSITION (résumé)\n\n";
         pc.sections.forEach((s: any) => {
-          contextSummary += "- " + s.title + " : " + s.content.slice(0, 200) + (s.content.length > 200 ? "..." : "") + "\n";
+          contextSummary += "### " + s.title + "\n" + s.content.slice(0, 500) + (s.content.length > 500 ? "..." : "") + "\n\n";
         });
-        contextSummary += "\n";
       }
     }
 
