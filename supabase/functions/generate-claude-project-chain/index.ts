@@ -12,39 +12,39 @@ const PHASE_PROMPTS: Record<string, string> = {
 
 La phase A couvre : audits de l'existant, analyse concurrentielle, vérification des comptes/site, recherche de marché.
 
-RÈGLE FONDAMENTALE : les prompts que tu génères sont des INSTRUCTIONS DE TRAVAIL pour un autre Claude dans un projet dédié. Ils doivent demander à Claude de FAIRE le travail de recherche, pas de deviner les résultats.
+RÈGLE FONDAMENTALE : les prompts sont des INSTRUCTIONS DE TRAVAIL pour un autre Claude dans un projet dédié. Ils demandent à Claude de FAIRE la recherche, pas de deviner les résultats.
 
-RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux résultats des autres prompts. Il a accès au prompt système du projet (contexte client, règles, red flags) et aux documents uploadés. Donc :
-- Ne JAMAIS écrire "à l'étape X" ou "résultats de l'étape précédente"
-- Chaque prompt doit être compréhensible et exécutable de façon indépendante
+RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il a accès au prompt système (contexte client) et aux documents uploadés par Laetitia.
+- Ne JAMAIS écrire "à l'étape X"
+- Nommer les documents sources par leur nom
+- Chaque prompt est exécutable indépendamment
 
-RÈGLE CRITIQUE — NE PAS PRÉSUPPOSER : les informations du kick-off (cible, concurrents, positionnement) sont des HYPOTHÈSES de la cliente, pas des faits validés. Les prompts doivent :
-- Présenter ces infos comme le point de départ de la cliente ("La cliente pense que...", "L'hypothèse actuelle est que...")
-- Demander à Claude de VÉRIFIER si le marché confirme ou infirme ces hypothèses
-- Laisser la recherche RÉVÉLER des choses que la cliente n'a pas anticipées (nouveaux concurrents, segments ignorés, opportunités insoupçonnées)
+RÈGLE DE CASCADING : les prompts de recherche forment une séquence logique. Chaque prompt APRÈS le premier s'appuie sur les livrables des prompts précédents (que Laetitia aura uploadés dans le projet après validation).
 
-MAUVAIS EXEMPLE (ne fais JAMAIS ça) :
-"Analyse la concurrence sur 3 catégories : 1) coussins classiques, 2) tapis innovants, 3) applis méditation. Pour les 40-60 ans avec douleurs articulaires."
-→ C'est mauvais parce que les catégories et la cible sont présentées comme des faits alors que c'est juste ce que la cliente a dit au kick-off.
+- Le PREMIER prompt de la chaîne part des hypothèses du kick-off comme point de départ à vérifier. C'est le SEUL qui a le droit de citer les hypothèses brutes de la cliente.
+- Les prompts SUIVANTS s'appuient sur les documents produits par les prompts précédents. Ils disent : "En te basant sur l'audit concurrentiel / l'analyse de marché / le benchmark disponible dans le projet..."
+- Si un prompt de recherche dépend d'un livrable précédent, le dire explicitement : "Ce prompt nécessite que l'audit concurrentiel ait été réalisé et uploadé dans le projet."
 
-BON EXEMPLE :
-"La cliente positionne son produit comme un coussin de méditation innovant. Son hypothèse de cible est les 40-60 ans avec douleurs articulaires. Fais une recherche web pour : 1) identifier les acteurs du marché des accessoires de méditation en Europe (sans te limiter aux catégories que la cliente a en tête), 2) analyser qui ces acteurs ciblent réellement, 3) repérer s'il existe des segments de marché que la concurrence ignore. Produis tes observations brutes avec les sources."
+RÈGLE NE PAS PRÉSUPPOSER : les informations du kick-off sont des HYPOTHÈSES. Les prompts doivent :
+- Présenter les infos comme "La cliente pense que...", "L'hypothèse actuelle est que..."
+- Demander à Claude de vérifier, pas de confirmer
+- Ne PAS nommer de concurrents, médias, influenceurs spécifiques (Claude doit les TROUVER)
+- Ne PAS pré-découper le terrain en catégories
+- Signaler ce qui contredit les hypothèses initiales
 
-Génère entre 2 et 5 prompts de recherche adaptés à CETTE cliente et à SES canaux/missions.
+Génère entre 2 et 5 prompts adaptés à CETTE cliente.
 
-Règles pour chaque prompt :
-- Rappeler brièvement qui est la cliente et son hypothèse de départ (pas ses conclusions)
-- Demander des recherches WEB RÉELLES
-- Format de sortie : "chat" pour les recherches exploratoires rapides, ".docx" pour les audits structurés (audit Instagram, audit site, analyse concurrentielle, benchmark)
-- Le prompt doit PRODUIRE des observations factuelles et signaler ce qui contredit les hypothèses de la cliente
-- Ne PAS pré-découper le terrain : pas de "3 catégories de concurrents" si la recherche n'a pas encore été faite
+Règles :
+- Format : "chat" pour l'exploratoire rapide, ".docx" pour les audits structurés
+- Le premier prompt est le plus ouvert (exploration large). Les suivants affinent à partir des découvertes.
+- Indiquer pour chaque prompt s'il dépend d'un livrable précédent (champ depends_on avec le titre du livrable, pas un numéro)
 
-CONCISION : chaque prompt fait 100-200 mots max.
+CONCISION : 100-200 mots par prompt.
 
 Réponds UNIQUEMENT en JSON valide :
 {
   "prompts": [
-    { "order": 1, "title": "Titre court", "prompt": "Le prompt complet", "output_format": "chat ou .docx selon le type", "depends_on": null, "is_pause": false }
+    { "order": 1, "title": "Titre court", "prompt": "Le prompt complet", "output_format": "chat ou .docx", "depends_on": null, "is_pause": false }
   ],
   "warnings": [
     { "type": "missing_info", "message": "Description" }
@@ -55,25 +55,24 @@ Réponds UNIQUEMENT en JSON valide :
 
 La phase B couvre : positionnement, messages clés, ligne éditoriale, choix structurants. C'est la phase où Laetitia TRANCHE.
 
-RÈGLE FONDAMENTALE : les prompts phase B s'appuient sur le travail de recherche fait en phase A. Ils ne doivent JAMAIS inventer des options stratégiques à partir de rien. Ils doivent :
-1. Demander à Claude de synthétiser les observations issues des audits (disponibles dans le projet)
-2. Poser des QUESTIONS OUVERTES à Laetitia, pas des QCM avec options pré-remplies
-3. Laisser Claude présenter ses observations PUIS poser les questions qui permettent de trancher
+RÈGLE FONDAMENTALE : les prompts phase B s'appuient sur les LIVRABLES produits en phase A (audits, analyses), PAS sur les hypothèses brutes du kick-off. Si la recherche a révélé que la cible ou le marché est différent de ce que la cliente pensait, c'est la recherche qui prime.
 
-RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux conversations précédentes. Il a accès au prompt système et aux documents uploadés (dont les audits réalisés en phase A que Laetitia aura uploadés). Donc :
-- Ne JAMAIS écrire "à l'étape 2" ou "en suivant l'étape X"
-- Écrire "à partir de l'audit Instagram disponible dans le projet" ou "en te basant sur l'analyse concurrentielle uploadée"
-- Nommer les LIVRABLES par leur nom, pas par leur numéro
+RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL. Il a accès au prompt système et aux documents uploadés.
+- Ne JAMAIS écrire "à l'étape X"
+- Nommer les livrables par leur nom ("l'audit concurrentiel", "l'analyse Instagram")
 
-MAUVAIS EXEMPLE (ne fais JAMAIS ça) :
-"Je vois 3 axes possibles : Option A, Option B, Option C. Lequel préfères-tu ?"
+RÈGLE NE PAS PRÉSUPPOSER : les prompts phase B ne reprennent JAMAIS les données brutes du kick-off (cible, concurrents, médias cités par la cliente). Ils s'appuient sur les audits.
+- MAUVAIS : "Définis le positionnement pour les 40-60 ans face à Zafu et Lotuscrafts."
+- BON : "À partir de l'audit concurrentiel et de l'analyse de marché (documents dans le projet), synthétise les segments identifiés et les espaces libres. La cible et les concurrents mentionnés au kick-off sont-ils confirmés par la recherche ? Pose les questions à Laetitia pour trancher."
 
-BON EXEMPLE :
-"À partir de l'analyse concurrentielle et de l'audit de communication (documents disponibles dans le projet), synthétise les forces, faiblesses et espaces libres identifiés. Puis pose à Laetitia les questions qui permettent de trancher le positionnement : qu'est-ce qui résonne avec la vision de la cliente ? Quels territoires exclure ? Quels critères prioriser (budget, délai, cible) ?"
+Les prompts doivent :
+1. Demander à Claude de synthétiser les observations des audits uploadés
+2. Poser des QUESTIONS OUVERTES à Laetitia (pas des QCM)
+3. Signaler les écarts entre hypothèses kick-off et réalité du marché
 
-Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) : un moment où on résume les décisions prises et celles qui restent à prendre.
+Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true).
 
-Génère entre 2 et 4 prompts. CONCISION : 100-200 mots chacun.
+Génère entre 2 et 4 prompts. CONCISION : 100-200 mots.
 
 Réponds UNIQUEMENT en JSON valide :
 {
@@ -89,30 +88,33 @@ Réponds UNIQUEMENT en JSON valide :
 
 La phase C couvre : tous les livrables concrets. Un prompt = un livrable (ou un batch de livrables similaires) = un fichier.
 
-RÈGLE FONDAMENTALE : chaque prompt de production s'appuie sur les décisions stratégiques validées. Il ne réinvente PAS la stratégie, il EXÉCUTE ce qui a été décidé.
+RÈGLE FONDAMENTALE : chaque prompt de production s'appuie sur les DÉCISIONS VALIDÉES (documents uploadés : positionnement, ligne éditoriale, messages clés). Il ne réinvente PAS la stratégie, il EXÉCUTE ce qui a été décidé.
 
-RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux conversations précédentes. Il a accès au prompt système (contexte, ton, red flags) et aux documents uploadés (audits, positionnement validé, ligne éditoriale, etc.). Donc :
-- Ne JAMAIS écrire "en suivant le positionnement validé à l'étape 5"
-- Écrire "en suivant le positionnement et les messages clés validés (documents disponibles dans le projet)"
-- Nommer les documents sources explicitement par leur NOM, pas par un numéro d'étape
-- Chaque prompt doit être exécutable de façon indépendante
+RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL. Il a accès au prompt système et aux documents uploadés.
+- Ne JAMAIS écrire "en suivant l'étape 5"
+- Écrire "en suivant le positionnement validé (document dans le projet)"
+- Nommer les documents sources par leur NOM
 
-RÈGLE DU DESTINATAIRE : chaque prompt précise QUI va utiliser le livrable et COMMENT. Un calendrier éditorial pour une solopreneuse débutante (qui va l'appliquer seule) n'est pas structuré pareil qu'un document stratégique pour une coopérative (qui sera présenté en CA). Le profil de la cliente est dans le kick-off — l'utiliser.
+RÈGLE NE PAS PRÉSUPPOSER : les prompts phase C ne reprennent JAMAIS les données brutes du kick-off pour les éléments stratégiques (cible, positionnement, canaux, médias). Ils utilisent les décisions validées en phase B.
+- MAUVAIS : "Recherche les médias wellness senior : Psychologies, Santé Magazine, Yanko Design."
+- BON : "À partir du positionnement validé et des segments confirmés par la recherche (documents dans le projet), identifie les médias et influenceurs pertinents pour ce positionnement. Ne te limite pas aux médias mentionnés au kick-off : la recherche a pu révéler des opportunités plus pertinentes."
 
-RÈGLE POST-LIVRABLE : chaque prompt de production demande EN PLUS du fichier :
-- Un résumé en 3-5 lignes de ce qui a été produit (pour que Laetitia puisse l'envoyer à la cliente sans relire tout le document)
-- La liste des prochaines actions (ce que Laetitia doit faire, ce que la cliente doit faire)
+RÈGLE DU DESTINATAIRE : chaque prompt précise QUI va utiliser le livrable et COMMENT.
+
+RÈGLE POST-LIVRABLE : chaque prompt demande EN PLUS du fichier :
+- Un résumé en 3-5 lignes
+- La liste des prochaines actions (Laetitia + cliente)
 
 Adaptation au profil :
-- Cliente débutante/débordée → prêt-à-publier, actionnable immédiatement
-- Cliente avancée → co-création, affinage de ses brouillons
-- Structure avec équipe → briques modulables que l'équipe pioche
+- Débutante/débordée → prêt-à-publier
+- Avancée → co-création
+- Structure avec équipe → briques modulables
 
-Regrouper les livrables similaires (4 posts Instagram = 1 prompt batch, pas 4 prompts).
+Regrouper les livrables similaires.
 
-CONCISION : chaque prompt fait 100-200 mots max. Ne pas répéter le ton, les red flags, les règles de style (déjà dans le prompt système). Se concentrer sur : le format de sortie, la structure du livrable, les documents sources nécessaires, le destinataire final.
+CONCISION : 100-200 mots par prompt. Ne pas répéter le ton, red flags, règles de style (déjà dans le prompt système).
 
-Signale en WARNING si le volume estimé semble dépasser le budget horaire.
+Signale en WARNING si le volume estimé dépasse le budget horaire.
 
 Réponds UNIQUEMENT en JSON valide :
 {
