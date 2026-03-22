@@ -59,6 +59,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [data, setData] = useState<ClaudeProjectData | null>(null);
   const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
+  const [completedPrompts, setCompletedPrompts] = useState<number[]>([]);
 
   const { data: savedProject, refetch: refetchProject } = useQuery({
     queryKey: ['claude-project', missionId],
@@ -82,6 +83,10 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         prompt_chain: savedProject.prompt_chain as unknown as PromptChainItem[],
         warnings: savedProject.warnings as unknown as Warning[],
       });
+      const completed = (savedProject as any).completed_prompts;
+      if (Array.isArray(completed)) {
+        setCompletedPrompts(completed);
+      }
     }
   }, [savedProject]);
 
@@ -109,6 +114,20 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const copyToClipboard = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
     toast({ title: `${label} copié ✓` });
+  };
+
+  const togglePromptComplete = async (order: number) => {
+    const updated = completedPrompts.includes(order)
+      ? completedPrompts.filter(o => o !== order)
+      : [...completedPrompts, order];
+    setCompletedPrompts(updated);
+
+    if (savedProject?.id) {
+      await supabase
+        .from('claude_projects' as any)
+        .update({ completed_prompts: updated } as any)
+        .eq('id', savedProject.id);
+    }
   };
 
   const handleGenerate = async () => {
@@ -202,6 +221,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         warnings: allWarnings,
       };
       setData(newData);
+      setCompletedPrompts([]);
 
       // Save to database
       try {
@@ -212,8 +232,9 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
               prompt_system: newData.prompt_system,
               prompt_chain: newData.prompt_chain as any,
               warnings: newData.warnings as any,
+              completed_prompts: [] as any,
               version: ((savedProject as any).version || 1) + 1,
-            })
+            } as any)
             .eq('id', savedProject.id);
         } else {
           await supabase
@@ -223,6 +244,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
               prompt_system: newData.prompt_system,
               prompt_chain: newData.prompt_chain as any,
               warnings: newData.warnings as any,
+              completed_prompts: [] as any,
             } as any);
         }
         refetchProject();
@@ -339,6 +361,11 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
               <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
                 {openSections.chain ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 Prompt chain ({data.prompt_chain.length} étapes)
+                {completedPrompts.length > 0 && (
+                  <span className="font-body text-xs text-muted-foreground ml-2">
+                    — {completedPrompts.length}/{data.prompt_chain.length} terminés
+                  </span>
+                )}
               </CollapsibleTrigger>
               <Button
                 variant="ghost"
@@ -358,9 +385,15 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
             <CollapsibleContent>
               <div className="mt-2 space-y-2">
                 {data.prompt_chain.map((item) => (
-                  <div key={item.order} className="border rounded-lg p-3 bg-background">
+                  <div key={item.order} className={`border rounded-lg p-3 transition-opacity ${completedPrompts.includes(item.order) ? 'bg-muted/50 opacity-60' : 'bg-background'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
+                        <input
+                          type="checkbox"
+                          checked={completedPrompts.includes(item.order)}
+                          onChange={() => togglePromptComplete(item.order)}
+                          className="h-4 w-4 rounded border-gray-300 cursor-pointer accent-primary shrink-0"
+                        />
                         <span className="font-body text-xs font-bold text-muted-foreground">
                           #{item.order}
                         </span>
