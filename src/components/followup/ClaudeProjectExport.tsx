@@ -244,6 +244,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
               prompt_system: newData.prompt_system,
               prompt_chain: newData.prompt_chain as any,
               warnings: newData.warnings as any,
+              completed_prompts: [] as any,
             } as any);
         }
         refetchProject();
