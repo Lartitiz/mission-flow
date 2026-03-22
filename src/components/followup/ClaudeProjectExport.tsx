@@ -385,9 +385,15 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
             <CollapsibleContent>
               <div className="mt-2 space-y-2">
                 {data.prompt_chain.map((item) => (
-                  <div key={item.order} className="border rounded-lg p-3 bg-background">
+                  <div key={item.order} className={`border rounded-lg p-3 transition-opacity ${completedPrompts.includes(item.order) ? 'bg-muted/50 opacity-60' : 'bg-background'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
+                        <input
+                          type="checkbox"
+                          checked={completedPrompts.includes(item.order)}
+                          onChange={() => togglePromptComplete(item.order)}
+                          className="h-4 w-4 rounded border-gray-300 cursor-pointer accent-primary shrink-0"
+                        />
                         <span className="font-body text-xs font-bold text-muted-foreground">
                           #{item.order}
                         </span>
