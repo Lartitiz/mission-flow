@@ -116,6 +116,20 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     toast({ title: `${label} copié ✓` });
   };
 
+  const togglePromptComplete = async (order: number) => {
+    const updated = completedPrompts.includes(order)
+      ? completedPrompts.filter(o => o !== order)
+      : [...completedPrompts, order];
+    setCompletedPrompts(updated);
+
+    if (savedProject?.id) {
+      await supabase
+        .from('claude_projects' as any)
+        .update({ completed_prompts: updated } as any)
+        .eq('id', savedProject.id);
+    }
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     setData(null);
