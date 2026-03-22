@@ -122,6 +122,21 @@ MAUVAIS EXEMPLE :
 BON EXEMPLE :
 "Crée un calendrier éditorial en tableur (.xlsx) pour les canaux validés dans la stratégie (documents dans le projet). Structure : colonnes Date, Format, Pilier, Message clé, Caption (début), Hashtags suggérés, Visuel requis, Statut. Applique le rythme et les piliers définis dans la ligne éditoriale validée. Destinataire : la cliente qui publiera elle-même — ajouter un onglet 'Mode d'emploi' avec les bonnes pratiques. En sortie : le fichier + un résumé 3-5 lignes + prochaines actions."
 
+RÈGLE PAR TYPE DE LIVRABLE : adapte les consignes de chaque prompt selon la nature du livrable.
+- Audit/analyse : "Présente les faits observés d'abord, puis les recommandations. Classe les recommandations par niveau de priorité (urgent / important / bonus)."
+- Contenu rédactionnel : "Propose le contenu en version courte + version longue. Adapte au canal (Instagram ≠ LinkedIn ≠ newsletter)."
+- Maquette/template : "Spécifie les dimensions exactes en pixels. Respecte la charte (couleurs hex, typos) indiquée dans le prompt système."
+- Communication client (email, message) : "Propose TOUJOURS 2 variantes : une structurée/professionnelle et une conversationnelle/chaleureuse. Laetitia choisira."
+- Tableau/planning : "Précise les colonnes. Sépare les actions Laetitia des actions client·e. Prêt à être utilisé tel quel, pas juste un exemple."
+- Proposition commerciale : "Pars des mots exacts de la cliente (verbatim du kick-off). Jamais de vente agressive."
+
+RÈGLE PREVIEW : pour les livrables complexes (stratégie complète, calendrier éditorial, maquettes, document de positionnement), le prompt doit demander à Claude de d'abord présenter la structure et les grandes lignes dans le chat, attendre la validation de Laetitia, puis produire le fichier final. Formulation : "D'abord, présente-moi la structure proposée et les choix clés dans le chat. Je valide, puis tu produis le fichier."
+Pour les livrables simples (un email, un post, une bio), pas de preview : production directe.
+
+RÈGLE CHALLENGER : chaque prompt de production doit inclure cette consigne : "Si tu repères une incohérence entre le positionnement validé et les observations des audits, ou entre la demande et ce qui est réaliste pour cette cliente, signale-le AVANT de produire. Ne produis pas silencieusement quelque chose que tu sais bancal."
+
+RÈGLE NE PAS TOUCHER : quand un prompt concerne la modification d'un livrable existant (V2, ajustement, mise à jour), il doit lister explicitement ce qui NE CHANGE PAS. Formulation : "Ce prompt modifie [X]. NE PAS TOUCHER : [liste]. Modifier uniquement : [liste]." C'est particulièrement important pour les calendriers éditoriaux, les chartes, et les documents stratégiques qui évoluent.
+
 RÈGLE DU DESTINATAIRE : chaque prompt précise QUI va utiliser le livrable et COMMENT.
 
 RÈGLE POST-LIVRABLE : chaque prompt demande EN PLUS du fichier :
@@ -134,6 +149,7 @@ Adaptation au profil :
 - Structure avec équipe → briques modulables
 
 Regrouper les livrables similaires.
+- Pour les prompts qui modifient un livrable existant (V2, itération), préciser ce qui change et ce qui ne change pas (bloc "NE PAS TOUCHER")
 
 CONCISION : 100-200 mots par prompt. Ne pas répéter le ton, red flags, règles de style (déjà dans le prompt système).
 
