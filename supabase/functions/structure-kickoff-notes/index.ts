@@ -92,8 +92,8 @@ serve(async (req) => {
       });
     }
 
-    // Truncate very long notes to avoid timeout (max ~30000 chars ≈ 8000 tokens)
-    const truncatedNotes = raw_notes.length > 30000 ? raw_notes.slice(0, 30000) + "\n\n[... notes tronquées pour des raisons de longueur]" : raw_notes;
+    // Truncate very long notes to avoid timeout (max ~50000 chars)
+    const truncatedNotes = raw_notes.length > 50000 ? raw_notes.slice(0, 50000) + "\n\n[... notes tronquées pour des raisons de longueur]" : raw_notes;
 
     // Truncate proposal context too
     const proposalCtx = proposal_content ? JSON.stringify(proposal_content, null, 2) : "";
@@ -115,8 +115,15 @@ ${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal
       });
     }
 
+    // Adapter le modèle et les tokens à la taille de l'input
+    const inputLength = truncatedNotes.length;
+    const isLongTranscript = inputLength > 8000; // ~2000+ mots
+    const model = isLongTranscript ? "claude-opus-4-20250514" : "claude-sonnet-4-20250514";
+    const maxTokens = isLongTranscript ? 16000 : 8000;
+    const timeoutMs = isLongTranscript ? 180000 : 140000; // 3 min pour Opus, 2m20 pour Sonnet
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 140000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -126,8 +133,8 @@ ${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 8000,
+        model,
+        max_tokens: maxTokens,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
       }),
@@ -174,7 +181,9 @@ ${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal
     });
   } catch (e) {
     console.error("structure-kickoff-notes error:", e);
-    const message = e instanceof Error && e.name === "AbortError" ? "Timeout" : "Erreur interne";
+    const message = e instanceof Error && e.name === "AbortError"
+      ? "La structuration a pris trop de temps. Si ta transcription est très longue, essaie de la découper en 2 parties et structure chaque partie séparément."
+      : "Erreur interne";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
