@@ -1,0 +1,1 @@
+ALTER TABLE public.claude_projects ADD COLUMN IF NOT EXISTS completed_prompts jsonb NOT NULL DEFAULT '[]'::jsonb;

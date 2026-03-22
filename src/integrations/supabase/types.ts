@@ -81,6 +81,7 @@ export type Database = {
       }
       claude_projects: {
         Row: {
+          completed_prompts: Json
           created_at: string
           id: string
           mission_id: string
@@ -91,6 +92,7 @@ export type Database = {
           warnings: Json
         }
         Insert: {
+          completed_prompts?: Json
           created_at?: string
           id?: string
           mission_id: string
@@ -101,6 +103,7 @@ export type Database = {
           warnings?: Json
         }
         Update: {
+          completed_prompts?: Json
           created_at?: string
           id?: string
           mission_id?: string
