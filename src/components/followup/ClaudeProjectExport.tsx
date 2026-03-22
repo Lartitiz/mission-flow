@@ -229,6 +229,12 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       } catch (saveErr) {
         console.error('Failed to save claude project:', saveErr);
       }
+
+      if (allPrompts.length > 0) {
+        toast({ title: 'Kit projet Claude généré ✓', description: allPrompts.length + ' prompts en ' + new Set(allPrompts.map(p => p.phase)).size + ' phases.' });
+      } else {
+        toast({ title: 'Prompt système généré', description: 'Les phases n\'ont pas pu être générées. Le prompt système est disponible.', variant: 'destructive' });
+      }
     } catch {
       toast({ title: 'Erreur', description: "Erreur inattendue.", variant: 'destructive' });
     } finally {
