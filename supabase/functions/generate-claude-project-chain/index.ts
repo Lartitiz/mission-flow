@@ -131,8 +131,39 @@ RÈGLE PAR TYPE DE LIVRABLE : adapte les consignes de chaque prompt selon la nat
 - Tableau/planning : "Précise les colonnes. Sépare les actions Laetitia des actions client·e. Prêt à être utilisé tel quel, pas juste un exemple."
 - Proposition commerciale : "Pars des mots exacts de la cliente (verbatim du kick-off). Jamais de vente agressive."
 
-RÈGLE PREVIEW : pour les livrables complexes (stratégie complète, calendrier éditorial, maquettes, document de positionnement), le prompt doit demander à Claude de d'abord présenter la structure et les grandes lignes dans le chat, attendre la validation de Laetitia, puis produire le fichier final. Formulation : "D'abord, présente-moi la structure proposée et les choix clés dans le chat. Je valide, puis tu produis le fichier."
-Pour les livrables simples (un email, un post, une bio), pas de preview : production directe.
+RÈGLE DE PRODUCTION PAR ÉTAPES : les livrables se divisent en deux catégories.
+
+LIVRABLES SIMPLES (un email, un post, une bio, un message WhatsApp, une liste de contacts) :
+→ Un seul prompt. Production directe dans le format final.
+
+LIVRABLES COMPLEXES (document de positionnement, kit presse, calendrier éditorial, maquettes, templates Instagram, dossier stratégique, tout document de plus de 2 pages) :
+→ TOUJOURS découper en sous-prompts séquentiels. Un livrable complexe = 2 à 4 prompts, pas 1. Chaque sous-prompt attend la validation de Laetitia avant de passer au suivant.
+
+Séquence pour un livrable complexe :
+
+Sous-prompt 1 — STRUCTURE : "Propose la structure du [livrable] : nombre de pages/slides, titre de chaque section, contenu résumé en une ligne par section, longueur estimée. Présente dans le chat. J'ajuste et je valide avant production."
+Format de sortie : "chat"
+
+Sous-prompt 2 — RÉDACTION + DA : "En suivant la structure validée, rédige le contenu complet. Produis en HTML avec la DA du projet (couleurs, typos, mise en page indiquées dans le prompt système). Le HTML sert de preview haute fidélité."
+Format de sortie : "preview" (HTML dans le chat)
+
+Sous-prompt 3 — FICHIER FINAL : "Transforme le HTML validé en [.docx/.pptx]. Si le format ne permet pas un rendu identique au HTML, produis les éléments visuels en images PNG intégrées dans le fichier."
+Format de sortie : ".docx" ou ".pptx"
+
+Quand tu génères les prompts pour un livrable complexe, génère TOUS les sous-prompts (structure + rédaction + fichier final) dans l'ordre, avec les bons depends_on entre eux.
+
+IMPORTANT : le titre de chaque sous-prompt doit être explicite. Pas "Kit presse" x3. Mais :
+- "Kit presse — structure et plan"
+- "Kit presse — rédaction HTML"
+- "Kit presse — fichier .docx final"
+
+MAUVAIS EXEMPLE (un seul prompt pour tout) :
+"Produis le kit presse ENSCO : dossier de presse 4-5 pages + communiqué 1 page. Ton informatif mais engageant."
+
+BON EXEMPLE (3 sous-prompts) :
+Prompt C-1 : "Propose la structure du kit presse : combien de pages pour le dossier, combien pour le communiqué, quelles sections dans chaque document, quel ordre. Présente dans le chat."
+Prompt C-2 : "En suivant la structure validée du kit presse, rédige le contenu complet (dossier + communiqué). Produis en HTML avec la DA du projet. Le HTML sert de preview."
+Prompt C-3 : "Transforme le kit presse HTML validé en .docx prêt à envoyer aux journalistes. Si des éléments visuels ne passent pas en .docx, produis-les en PNG intégrés."
 
 RÈGLE CHALLENGER : chaque prompt de production doit inclure cette consigne : "Si tu repères une incohérence entre le positionnement validé et les observations des audits, ou entre la demande et ce qui est réaliste pour cette cliente, signale-le AVANT de produire. Ne produis pas silencieusement quelque chose que tu sais bancal."
 
