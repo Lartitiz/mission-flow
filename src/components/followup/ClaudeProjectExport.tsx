@@ -60,6 +60,31 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
 
+  const { data: savedProject, refetch: refetchProject } = useQuery({
+    queryKey: ['claude-project', missionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('claude_projects' as any)
+        .select('*')
+        .eq('mission_id', missionId)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  useEffect(() => {
+    if (savedProject && !data) {
+      setData({
+        prompt_system: savedProject.prompt_system,
+        prompt_chain: savedProject.prompt_chain as unknown as PromptChainItem[],
+        warnings: savedProject.warnings as unknown as Warning[],
+      });
+    }
+  }, [savedProject]);
+
   const { data: readiness } = useQuery({
     queryKey: ['claude-project-readiness', missionId],
     queryFn: async () => {
