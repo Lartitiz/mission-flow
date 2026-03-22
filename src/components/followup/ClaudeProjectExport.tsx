@@ -270,7 +270,14 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
+        <div>
+          <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
+          {savedProject && (
+            <p className="font-body text-xs text-muted-foreground">
+              Version {(savedProject as any).version} — généré le {new Date((savedProject as any).updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </div>
         {data && (
           <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
             <Download className="h-3.5 w-3.5" />
