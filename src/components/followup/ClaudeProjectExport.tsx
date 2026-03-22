@@ -361,6 +361,11 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
               <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
                 {openSections.chain ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 Prompt chain ({data.prompt_chain.length} étapes)
+                {completedPrompts.length > 0 && (
+                  <span className="font-body text-xs text-muted-foreground ml-2">
+                    — {completedPrompts.length}/{data.prompt_chain.length} terminés
+                  </span>
+                )}
               </CollapsibleTrigger>
               <Button
                 variant="ghost"
