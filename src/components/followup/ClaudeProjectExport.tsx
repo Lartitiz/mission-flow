@@ -59,6 +59,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [data, setData] = useState<ClaudeProjectData | null>(null);
   const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
+  const [completedPrompts, setCompletedPrompts] = useState<number[]>([]);
 
   const { data: savedProject, refetch: refetchProject } = useQuery({
     queryKey: ['claude-project', missionId],
