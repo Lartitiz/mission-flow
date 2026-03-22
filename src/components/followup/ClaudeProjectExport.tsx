@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,31 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [data, setData] = useState<ClaudeProjectData | null>(null);
   const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
+
+  const { data: savedProject, refetch: refetchProject } = useQuery({
+    queryKey: ['claude-project', missionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('claude_projects' as any)
+        .select('*')
+        .eq('mission_id', missionId)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  useEffect(() => {
+    if (savedProject && !data) {
+      setData({
+        prompt_system: savedProject.prompt_system,
+        prompt_chain: savedProject.prompt_chain as unknown as PromptChainItem[],
+        warnings: savedProject.warnings as unknown as Warning[],
+      });
+    }
+  }, [savedProject]);
 
   const { data: readiness } = useQuery({
     queryKey: ['claude-project-readiness', missionId],
@@ -171,11 +196,39 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         });
       }
 
-      setData({
+      const newData = {
         prompt_system: step1.prompt_system,
         prompt_chain: allPrompts,
         warnings: allWarnings,
-      });
+      };
+      setData(newData);
+
+      // Save to database
+      try {
+        if (savedProject?.id) {
+          await supabase
+            .from('claude_projects' as any)
+            .update({
+              prompt_system: newData.prompt_system,
+              prompt_chain: newData.prompt_chain as any,
+              warnings: newData.warnings as any,
+              version: ((savedProject as any).version || 1) + 1,
+            })
+            .eq('id', savedProject.id);
+        } else {
+          await supabase
+            .from('claude_projects' as any)
+            .insert({
+              mission_id: missionId,
+              prompt_system: newData.prompt_system,
+              prompt_chain: newData.prompt_chain as any,
+              warnings: newData.warnings as any,
+            } as any);
+        }
+        refetchProject();
+      } catch (saveErr) {
+        console.error('Failed to save claude project:', saveErr);
+      }
 
       if (allPrompts.length > 0) {
         toast({ title: 'Kit projet Claude généré ✓', description: allPrompts.length + ' prompts en ' + new Set(allPrompts.map(p => p.phase)).size + ' phases.' });
@@ -217,7 +270,14 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
+        <div>
+          <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
+          {savedProject && (
+            <p className="font-body text-xs text-muted-foreground">
+              Version {(savedProject as any).version} — généré le {new Date((savedProject as any).updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </div>
         {data && (
           <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
             <Download className="h-3.5 w-3.5" />

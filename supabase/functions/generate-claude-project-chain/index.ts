@@ -24,7 +24,7 @@ Génère entre 2 et 5 prompts de recherche adaptés à CETTE cliente et à SES c
 Règles pour chaque prompt :
 - Rappeler brièvement qui est la cliente et ce qu'on cherche
 - Demander des recherches WEB RÉELLES (pas de la réorganisation de contexte)
-- Format de sortie : "chat" (c'est de l'investigation, pas des livrables)
+- Format de sortie : "chat" pour les recherches rapides et exploratoires, ".docx" pour les audits structurés (audit Instagram, audit site, analyse concurrentielle, benchmark). Un audit est un livrable réutilisable, pas juste du texte dans le chat.
 - Le prompt doit PRODUIRE des observations, pas poser des questions à Laetitia à ce stade
 - Ne PAS inventer de données — le prompt demande à Claude de les CHERCHER
 
@@ -33,7 +33,7 @@ CONCISION : chaque prompt fait 100-200 mots max.
 Réponds UNIQUEMENT en JSON valide :
 {
   "prompts": [
-    { "order": 1, "title": "Titre court", "prompt": "Le prompt complet", "output_format": "chat", "depends_on": null, "is_pause": false }
+    { "order": 1, "title": "Titre court", "prompt": "Le prompt complet", "output_format": "chat ou .docx selon le type", "depends_on": null, "is_pause": false }
   ],
   "warnings": [
     { "type": "missing_info", "message": "Description" }
