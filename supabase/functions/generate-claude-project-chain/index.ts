@@ -147,8 +147,8 @@ Format de sortie : "chat"
 Sous-prompt 2 — RÉDACTION + DA : "En suivant la structure validée, rédige le contenu complet. Produis en HTML avec la DA du projet (couleurs, typos, mise en page indiquées dans le prompt système). Le HTML sert de preview haute fidélité."
 Format de sortie : "preview" (HTML dans le chat)
 
-Sous-prompt 3 — FICHIER FINAL : "Transforme le HTML validé en [.docx/.pptx]. Si le format ne permet pas un rendu identique au HTML, produis les éléments visuels en images PNG intégrées dans le fichier."
-Format de sortie : ".docx" ou ".pptx"
+Sous-prompt 3 — FICHIER FINAL : "Transforme le HTML validé dans le format choisi par Laetitia à l'étape structure. Si le format ne permet pas un rendu identique au HTML, produis les éléments visuels en images PNG intégrées dans le fichier."
+Format de sortie : le format validé par Laetitia (ne pas présupposer)
 
 Quand tu génères les prompts pour un livrable complexe, génère TOUS les sous-prompts (structure + rédaction + fichier final) dans l'ordre, avec les bons depends_on entre eux.
 
