@@ -12,21 +12,32 @@ const PHASE_PROMPTS: Record<string, string> = {
 
 La phase A couvre : audits de l'existant, analyse concurrentielle, vérification des comptes/site, recherche de marché.
 
-RÈGLE FONDAMENTALE : les prompts que tu génères sont des INSTRUCTIONS DE TRAVAIL pour un autre Claude dans un projet dédié. Ils doivent demander à Claude de FAIRE le travail de recherche, pas de deviner les résultats. Chaque prompt doit demander des recherches web réelles et produire des observations factuelles.
+RÈGLE FONDAMENTALE : les prompts que tu génères sont des INSTRUCTIONS DE TRAVAIL pour un autre Claude dans un projet dédié. Ils doivent demander à Claude de FAIRE le travail de recherche, pas de deviner les résultats.
 
 RÈGLE D'AUTONOMIE : chaque prompt sera copié-collé SEUL dans une conversation du projet Claude. Il n'a PAS accès aux résultats des autres prompts. Il a accès au prompt système du projet (contexte client, règles, red flags) et aux documents uploadés. Donc :
 - Ne JAMAIS écrire "à l'étape X" ou "résultats de l'étape précédente"
-- Écrire plutôt "à partir des informations du projet" ou "en te basant sur le contexte client"
 - Chaque prompt doit être compréhensible et exécutable de façon indépendante
+
+RÈGLE CRITIQUE — NE PAS PRÉSUPPOSER : les informations du kick-off (cible, concurrents, positionnement) sont des HYPOTHÈSES de la cliente, pas des faits validés. Les prompts doivent :
+- Présenter ces infos comme le point de départ de la cliente ("La cliente pense que...", "L'hypothèse actuelle est que...")
+- Demander à Claude de VÉRIFIER si le marché confirme ou infirme ces hypothèses
+- Laisser la recherche RÉVÉLER des choses que la cliente n'a pas anticipées (nouveaux concurrents, segments ignorés, opportunités insoupçonnées)
+
+MAUVAIS EXEMPLE (ne fais JAMAIS ça) :
+"Analyse la concurrence sur 3 catégories : 1) coussins classiques, 2) tapis innovants, 3) applis méditation. Pour les 40-60 ans avec douleurs articulaires."
+→ C'est mauvais parce que les catégories et la cible sont présentées comme des faits alors que c'est juste ce que la cliente a dit au kick-off.
+
+BON EXEMPLE :
+"La cliente positionne son produit comme un coussin de méditation innovant. Son hypothèse de cible est les 40-60 ans avec douleurs articulaires. Fais une recherche web pour : 1) identifier les acteurs du marché des accessoires de méditation en Europe (sans te limiter aux catégories que la cliente a en tête), 2) analyser qui ces acteurs ciblent réellement, 3) repérer s'il existe des segments de marché que la concurrence ignore. Produis tes observations brutes avec les sources."
 
 Génère entre 2 et 5 prompts de recherche adaptés à CETTE cliente et à SES canaux/missions.
 
 Règles pour chaque prompt :
-- Rappeler brièvement qui est la cliente et ce qu'on cherche
-- Demander des recherches WEB RÉELLES (pas de la réorganisation de contexte)
-- Format de sortie : "chat" pour les recherches rapides et exploratoires, ".docx" pour les audits structurés (audit Instagram, audit site, analyse concurrentielle, benchmark). Un audit est un livrable réutilisable, pas juste du texte dans le chat.
-- Le prompt doit PRODUIRE des observations, pas poser des questions à Laetitia à ce stade
-- Ne PAS inventer de données — le prompt demande à Claude de les CHERCHER
+- Rappeler brièvement qui est la cliente et son hypothèse de départ (pas ses conclusions)
+- Demander des recherches WEB RÉELLES
+- Format de sortie : "chat" pour les recherches exploratoires rapides, ".docx" pour les audits structurés (audit Instagram, audit site, analyse concurrentielle, benchmark)
+- Le prompt doit PRODUIRE des observations factuelles et signaler ce qui contredit les hypothèses de la cliente
+- Ne PAS pré-découper le terrain : pas de "3 catégories de concurrents" si la recherche n'a pas encore été faite
 
 CONCISION : chaque prompt fait 100-200 mots max.
 
