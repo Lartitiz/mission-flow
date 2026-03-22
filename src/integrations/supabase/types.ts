@@ -79,6 +79,47 @@ export type Database = {
           },
         ]
       }
+      claude_projects: {
+        Row: {
+          created_at: string
+          id: string
+          mission_id: string
+          prompt_chain: Json
+          prompt_system: string
+          updated_at: string
+          version: number
+          warnings: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mission_id: string
+          prompt_chain?: Json
+          prompt_system: string
+          updated_at?: string
+          version?: number
+          warnings?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mission_id?: string
+          prompt_chain?: Json
+          prompt_system?: string
+          updated_at?: string
+          version?: number
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claude_projects_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discovery_calls: {
         Row: {
           ai_suggested_type: string | null
