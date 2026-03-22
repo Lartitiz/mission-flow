@@ -221,6 +221,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         warnings: allWarnings,
       };
       setData(newData);
+      setCompletedPrompts([]);
 
       // Save to database
       try {
