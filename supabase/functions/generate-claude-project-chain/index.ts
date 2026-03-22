@@ -115,6 +115,7 @@ Ce que les prompts de production DOIVENT prescrire (c'est leur job) :
 - Les BONNES PRATIQUES de production (ex : "ajouter un onglet mode d'emploi")
 - Le DESTINATAIRE et comment il va l'utiliser
 - Le résumé + prochaines actions en sortie
+- Pour les livrables complexes : la SÉQUENCE de sous-prompts (structure → rédaction HTML → fichier final)
 
 MAUVAIS EXEMPLE :
 "Crée un calendrier éditorial Instagram sur 3 mois. 3 posts/semaine alternant éducation, témoignages, coulisses, conseils bien-être. Inclure posts spéciaux lancement précommandes."
