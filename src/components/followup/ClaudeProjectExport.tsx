@@ -232,8 +232,9 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
               prompt_system: newData.prompt_system,
               prompt_chain: newData.prompt_chain as any,
               warnings: newData.warnings as any,
+              completed_prompts: [] as any,
               version: ((savedProject as any).version || 1) + 1,
-            })
+            } as any)
             .eq('id', savedProject.id);
         } else {
           await supabase
