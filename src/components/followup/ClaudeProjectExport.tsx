@@ -196,16 +196,38 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         });
       }
 
-      setData({
+      const newData = {
         prompt_system: step1.prompt_system,
         prompt_chain: allPrompts,
         warnings: allWarnings,
-      });
+      };
+      setData(newData);
 
-      if (allPrompts.length > 0) {
-        toast({ title: 'Kit projet Claude généré ✓', description: allPrompts.length + ' prompts en ' + new Set(allPrompts.map(p => p.phase)).size + ' phases.' });
-      } else {
-        toast({ title: 'Prompt système généré', description: 'Les phases n\'ont pas pu être générées. Le prompt système est disponible.', variant: 'destructive' });
+      // Save to database
+      try {
+        if (savedProject?.id) {
+          await supabase
+            .from('claude_projects' as any)
+            .update({
+              prompt_system: newData.prompt_system,
+              prompt_chain: newData.prompt_chain as any,
+              warnings: newData.warnings as any,
+              version: ((savedProject as any).version || 1) + 1,
+            })
+            .eq('id', savedProject.id);
+        } else {
+          await supabase
+            .from('claude_projects' as any)
+            .insert({
+              mission_id: missionId,
+              prompt_system: newData.prompt_system,
+              prompt_chain: newData.prompt_chain as any,
+              warnings: newData.warnings as any,
+            } as any);
+        }
+        refetchProject();
+      } catch (saveErr) {
+        console.error('Failed to save claude project:', saveErr);
       }
     } catch {
       toast({ title: 'Erreur', description: "Erreur inattendue.", variant: 'destructive' });
