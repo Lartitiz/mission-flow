@@ -83,6 +83,10 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         prompt_chain: savedProject.prompt_chain as unknown as PromptChainItem[],
         warnings: savedProject.warnings as unknown as Warning[],
       });
+      const completed = (savedProject as any).completed_prompts;
+      if (Array.isArray(completed)) {
+        setCompletedPrompts(completed);
+      }
     }
   }, [savedProject]);
 
