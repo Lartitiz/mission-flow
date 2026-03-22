@@ -70,7 +70,11 @@ Les prompts doivent :
 2. Poser des QUESTIONS OUVERTES à Laetitia (pas des QCM)
 3. Signaler les écarts entre hypothèses kick-off et réalité du marché
 
-Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true).
+Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) qui inclut un RECALIBRAGE DU PÉRIMÈTRE : comparer les missions prévues dans la proposition avec ce que la recherche et le kick-off ont révélé. Signaler :
+- Ce qui est confirmé (dans le périmètre, on continue)
+- Ce qui n'est plus pertinent (le marché a révélé autre chose)
+- Ce qui est NOUVEAU et pertinent mais HORS périmètre (ex : une stratégie B2B identifiée alors que seul le B2C était vendu)
+Pour les éléments hors périmètre : ne PAS les intégrer dans les prompts de production (ce n'est pas vendu). Les noter pour le plan d'actions final.
 
 Génère entre 2 et 4 prompts. CONCISION : 100-200 mots.
 
@@ -174,6 +178,16 @@ RÈGLE DU DESTINATAIRE : chaque prompt précise QUI va utiliser le livrable et C
 RÈGLE POST-LIVRABLE : chaque prompt demande EN PLUS du fichier :
 - Un résumé en 3-5 lignes
 - La liste des prochaines actions (Laetitia + cliente)
+
+RÈGLE DU PLAN D'ACTIONS FINAL : le DERNIER prompt de la phase C doit TOUJOURS être la production du plan d'actions complet pour la cliente. Ce plan est LE livrable de sortie de l'accompagnement. Il contient 3 catégories clairement distinctes :
+
+1. RÉALISÉ (dans le périmètre, livré pendant l'accompagnement) — Bilan de tout ce qui a été produit. C'est la preuve de valeur concrète de l'accompagnement.
+
+2. À FAIRE EN AUTONOMIE (la cliente peut continuer seule) — Les actions régulières à maintenir après l'accompagnement. Pour chaque action : quoi faire, à quelle fréquence, avec quel outil. C'est la feuille de route post-accompagnement.
+
+3. OPPORTUNITÉS IDENTIFIÉES (hors périmètre, découvertes pendant la recherche) — Les leviers identifiés par les audits qui n'étaient pas dans la proposition initiale. Pour chaque opportunité : pourquoi c'est pertinent (basé sur les recherches concrètes, pas des suppositions), quel impact estimé, et la mention "Accompagnement possible avec Nowadays pour aller plus loin sur ce sujet."
+
+Le plan doit fonctionner comme une feuille de route autonome : la cliente peut le relire dans 6 mois et savoir exactement quoi faire.
 
 Adaptation au profil :
 - Débutante/débordée → prêt-à-publier
