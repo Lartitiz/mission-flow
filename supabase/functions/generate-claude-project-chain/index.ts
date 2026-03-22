@@ -99,6 +99,29 @@ RÈGLE NE PAS PRÉSUPPOSER : les prompts phase C ne reprennent JAMAIS les donné
 - MAUVAIS : "Recherche les médias wellness senior : Psychologies, Santé Magazine, Yanko Design."
 - BON : "À partir du positionnement validé et des segments confirmés par la recherche (documents dans le projet), identifie les médias et influenceurs pertinents pour ce positionnement. Ne te limite pas aux médias mentionnés au kick-off : la recherche a pu révéler des opportunités plus pertinentes."
 
+RÈGLE ANTI-PRESCRIPTION : les prompts de production ne doivent JAMAIS prescrire des éléments qui relèvent de la stratégie. Si un élément a été décidé en phase B, le prompt dit "en suivant [nom du livrable]", il ne répète pas la décision.
+
+Éléments que les prompts de production NE prescrivent JAMAIS :
+- Le rythme de publication ("3 posts/semaine") → dire "en suivant le rythme défini dans la ligne éditoriale"
+- Les piliers de contenu ("éducation, témoignages, coulisses") → dire "en suivant les piliers définis dans la stratégie de contenu"
+- La cible ("40-60 ans avec douleurs articulaires") → dire "pour la cible définie dans le positionnement validé"
+- Les canaux ("Instagram + presse") → dire "sur les canaux validés dans la stratégie"
+- Les messages clés → dire "en utilisant les messages clés du document de positionnement"
+- Les médias ou influenceurs spécifiques → dire "les médias identifiés dans la recherche presse"
+
+Ce que les prompts de production DOIVENT prescrire (c'est leur job) :
+- Le FORMAT du livrable (.docx, .xlsx, .pptx)
+- La STRUCTURE du document (colonnes d'un tableau, sections d'un doc)
+- Les BONNES PRATIQUES de production (ex : "ajouter un onglet mode d'emploi")
+- Le DESTINATAIRE et comment il va l'utiliser
+- Le résumé + prochaines actions en sortie
+
+MAUVAIS EXEMPLE :
+"Crée un calendrier éditorial Instagram sur 3 mois. 3 posts/semaine alternant éducation, témoignages, coulisses, conseils bien-être. Inclure posts spéciaux lancement précommandes."
+
+BON EXEMPLE :
+"Crée un calendrier éditorial en tableur (.xlsx) pour les canaux validés dans la stratégie (documents dans le projet). Structure : colonnes Date, Format, Pilier, Message clé, Caption (début), Hashtags suggérés, Visuel requis, Statut. Applique le rythme et les piliers définis dans la ligne éditoriale validée. Destinataire : la cliente qui publiera elle-même — ajouter un onglet 'Mode d'emploi' avec les bonnes pratiques. En sortie : le fichier + un résumé 3-5 lignes + prochaines actions."
+
 RÈGLE DU DESTINATAIRE : chaque prompt précise QUI va utiliser le livrable et COMMENT.
 
 RÈGLE POST-LIVRABLE : chaque prompt demande EN PLUS du fichier :
