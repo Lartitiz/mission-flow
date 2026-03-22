@@ -70,7 +70,11 @@ Les prompts doivent :
 2. Poser des QUESTIONS OUVERTES à Laetitia (pas des QCM)
 3. Signaler les écarts entre hypothèses kick-off et réalité du marché
 
-Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true).
+Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) qui inclut un RECALIBRAGE DU PÉRIMÈTRE : comparer les missions prévues dans la proposition avec ce que la recherche et le kick-off ont révélé. Signaler :
+- Ce qui est confirmé (dans le périmètre, on continue)
+- Ce qui n'est plus pertinent (le marché a révélé autre chose)
+- Ce qui est NOUVEAU et pertinent mais HORS périmètre (ex : une stratégie B2B identifiée alors que seul le B2C était vendu)
+Pour les éléments hors périmètre : ne PAS les intégrer dans les prompts de production (ce n'est pas vendu). Les noter pour le plan d'actions final.
 
 Génère entre 2 et 4 prompts. CONCISION : 100-200 mots.
 
