@@ -316,7 +316,9 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
                 {isStructuring ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Structuration en cours... (jusqu'à 30s)
+                    {notes.length > 8000
+                      ? "Structuration en cours... (transcription longue, jusqu'à 3 min)"
+                      : "Structuration en cours... (jusqu'à 1 min)"}
                   </>
                 ) : (
                   <>
