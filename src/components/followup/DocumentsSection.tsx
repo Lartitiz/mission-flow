@@ -19,6 +19,7 @@ interface FileRow {
   category: string | null;
   created_at: string;
   uploaded_by: string;
+  url: string | null;
 }
 
 function formatFileSize(bytes: number | null): string {
