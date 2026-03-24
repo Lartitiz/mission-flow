@@ -269,9 +269,9 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
                 <button
                   onClick={() => handleDownload(file)}
                   className="p-1.5 rounded-lg hover:bg-accent transition-colors"
-                  title="Télécharger"
+                  title={file.url ? 'Ouvrir le lien' : 'Télécharger'}
                 >
-                  <Download className="h-4 w-4" style={{ color: '#91014b' }} />
+                  {file.url ? <ExternalLink className="h-4 w-4" style={{ color: '#91014b' }} /> : <Download className="h-4 w-4" style={{ color: '#91014b' }} />}
                 </button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
