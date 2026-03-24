@@ -122,10 +122,37 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   };
 
   const handleDelete = async (file: FileRow) => {
-    await supabase.storage.from('mission-files').remove([file.storage_path]);
+    if (!file.url) {
+      await supabase.storage.from('mission-files').remove([file.storage_path]);
+    }
     await supabase.from('files').delete().eq('id', file.id);
-    toast({ title: 'Document supprimé' });
+    toast({ title: 'Supprimé' });
     refresh();
+  };
+
+  const handleAddLink = async () => {
+    if (!linkUrl.trim() || !linkName.trim()) return;
+    setSavingLink(true);
+    const { error } = await supabase.from('files').insert({
+      mission_id: missionId,
+      file_name: linkName,
+      storage_path: '',
+      uploaded_by: 'laetitia',
+      category: linkCategory,
+      url: linkUrl,
+      file_size: null,
+    });
+    if (error) {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    } else {
+      toast({ title: 'Lien ajouté ✓' });
+      refresh();
+    }
+    setShowLinkDialog(false);
+    setLinkName('');
+    setLinkUrl('');
+    setLinkCategory('autre');
+    setSavingLink(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
