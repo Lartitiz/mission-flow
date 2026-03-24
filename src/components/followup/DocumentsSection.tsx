@@ -179,15 +179,27 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
         <h3 className="font-heading text-lg" style={{ color: '#91014b' }}>
           Documents & livrables
         </h3>
-        <Button
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          style={{ background: '#FB3D80', color: '#fff' }}
-          className="hover:opacity-90"
-        >
-          <Upload className="h-4 w-4 mr-1.5" />
-          Ajouter un document
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowLinkDialog(true)}
+            className="hover:opacity-90"
+            style={{ borderColor: '#FB3D80', color: '#FB3D80' }}
+          >
+            <Link2 className="h-4 w-4 mr-1.5" />
+            Ajouter un lien
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            style={{ background: '#FB3D80', color: '#fff' }}
+            className="hover:opacity-90"
+          >
+            <Upload className="h-4 w-4 mr-1.5" />
+            Ajouter un fichier
+          </Button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
