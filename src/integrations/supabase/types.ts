@@ -174,6 +174,7 @@ export type Database = {
           mission_id: string
           storage_path: string
           uploaded_by: string
+          url: string | null
         }
         Insert: {
           category?: string | null
@@ -184,6 +185,7 @@ export type Database = {
           mission_id: string
           storage_path: string
           uploaded_by?: string
+          url?: string | null
         }
         Update: {
           category?: string | null
@@ -194,6 +196,7 @@ export type Database = {
           mission_id?: string
           storage_path?: string
           uploaded_by?: string
+          url?: string | null
         }
         Relationships: [
           {
