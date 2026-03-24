@@ -67,7 +67,7 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
     queryFn: async () => {
       const { data } = await supabase
         .from('files')
-        .select('id, file_name, file_size, storage_path, category, created_at, uploaded_by')
+        .select('id, file_name, file_size, storage_path, category, created_at, uploaded_by, url')
         .eq('mission_id', missionId)
         .order('created_at', { ascending: false });
       return (data ?? []) as FileRow[];
