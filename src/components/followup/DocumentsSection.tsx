@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Download, Trash2, FileText, FileImage, FileSpreadsheet, File as FileIcon, Loader2, X } from 'lucide-react';
+import { Upload, Download, Trash2, FileText, FileImage, FileSpreadsheet, File as FileIcon, Loader2, X, Link2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
