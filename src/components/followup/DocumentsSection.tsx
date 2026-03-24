@@ -246,7 +246,7 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
               key={file.id}
               className="group bg-card rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3"
             >
-              {getFileIcon(file.file_name)}
+              {file.url ? <Link2 className="h-5 w-5 text-indigo-500" /> : getFileIcon(file.file_name)}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate" style={{ color: '#1A1A2E' }}>
                   {file.file_name.length > 40 ? file.file_name.slice(0, 37) + '...' : file.file_name}
