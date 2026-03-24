@@ -66,7 +66,7 @@ serve(async (req) => {
         .order("session_date", { ascending: false }),
       supabase
         .from("files")
-        .select("id, file_name, file_size, storage_path, category, created_at")
+        .select("id, file_name, file_size, storage_path, category, created_at, url")
         .eq("mission_id", missionId)
         .order("created_at", { ascending: false }),
       // nothing extra needed
