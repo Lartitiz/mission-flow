@@ -112,6 +112,10 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   };
 
   const handleDownload = async (file: FileRow) => {
+    if (file.url) {
+      window.open(file.url, '_blank');
+      return;
+    }
     const { data } = await supabase.storage.from('mission-files').createSignedUrl(file.storage_path, 3600);
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
     else toast({ title: 'Erreur téléchargement', variant: 'destructive' });
