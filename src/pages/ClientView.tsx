@@ -770,8 +770,8 @@ const ClientView = () => {
           {data.files.map(file => {
             const cb = catBadge(file.category);
             return (
-              <div key={file.id} onClick={() => file.download_url && window.open(file.download_url, '_blank')}
-                style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.04)', cursor: file.download_url ? 'pointer' : 'default', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}
+              <div key={file.id} onClick={() => { const target = file.url || file.download_url; if (target) window.open(target, '_blank'); }}
+                style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.04)', cursor: (file.url || file.download_url) ? 'pointer' : 'default', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 3px 8px rgba(145,1,75,0.08)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.04)'; }}
               >
