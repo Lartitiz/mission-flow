@@ -338,6 +338,49 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Link modal */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter un lien</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Nom du lien</label>
+              <Input value={linkName} onChange={(e) => setLinkName(e.target.value)} placeholder="Ex: Maquette Canva, Brief Google Doc..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">URL</label>
+              <Input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Catégorie</label>
+              <Select value={linkCategory} onValueChange={setLinkCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brief">Brief</SelectItem>
+                  <SelectItem value="livrable">Livrable</SelectItem>
+                  <SelectItem value="visuel">Visuel</SelectItem>
+                  <SelectItem value="proposition">Proposition</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={handleAddLink}
+              disabled={savingLink || !linkUrl.trim() || !linkName.trim()}
+              className="w-full"
+              style={{ background: '#FB3D80', color: '#fff' }}
+            >
+              {savingLink ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Link2 className="h-4 w-4 mr-2" />}
+              Ajouter
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
