@@ -92,6 +92,9 @@ serve(async (req) => {
     // Generate signed URLs for files
     const filesWithUrls = await Promise.all(
       files.map(async (f: any) => {
+        if (f.url) {
+          return { ...f, download_url: null };
+        }
         const { data } = await supabase.storage
           .from("mission-files")
           .createSignedUrl(f.storage_path, 3600);

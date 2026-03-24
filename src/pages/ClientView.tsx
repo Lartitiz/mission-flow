@@ -775,7 +775,7 @@ const ClientView = () => {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 3px 8px rgba(145,1,75,0.08)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.04)'; }}
               >
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{fileIconEmoji(file.file_name)}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: file.url ? '#EEF2FF' : fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{file.url ? '🔗' : fileIconEmoji(file.file_name)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 12, fontWeight: 500, color: '#1A1A2E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</p>
                   <p style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>{fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{format(new Date(file.created_at), 'd MMM yyyy', { locale: fr })}</p>
