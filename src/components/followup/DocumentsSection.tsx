@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Download, Trash2, FileText, FileImage, FileSpreadsheet, File as FileIcon, Loader2, X } from 'lucide-react';
+import { Upload, Download, Trash2, FileText, FileImage, FileSpreadsheet, File as FileIcon, Loader2, X, Link2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ interface FileRow {
   category: string | null;
   created_at: string;
   uploaded_by: string;
+  url: string | null;
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -55,13 +56,18 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   const [pendingFile, setPendingFile] = useState<globalThis.File | null>(null);
   const [uploadName, setUploadName] = useState('');
   const [uploadCategory, setUploadCategory] = useState('autre');
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkName, setLinkName] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkCategory, setLinkCategory] = useState('autre');
+  const [savingLink, setSavingLink] = useState(false);
 
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['mission-files', missionId],
     queryFn: async () => {
       const { data } = await supabase
         .from('files')
-        .select('id, file_name, file_size, storage_path, category, created_at, uploaded_by')
+        .select('id, file_name, file_size, storage_path, category, created_at, uploaded_by, url')
         .eq('mission_id', missionId)
         .order('created_at', { ascending: false });
       return (data ?? []) as FileRow[];
@@ -106,16 +112,47 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   };
 
   const handleDownload = async (file: FileRow) => {
+    if (file.url) {
+      window.open(file.url, '_blank');
+      return;
+    }
     const { data } = await supabase.storage.from('mission-files').createSignedUrl(file.storage_path, 3600);
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
     else toast({ title: 'Erreur téléchargement', variant: 'destructive' });
   };
 
   const handleDelete = async (file: FileRow) => {
-    await supabase.storage.from('mission-files').remove([file.storage_path]);
+    if (!file.url) {
+      await supabase.storage.from('mission-files').remove([file.storage_path]);
+    }
     await supabase.from('files').delete().eq('id', file.id);
-    toast({ title: 'Document supprimé' });
+    toast({ title: 'Supprimé' });
     refresh();
+  };
+
+  const handleAddLink = async () => {
+    if (!linkUrl.trim() || !linkName.trim()) return;
+    setSavingLink(true);
+    const { error } = await supabase.from('files').insert({
+      mission_id: missionId,
+      file_name: linkName,
+      storage_path: '',
+      uploaded_by: 'laetitia',
+      category: linkCategory,
+      url: linkUrl,
+      file_size: null,
+    });
+    if (error) {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    } else {
+      toast({ title: 'Lien ajouté ✓' });
+      refresh();
+    }
+    setShowLinkDialog(false);
+    setLinkName('');
+    setLinkUrl('');
+    setLinkCategory('autre');
+    setSavingLink(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -142,15 +179,27 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
         <h3 className="font-heading text-lg" style={{ color: '#91014b' }}>
           Documents & livrables
         </h3>
-        <Button
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          style={{ background: '#FB3D80', color: '#fff' }}
-          className="hover:opacity-90"
-        >
-          <Upload className="h-4 w-4 mr-1.5" />
-          Ajouter un document
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowLinkDialog(true)}
+            className="hover:opacity-90"
+            style={{ borderColor: '#FB3D80', color: '#FB3D80' }}
+          >
+            <Link2 className="h-4 w-4 mr-1.5" />
+            Ajouter un lien
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            style={{ background: '#FB3D80', color: '#fff' }}
+            className="hover:opacity-90"
+          >
+            <Upload className="h-4 w-4 mr-1.5" />
+            Ajouter un fichier
+          </Button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -197,7 +246,7 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
               key={file.id}
               className="group bg-card rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3"
             >
-              {getFileIcon(file.file_name)}
+              {file.url ? <Link2 className="h-5 w-5 text-indigo-500" /> : getFileIcon(file.file_name)}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate" style={{ color: '#1A1A2E' }}>
                   {file.file_name.length > 40 ? file.file_name.slice(0, 37) + '...' : file.file_name}
@@ -220,9 +269,9 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
                 <button
                   onClick={() => handleDownload(file)}
                   className="p-1.5 rounded-lg hover:bg-accent transition-colors"
-                  title="Télécharger"
+                  title={file.url ? 'Ouvrir le lien' : 'Télécharger'}
                 >
-                  <Download className="h-4 w-4" style={{ color: '#91014b' }} />
+                  {file.url ? <ExternalLink className="h-4 w-4" style={{ color: '#91014b' }} /> : <Download className="h-4 w-4" style={{ color: '#91014b' }} />}
                 </button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -285,6 +334,49 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
             >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
               Uploader
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link modal */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter un lien</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Nom du lien</label>
+              <Input value={linkName} onChange={(e) => setLinkName(e.target.value)} placeholder="Ex: Maquette Canva, Brief Google Doc..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">URL</label>
+              <Input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Catégorie</label>
+              <Select value={linkCategory} onValueChange={setLinkCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brief">Brief</SelectItem>
+                  <SelectItem value="livrable">Livrable</SelectItem>
+                  <SelectItem value="visuel">Visuel</SelectItem>
+                  <SelectItem value="proposition">Proposition</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={handleAddLink}
+              disabled={savingLink || !linkUrl.trim() || !linkName.trim()}
+              className="w-full"
+              style={{ background: '#FB3D80', color: '#fff' }}
+            >
+              {savingLink ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Link2 className="h-4 w-4 mr-2" />}
+              Ajouter
             </Button>
           </div>
         </DialogContent>

@@ -34,6 +34,7 @@ interface ClientFile {
   category: string | null;
   created_at: string;
   download_url: string | null;
+  url: string | null;
 }
 interface ClientData {
   mission: { id: string; client_name: string; mission_type: string; status: string };
@@ -769,12 +770,12 @@ const ClientView = () => {
           {data.files.map(file => {
             const cb = catBadge(file.category);
             return (
-              <div key={file.id} onClick={() => file.download_url && window.open(file.download_url, '_blank')}
-                style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.04)', cursor: file.download_url ? 'pointer' : 'default', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}
+              <div key={file.id} onClick={() => { const target = file.url || file.download_url; if (target) window.open(target, '_blank'); }}
+                style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.04)', cursor: (file.url || file.download_url) ? 'pointer' : 'default', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 3px 8px rgba(145,1,75,0.08)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.04)'; }}
               >
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{fileIconEmoji(file.file_name)}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: file.url ? '#EEF2FF' : fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{file.url ? '🔗' : fileIconEmoji(file.file_name)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 12, fontWeight: 500, color: '#1A1A2E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</p>
                   <p style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>{fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{format(new Date(file.created_at), 'd MMM yyyy', { locale: fr })}</p>

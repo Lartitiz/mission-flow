@@ -66,7 +66,7 @@ serve(async (req) => {
         .order("session_date", { ascending: false }),
       supabase
         .from("files")
-        .select("id, file_name, file_size, storage_path, category, created_at")
+        .select("id, file_name, file_size, storage_path, category, created_at, url")
         .eq("mission_id", missionId)
         .order("created_at", { ascending: false }),
       // nothing extra needed
@@ -92,6 +92,9 @@ serve(async (req) => {
     // Generate signed URLs for files
     const filesWithUrls = await Promise.all(
       files.map(async (f: any) => {
+        if (f.url) {
+          return { ...f, download_url: null };
+        }
         const { data } = await supabase.storage
           .from("mission-files")
           .createSignedUrl(f.storage_path, 3600);

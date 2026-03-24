@@ -1,0 +1,1 @@
+ALTER TABLE public.files ADD COLUMN IF NOT EXISTS url text DEFAULT NULL;
