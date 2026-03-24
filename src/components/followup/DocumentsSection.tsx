@@ -56,6 +56,11 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   const [pendingFile, setPendingFile] = useState<globalThis.File | null>(null);
   const [uploadName, setUploadName] = useState('');
   const [uploadCategory, setUploadCategory] = useState('autre');
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkName, setLinkName] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkCategory, setLinkCategory] = useState('autre');
+  const [savingLink, setSavingLink] = useState(false);
 
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['mission-files', missionId],
