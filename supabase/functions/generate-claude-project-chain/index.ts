@@ -333,7 +333,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("generate-claude-project-chain error:", e);
     const msg = e instanceof Error && e.name === "AbortError"
-      ? "La génération a pris trop de temps (phase " + phase + "). Réessaie — ça fonctionne souvent au 2e essai."
+      ? "La génération a pris trop de temps. Réessaie — ça fonctionne souvent au 2e essai."
       : "Erreur interne";
     return new Response(JSON.stringify({ error: msg }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
