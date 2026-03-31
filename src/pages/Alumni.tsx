@@ -27,21 +27,40 @@ const TYPE_BADGE: Record<string, string> = {
 const Alumni = () => {
   const { data: alumni = [], isLoading } = useAlumni();
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'warmth' | 'name' | 'date'>('warmth');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const navigate = useNavigate();
 
   const filtered = useMemo(() => {
-    if (typeFilter === 'all') return alumni;
-    return alumni.filter((m) => m.mission_type === typeFilter);
-  }, [alumni, typeFilter]);
+    let result = alumni;
+    if (typeFilter !== 'all') {
+      result = result.filter((m) => m.mission_type === typeFilter);
+    }
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'warmth': {
+          const daysA = Date.now() - new Date((a as any).last_contact_at || a.updated_at).getTime();
+          const daysB = Date.now() - new Date((b as any).last_contact_at || b.updated_at).getTime();
+          return daysB - daysA;
+        }
+        case 'name':
+          return a.client_name.localeCompare(b.client_name);
+        case 'date':
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        default:
+          return 0;
+      }
+    });
+    return result;
+  }, [alumni, typeFilter, sortBy]);
 
   const totalAlumni = alumni.length;
   const coldCount = alumni.filter(
-    (m) => getWarmthLevel(null, m.updated_at) === 'cold'
+    (m) => getWarmthLevel((m as any).last_contact_at, m.updated_at) === 'cold'
   ).length;
   const recentCount = alumni.filter(
-    (m) => getWarmthLevel(null, m.updated_at) === 'recent'
+    (m) => getWarmthLevel((m as any).last_contact_at, m.updated_at) === 'recent'
   ).length;
 
   const openDialog = (mission: Mission) => {
