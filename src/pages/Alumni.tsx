@@ -176,7 +176,7 @@ const Alumni = () => {
                       Fin de mission : {format(new Date(mission.updated_at), 'd MMM yyyy', { locale: fr })}
                     </p>
                     <p className="font-body text-xs text-muted-foreground">
-                      Dernier contact : {daysSinceContact(null, mission.updated_at)}
+                      Dernier contact : {daysSinceContact((mission as any).last_contact_at, mission.updated_at)}
                     </p>
                   </div>
 
