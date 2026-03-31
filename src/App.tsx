@@ -11,6 +11,7 @@ import Missions from './pages/Missions';
 import MissionDetail from './pages/MissionDetail';
 import ClientView from './pages/ClientView';
 import QuestionnaireView from './pages/QuestionnaireView';
+import Alumni from './pages/Alumni';
 import NotFound from './pages/NotFound';
 import ResetPassword from './pages/ResetPassword';
 
