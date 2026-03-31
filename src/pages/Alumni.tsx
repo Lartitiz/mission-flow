@@ -27,21 +27,40 @@ const TYPE_BADGE: Record<string, string> = {
 const Alumni = () => {
   const { data: alumni = [], isLoading } = useAlumni();
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'warmth' | 'name' | 'date'>('warmth');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const navigate = useNavigate();
 
   const filtered = useMemo(() => {
-    if (typeFilter === 'all') return alumni;
-    return alumni.filter((m) => m.mission_type === typeFilter);
-  }, [alumni, typeFilter]);
+    let result = alumni;
+    if (typeFilter !== 'all') {
+      result = result.filter((m) => m.mission_type === typeFilter);
+    }
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'warmth': {
+          const daysA = Date.now() - new Date((a as any).last_contact_at || a.updated_at).getTime();
+          const daysB = Date.now() - new Date((b as any).last_contact_at || b.updated_at).getTime();
+          return daysB - daysA;
+        }
+        case 'name':
+          return a.client_name.localeCompare(b.client_name);
+        case 'date':
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        default:
+          return 0;
+      }
+    });
+    return result;
+  }, [alumni, typeFilter, sortBy]);
 
   const totalAlumni = alumni.length;
   const coldCount = alumni.filter(
-    (m) => getWarmthLevel(null, m.updated_at) === 'cold'
+    (m) => getWarmthLevel((m as any).last_contact_at, m.updated_at) === 'cold'
   ).length;
   const recentCount = alumni.filter(
-    (m) => getWarmthLevel(null, m.updated_at) === 'recent'
+    (m) => getWarmthLevel((m as any).last_contact_at, m.updated_at) === 'recent'
   ).length;
 
   const openDialog = (mission: Mission) => {
@@ -98,7 +117,7 @@ const Alumni = () => {
         </Card>
       </div>
 
-      {/* Filter */}
+      {/* Filter & Sort */}
       <div className="flex items-center gap-3">
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-[180px] font-body">
@@ -108,6 +127,16 @@ const Alumni = () => {
             <SelectItem value="all">Tous</SelectItem>
             <SelectItem value="binome">Binôme</SelectItem>
             <SelectItem value="agency">Agency</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'warmth' | 'name' | 'date')}>
+          <SelectTrigger className="w-[200px] font-body">
+            <SelectValue placeholder="Trier par" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="warmth">À relancer en priorité</SelectItem>
+            <SelectItem value="name">Nom A→Z</SelectItem>
+            <SelectItem value="date">Date de fin</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -120,7 +149,7 @@ const Alumni = () => {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {filtered.map((mission) => {
-            const warmth = getWarmthLevel(null, mission.updated_at);
+            const warmth = getWarmthLevel((mission as any).last_contact_at, mission.updated_at);
             const warmthConfig = getWarmthConfig(warmth);
 
             return (
@@ -147,7 +176,7 @@ const Alumni = () => {
                       Fin de mission : {format(new Date(mission.updated_at), 'd MMM yyyy', { locale: fr })}
                     </p>
                     <p className="font-body text-xs text-muted-foreground">
-                      Dernier contact : {daysSinceContact(null, mission.updated_at)}
+                      Dernier contact : {daysSinceContact((mission as any).last_contact_at, mission.updated_at)}
                     </p>
                   </div>
 

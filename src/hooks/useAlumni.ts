@@ -23,7 +23,7 @@ export function useUpdateLastContact() {
     mutationFn: async (missionId: string) => {
       const { error } = await supabase
         .from('missions')
-        .update({ updated_at: new Date().toISOString() })
+        .update({ last_contact_at: new Date().toISOString() } as any)
         .eq('id', missionId);
       if (error) throw error;
     },
