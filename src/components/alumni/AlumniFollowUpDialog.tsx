@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, ExternalLink, Sparkles } from 'lucide-react';
+import { Copy, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
