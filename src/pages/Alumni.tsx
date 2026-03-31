@@ -149,7 +149,7 @@ const Alumni = () => {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {filtered.map((mission) => {
-            const warmth = getWarmthLevel(null, mission.updated_at);
+            const warmth = getWarmthLevel((mission as any).last_contact_at, mission.updated_at);
             const warmthConfig = getWarmthConfig(warmth);
 
             return (
