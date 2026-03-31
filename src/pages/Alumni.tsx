@@ -12,10 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Heart, MessageSquare, ExternalLink, Users, AlertTriangle, SmilePlus } from 'lucide-react';
+import { MessageSquare, ExternalLink, Users, AlertTriangle, SmilePlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
+import { AlumniFollowUpDialog } from '@/components/alumni/AlumniFollowUpDialog';
+import type { Mission } from '@/lib/missions';
 
 const TYPE_BADGE: Record<string, string> = {
   non_determine: 'bg-muted text-muted-foreground',
@@ -26,8 +27,9 @@ const TYPE_BADGE: Record<string, string> = {
 const Alumni = () => {
   const { data: alumni = [], isLoading } = useAlumni();
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const filtered = useMemo(() => {
     if (typeFilter === 'all') return alumni;
@@ -41,6 +43,11 @@ const Alumni = () => {
   const recentCount = alumni.filter(
     (m) => getWarmthLevel(null, m.updated_at) === 'recent'
   ).length;
+
+  const openDialog = (mission: Mission) => {
+    setSelectedMission(mission);
+    setDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -122,7 +129,6 @@ const Alumni = () => {
                 className="border-[hsl(340_30%_92%)] hover:border-primary/40 transition-colors rounded-xl"
               >
                 <CardContent className="p-5 space-y-3">
-                  {/* Header */}
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-body font-medium text-[15px] text-foreground">
                       {mission.client_name}
@@ -136,7 +142,6 @@ const Alumni = () => {
                     </span>
                   </div>
 
-                  {/* Dates */}
                   <div className="space-y-1">
                     <p className="font-body text-xs text-muted-foreground">
                       Fin de mission : {format(new Date(mission.updated_at), 'd MMM yyyy', { locale: fr })}
@@ -146,7 +151,6 @@ const Alumni = () => {
                     </p>
                   </div>
 
-                  {/* Warmth indicator */}
                   <div className="flex items-center gap-2">
                     <span className={`inline-block h-2.5 w-2.5 rounded-full ${warmthConfig.color}`} />
                     <span className={`font-body text-xs ${warmthConfig.textColor}`}>
@@ -154,18 +158,12 @@ const Alumni = () => {
                     </span>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2 pt-1">
                     <Button
                       variant="outline"
                       size="sm"
                       className="font-body text-sm flex-1"
-                      onClick={() =>
-                        toast({
-                          title: 'Bientôt disponible',
-                          description: "L'envoi de messages sera disponible prochainement.",
-                        })
-                      }
+                      onClick={() => openDialog(mission)}
                     >
                       <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
                       Prendre des nouvelles
@@ -184,6 +182,17 @@ const Alumni = () => {
             );
           })}
         </div>
+      )}
+
+      {selectedMission && (
+        <AlumniFollowUpDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          missionId={selectedMission.id}
+          clientName={selectedMission.client_name}
+          clientEmail={selectedMission.client_email}
+          missionType={selectedMission.mission_type}
+        />
       )}
     </div>
   );
