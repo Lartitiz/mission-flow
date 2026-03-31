@@ -16,6 +16,7 @@ import {
 const navItems = [
   { title: 'Pipeline', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Liste des missions', url: '/dashboard/missions', icon: List },
+  { title: 'Ancien·nes', url: '/dashboard/alumni', icon: Heart },
 ];
 
 export function AppSidebar() {

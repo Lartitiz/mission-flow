@@ -38,6 +38,7 @@ const App = () => (
             <Route path="missions" element={<Missions />} />
             <Route path="mission/:id" element={<MissionDetail />} />
             <Route path="mission/:id/:tab" element={<MissionDetail />} />
+            <Route path="alumni" element={<Alumni />} />
           </Route>
           <Route path="/client/:token" element={<ClientView />} />
           <Route path="/c/:token" element={<ClientView />} />
