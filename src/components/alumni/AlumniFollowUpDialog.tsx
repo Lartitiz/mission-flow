@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, ExternalLink, Sparkles } from 'lucide-react';
+import { Copy, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -303,21 +303,22 @@ export function AlumniFollowUpDialog({
             disabled={isGenerating}
             className="font-body gap-2 border-[#534AB7] text-[#534AB7] hover:bg-[#EEEDFE]"
           >
-            <Sparkles className="h-4 w-4" />
-            {isGenerating ? 'Génération…' : 'Générer avec l\'IA'}
+            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {isGenerating ? 'Génération...' : 'Générer avec l\'IA'}
           </Button>
 
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)} className="font-body">
+            <Button variant="ghost" onClick={() => onOpenChange(false)} className="font-body" disabled={isGenerating}>
               Fermer
             </Button>
-            <Button variant="outline" onClick={handleGmail} className="font-body gap-2">
+            <Button variant="outline" onClick={handleGmail} className="font-body gap-2" disabled={isGenerating}>
               <ExternalLink className="h-4 w-4" />
               Ouvrir dans Gmail
             </Button>
             <Button
               onClick={handleCopy}
               className="font-body gap-2 bg-[#91014b] text-white hover:bg-[#7a0140]"
+              disabled={isGenerating}
             >
               <Copy className="h-4 w-4" />
               Copier l'email
