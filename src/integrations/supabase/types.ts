@@ -315,6 +315,7 @@ export type Database = {
           client_token: string
           created_at: string
           id: string
+          last_contact_at: string | null
           mission_type: string
           notes: string | null
           status: string
@@ -329,6 +330,7 @@ export type Database = {
           client_token?: string
           created_at?: string
           id?: string
+          last_contact_at?: string | null
           mission_type?: string
           notes?: string | null
           status?: string
@@ -343,6 +345,7 @@ export type Database = {
           client_token?: string
           created_at?: string
           id?: string
+          last_contact_at?: string | null
           mission_type?: string
           notes?: string | null
           status?: string
