@@ -117,7 +117,7 @@ const Alumni = () => {
         </Card>
       </div>
 
-      {/* Filter */}
+      {/* Filter & Sort */}
       <div className="flex items-center gap-3">
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-[180px] font-body">
@@ -127,6 +127,16 @@ const Alumni = () => {
             <SelectItem value="all">Tous</SelectItem>
             <SelectItem value="binome">Binôme</SelectItem>
             <SelectItem value="agency">Agency</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'warmth' | 'name' | 'date')}>
+          <SelectTrigger className="w-[200px] font-body">
+            <SelectValue placeholder="Trier par" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="warmth">À relancer en priorité</SelectItem>
+            <SelectItem value="name">Nom A→Z</SelectItem>
+            <SelectItem value="date">Date de fin</SelectItem>
           </SelectContent>
         </Select>
       </div>
