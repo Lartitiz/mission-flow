@@ -21,9 +21,10 @@ export function useKickoff(missionId: string) {
         .from('kickoffs')
         .select('*')
         .eq('mission_id', missionId)
-        .maybeSingle();
+        .order('created_at', { ascending: true })
+        .limit(1);
       if (error) throw error;
-      return data as Kickoff | null;
+      return (data && data.length > 0 ? data[0] : null) as Kickoff | null;
     },
     enabled: !!missionId,
   });
