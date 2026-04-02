@@ -268,6 +268,51 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     }
   };
 
+  const handleRetryPhaseC = async () => {
+    if (!data || !lastGenContext) return;
+    setIsRetryingC(true);
+    try {
+      const existingNonC = data.prompt_chain.filter(p => p.phase !== 'C');
+      const orderOffset = existingNonC.length;
+
+      const { data: phaseC, error: errC } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: {
+          context_summary: lastGenContext.context_summary,
+          prompt_system: lastGenContext.prompt_system,
+          phase: 'C',
+          previous_prompts: existingNonC.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })),
+        },
+      });
+
+      if (errC || phaseC?.error || !phaseC?.prompts) {
+        toast({ title: 'Erreur', description: phaseC?.error || 'La phase C a encore échoué. Réessaie dans quelques instants.', variant: 'destructive' });
+        return;
+      }
+
+      const mapped = phaseC.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'C' as const }));
+      const newWarnings = data.warnings.filter(w => !w.message.includes('phase C'));
+      if (phaseC.warnings) newWarnings.push(...phaseC.warnings);
+
+      const newData = { ...data, prompt_chain: [...existingNonC, ...mapped], warnings: newWarnings };
+      setData(newData);
+
+      // Save
+      if (savedProject?.id) {
+        await supabase.from('claude_projects' as any).update({
+          prompt_chain: newData.prompt_chain as any,
+          warnings: newData.warnings as any,
+        } as any).eq('id', savedProject.id);
+        refetchProject();
+      }
+
+      toast({ title: 'Phase C générée ✓', description: `${mapped.length} prompts de production ajoutés.` });
+    } catch {
+      toast({ title: 'Erreur', description: 'Erreur inattendue.', variant: 'destructive' });
+    } finally {
+      setIsRetryingC(false);
+    }
+  };
+
   const exportFullMd = () => {
     if (!data) return;
     let md = `# Kit projet Claude — ${clientName}\n\n`;
