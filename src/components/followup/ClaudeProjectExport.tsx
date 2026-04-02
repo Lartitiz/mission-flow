@@ -56,10 +56,12 @@ const WARNING_CONFIG: Record<string, { icon: typeof AlertTriangle; color: string
 export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExportProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRetryingC, setIsRetryingC] = useState(false);
   const [data, setData] = useState<ClaudeProjectData | null>(null);
   const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
   const [completedPrompts, setCompletedPrompts] = useState<number[]>([]);
+  const [lastGenContext, setLastGenContext] = useState<{ context_summary: string; prompt_system: string } | null>(null);
 
   const { data: savedProject, refetch: refetchProject } = useQuery({
     queryKey: ['claude-project', missionId],
@@ -147,6 +149,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       const allPrompts: PromptChainItem[] = [];
       const allWarnings: Warning[] = [];
       let orderOffset = 0;
+      setLastGenContext({ context_summary: step1.context_summary, prompt_system: step1.prompt_system });
 
       // Step 2: Phase A (Recherche)
       setStep('phase_a');
@@ -262,6 +265,65 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     } finally {
       setIsGenerating(false);
       setStep('idle');
+    }
+  };
+
+  const handleRetryPhaseC = async () => {
+    if (!data) return;
+    setIsRetryingC(true);
+    try {
+      let ctx = lastGenContext;
+
+      // If no context cached (page was reloaded), regenerate it
+      if (!ctx) {
+        const { data: step1, error: err1 } = await supabase.functions.invoke('generate-claude-project', {
+          body: { mission_id: missionId },
+        });
+        if (err1 || step1?.error || !step1?.context_summary) {
+          toast({ title: 'Erreur', description: 'Impossible de récupérer le contexte. Regénère le kit complet.', variant: 'destructive' });
+          return;
+        }
+        ctx = { context_summary: step1.context_summary, prompt_system: step1.prompt_system };
+        setLastGenContext(ctx);
+      }
+
+      const existingNonC = data.prompt_chain.filter(p => p.phase !== 'C');
+      const orderOffset = existingNonC.length;
+
+      const { data: phaseC, error: errC } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: {
+          context_summary: ctx.context_summary,
+          prompt_system: ctx.prompt_system,
+          phase: 'C',
+          previous_prompts: existingNonC.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })),
+        },
+      });
+
+      if (errC || phaseC?.error || !phaseC?.prompts) {
+        toast({ title: 'Erreur', description: phaseC?.error || 'La phase C a encore échoué. Réessaie dans quelques instants.', variant: 'destructive' });
+        return;
+      }
+
+      const mapped = phaseC.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'C' as const }));
+      const newWarnings = data.warnings.filter(w => !w.message.includes('phase C'));
+      if (phaseC.warnings) newWarnings.push(...phaseC.warnings);
+
+      const newData = { ...data, prompt_chain: [...existingNonC, ...mapped], warnings: newWarnings };
+      setData(newData);
+
+      if (savedProject?.id) {
+        await supabase.from('claude_projects' as any).update({
+          prompt_chain: newData.prompt_chain as any,
+          warnings: newData.warnings as any,
+        } as any).eq('id', savedProject.id);
+        refetchProject();
+      }
+
+      toast({ title: 'Phase C générée ✓', description: `${mapped.length} prompts de production ajoutés.` });
+    } catch {
+      toast({ title: 'Erreur', description: 'Erreur inattendue.', variant: 'destructive' });
+    } finally {
+      setIsRetryingC(false);
     }
   };
 
@@ -451,6 +513,21 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                             {config.label}
                           </Badge>
                           <p className="font-body text-sm text-foreground">{w.message}</p>
+                          {w.message.includes('phase C') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleRetryPhaseC}
+                              disabled={isRetryingC}
+                              className="font-body gap-2 mt-2"
+                            >
+                              {isRetryingC ? (
+                                <><Loader2 className="h-3.5 w-3.5 animate-spin" />Génération phase C...</>
+                              ) : (
+                                <><Sparkles className="h-3.5 w-3.5" />Relancer la phase C</>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     );

@@ -268,7 +268,8 @@ serve(async (req) => {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90000);
+    const timeoutMs = phase === 'C' ? 140000 : 90000;
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
