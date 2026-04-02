@@ -115,12 +115,12 @@ ${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal
       });
     }
 
-    // Adapter le modèle et les tokens à la taille de l'input
+    // Toujours Sonnet (plus rapide, évite les timeouts edge function)
     const inputLength = truncatedNotes.length;
-    const isLongTranscript = inputLength > 8000; // ~2000+ mots
-    const model = isLongTranscript ? "claude-opus-4-20250514" : "claude-sonnet-4-20250514";
+    const isLongTranscript = inputLength > 8000;
+    const model = "claude-sonnet-4-20250514";
     const maxTokens = isLongTranscript ? 16000 : 8000;
-    const timeoutMs = isLongTranscript ? 180000 : 140000; // 3 min pour Opus, 2m20 pour Sonnet
+    const timeoutMs = 120000; // 2 min max (sous la limite edge function de 150s)
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
