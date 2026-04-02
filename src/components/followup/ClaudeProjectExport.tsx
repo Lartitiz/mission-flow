@@ -499,6 +499,21 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                             {config.label}
                           </Badge>
                           <p className="font-body text-sm text-foreground">{w.message}</p>
+                          {w.message.includes('phase C') && lastGenContext && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleRetryPhaseC}
+                              disabled={isRetryingC}
+                              className="font-body gap-2 mt-2"
+                            >
+                              {isRetryingC ? (
+                                <><Loader2 className="h-3.5 w-3.5 animate-spin" />Génération phase C...</>
+                              ) : (
+                                <><Sparkles className="h-3.5 w-3.5" />Relancer la phase C</>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     );
