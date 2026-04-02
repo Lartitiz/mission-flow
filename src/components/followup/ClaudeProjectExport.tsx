@@ -56,10 +56,12 @@ const WARNING_CONFIG: Record<string, { icon: typeof AlertTriangle; color: string
 export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExportProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRetryingC, setIsRetryingC] = useState(false);
   const [data, setData] = useState<ClaudeProjectData | null>(null);
   const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
   const [completedPrompts, setCompletedPrompts] = useState<number[]>([]);
+  const [lastGenContext, setLastGenContext] = useState<{ context_summary: string; prompt_system: string } | null>(null);
 
   const { data: savedProject, refetch: refetchProject } = useQuery({
     queryKey: ['claude-project', missionId],
