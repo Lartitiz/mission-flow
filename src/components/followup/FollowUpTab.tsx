@@ -11,6 +11,7 @@ import { JournalSection } from './JournalSection';
 import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 import { ClaudeProjectExport } from './ClaudeProjectExport';
+import { LaunchMessageCard } from './LaunchMessageCard';
 
 interface FollowUpTabProps {
   missionId: string;
@@ -82,6 +83,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
         totalActions={totalActions}
         actionsPercent={actionsPercent}
       />
+
+      <LaunchMessageCard clientName={clientName} />
 
       <NextSessionCard
         session={lastSession}
