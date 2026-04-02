@@ -149,6 +149,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       const allPrompts: PromptChainItem[] = [];
       const allWarnings: Warning[] = [];
       let orderOffset = 0;
+      setLastGenContext({ context_summary: step1.context_summary, prompt_system: step1.prompt_system });
 
       // Step 2: Phase A (Recherche)
       setStep('phase_a');
