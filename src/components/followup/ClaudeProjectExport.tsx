@@ -269,16 +269,31 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   };
 
   const handleRetryPhaseC = async () => {
-    if (!data || !lastGenContext) return;
+    if (!data) return;
     setIsRetryingC(true);
     try {
+      let ctx = lastGenContext;
+
+      // If no context cached (page was reloaded), regenerate it
+      if (!ctx) {
+        const { data: step1, error: err1 } = await supabase.functions.invoke('generate-claude-project', {
+          body: { mission_id: missionId },
+        });
+        if (err1 || step1?.error || !step1?.context_summary) {
+          toast({ title: 'Erreur', description: 'Impossible de récupérer le contexte. Regénère le kit complet.', variant: 'destructive' });
+          return;
+        }
+        ctx = { context_summary: step1.context_summary, prompt_system: step1.prompt_system };
+        setLastGenContext(ctx);
+      }
+
       const existingNonC = data.prompt_chain.filter(p => p.phase !== 'C');
       const orderOffset = existingNonC.length;
 
       const { data: phaseC, error: errC } = await supabase.functions.invoke('generate-claude-project-chain', {
         body: {
-          context_summary: lastGenContext.context_summary,
-          prompt_system: lastGenContext.prompt_system,
+          context_summary: ctx.context_summary,
+          prompt_system: ctx.prompt_system,
           phase: 'C',
           previous_prompts: existingNonC.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })),
         },
@@ -296,7 +311,6 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       const newData = { ...data, prompt_chain: [...existingNonC, ...mapped], warnings: newWarnings };
       setData(newData);
 
-      // Save
       if (savedProject?.id) {
         await supabase.from('claude_projects' as any).update({
           prompt_chain: newData.prompt_chain as any,
