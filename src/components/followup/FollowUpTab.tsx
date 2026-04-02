@@ -84,6 +84,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
         actionsPercent={actionsPercent}
       />
 
+      <LaunchMessageCard clientName={clientName} />
+
       <NextSessionCard
         session={lastSession}
         onUpdate={updateSession}
