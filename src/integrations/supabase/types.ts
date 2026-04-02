@@ -299,7 +299,7 @@ export type Database = {
           {
             foreignKeyName: "kickoffs_mission_id_fkey"
             columns: ["mission_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "missions"
             referencedColumns: ["id"]
           },
