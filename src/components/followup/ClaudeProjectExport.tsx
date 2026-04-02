@@ -513,7 +513,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                             {config.label}
                           </Badge>
                           <p className="font-body text-sm text-foreground">{w.message}</p>
-                          {w.message.includes('phase C') && lastGenContext && (
+                          {w.message.includes('phase C') && (
                             <Button
                               variant="outline"
                               size="sm"
