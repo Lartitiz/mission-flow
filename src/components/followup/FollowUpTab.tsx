@@ -11,6 +11,7 @@ import { JournalSection } from './JournalSection';
 import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 import { ClaudeProjectExport } from './ClaudeProjectExport';
+import { LaunchMessageCard } from './LaunchMessageCard';
 
 interface FollowUpTabProps {
   missionId: string;
