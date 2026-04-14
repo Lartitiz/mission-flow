@@ -193,9 +193,11 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
 
       // Apply updates
       for (const update of selectedUpdates) {
+        const updateData: Record<string, string> = {};
+        updateData[update.field] = update.new_value;
         const { error } = await supabase
           .from('actions')
-          .update({ [update.field]: update.new_value })
+          .update(updateData as any)
           .eq('id', update.action_id);
         if (error) console.error('Update action error:', error);
       }

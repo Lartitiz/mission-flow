@@ -132,7 +132,7 @@ export function useKickoff(missionId: string) {
       if (currentKickoff && pendingFieldsRef.current !== null) {
         supabase
           .from('kickoffs')
-          .update(pendingFieldsRef.current)
+          .update(pendingFieldsRef.current as any)
           .eq('id', currentKickoff.id)
           .then(() => {});
       }
