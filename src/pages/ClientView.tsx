@@ -162,15 +162,16 @@ const ClientView = () => {
   const handleToggleAction = async (actionId: string, done: boolean) => {
     setUpdatingAction(actionId);
     try {
-      await supabase.functions.invoke('update-client-action', {
+      const { data: result, error } = await supabase.functions.invoke('update-client-action', {
         body: { token, action_id: actionId, status: done ? 'done' : 'not_started' }
       });
+      if (error || result?.error) throw new Error(result?.error || 'Erreur');
       setData(p => p ? {
         ...p,
         actions: p.actions.map(a => a.id === actionId ? { ...a, status: done ? 'done' : 'not_started' } : a)
       } : p);
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: 'Erreur', description: 'Impossible de sauvegarder. Réessaie.', variant: 'destructive' });
     } finally {
       setUpdatingAction(null);
     }
@@ -180,16 +181,17 @@ const ClientView = () => {
     const comment = commentDrafts[actionId] ?? '';
     setSavingComment(actionId);
     try {
-      await supabase.functions.invoke('update-client-action', {
+      const { data: result, error } = await supabase.functions.invoke('update-client-action', {
         body: { token, action_id: actionId, client_comment: comment }
       });
+      if (error || result?.error) throw new Error(result?.error || 'Erreur');
       setData(p => p ? {
         ...p,
         actions: p.actions.map(a => a.id === actionId ? { ...a, client_comment: comment || null } : a)
       } : p);
       toast({ title: 'Commentaire enregistré ✓' });
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: 'Erreur', description: 'Impossible de sauvegarder. Réessaie.', variant: 'destructive' });
     } finally {
       setSavingComment(null);
     }

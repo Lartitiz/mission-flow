@@ -28,16 +28,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify token
-    const { data: mission, error: missionError } = await supabase
+    // Verify token (support both UUID and slug)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+    const missionQuery = supabase
       .from("missions")
-      .select("id")
-      .eq("client_token", token)
-      .single();
+      .select("id, client_link_active");
+
+    const { data: mission, error: missionError } = isUuid
+      ? await missionQuery.eq("client_token", token).single()
+      : await missionQuery.eq("client_slug", token).single();
 
     if (missionError || !mission) {
       return new Response(JSON.stringify({ error: "Token invalide" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (mission.client_link_active === false) {
+      return new Response(JSON.stringify({ error: "Ce lien a été désactivé" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

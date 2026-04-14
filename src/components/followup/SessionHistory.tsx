@@ -255,9 +255,11 @@ export function SessionHistory({
         });
       }
       for (const update of selectedUpdates) {
+        const updateData: Record<string, string> = {};
+        updateData[update.field] = update.new_value;
         await supabase
           .from('actions')
-          .update({ [update.field]: update.new_value })
+          .update(updateData as any)
           .eq('id', update.action_id);
       }
       toast({
