@@ -91,7 +91,7 @@ function buildEmail(
 
   // PAIEMENT
   if (payment === 'stripe') {
-    body += `Pour activer ton accompagnement, voici le lien de paiement (290€/mois) :\n👉 https://buy.stripe.com/4gMfZidRHgQo7Ve0IF67S00\nUne fois le premier paiement reçu, on planifie l'atelier de lancement.\n\n`;
+    body += `Pour activer ton accompagnement, voici le lien de paiement (290€/mois) :\n👉 https://buy.stripe.com/bJebJ200R57G7Veezv67S01\nUne fois le premier paiement reçu, on planifie l'atelier de lancement.\n\n`;
   } else {
     body += `Je t'envoie le devis et la facture d'acompte en pièce jointe. Voici les coordonnées bancaires pour le virement :\nIBAN : FR76 4061 8804 9300 0405 1786 861\nBIC : BOUSFRPPXXX\nTitulaire : Laetitia Mattioli / Nowadays Agency\nMontant acompte : ${acompte}€\nDès réception, on planifie l'atelier de lancement.\n\n`;
   }
