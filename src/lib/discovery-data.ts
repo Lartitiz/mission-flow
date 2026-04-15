@@ -65,7 +65,7 @@ export const SALES_SCRIPTS: SalesScript[] = [
   {
     title: 'Pitch Binôme',
     content:
-      "Ce que je peux te proposer, c'est l'accompagnement Ta Binôme de Com' : 6 mois où on construit et on applique ensemble ta stratégie de communication. Mois 1-2 : je construis ton plan de com' sur mesure. Mois 3-6 : on applique ensemble avec une visio de 2h par mois + WhatsApp jours ouvrés. 250€/mois pendant 6 mois.",
+      "Ce que je peux te proposer, c'est l'accompagnement Ta Binôme de Com' : 6 mois où on construit et on applique ensemble ta stratégie de communication. Mois 1-2 : je construis ton plan de com' sur mesure. Mois 3-6 : on applique ensemble avec une visio de 2h par mois + WhatsApp jours ouvrés. 290€/mois pendant 6 mois.",
   },
   {
     title: 'Pitch Agency',
