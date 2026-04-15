@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MAX_INPUT_CHARS = 40000;
+const MAX_INPUT_CHARS = 50000;
 
 const systemPrompt = `Tu es l'assistante IA de Laetitia Mattioli (Nowadays Agency). Tu reçois le contenu texte d'une proposition commerciale existante et tu dois le structurer au format standard de l'outil.
 
@@ -49,8 +49,8 @@ serve(async (req) => {
       );
     }
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY non configurée");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY non configurée");
 
     // Truncate input if too long
     const truncatedText = raw_text.length > MAX_INPUT_CHARS
@@ -58,25 +58,25 @@ serve(async (req) => {
       : raw_text;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 150000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 16000,
-        system: systemPrompt,
+        model: "google/gemini-2.5-flash",
         messages: [
+          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: `Voici le texte de la proposition commerciale à structurer :\n\nType de mission : ${mission_type || "non déterminé"}\n\n---\n\n${truncatedText}`,
           },
         ],
+        max_tokens: 16000,
+        temperature: 0.2,
       }),
       signal: controller.signal,
     });
@@ -85,19 +85,23 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic error:", response.status, errText);
+      console.error("AI Gateway error:", response.status, errText);
       throw new Error("Erreur API IA");
     }
 
     const result = await response.json();
-    const text = result.content?.[0]?.text || "";
+    const text = result.choices?.[0]?.message?.content || "";
 
     if (!text) throw new Error("Réponse IA vide");
 
-    // Check if response was truncated (stop_reason !== "end_turn")
-    const stopReason = result.stop_reason;
-    if (stopReason === "max_tokens") {
-      console.error("Response truncated by max_tokens");
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("Réponse IA non parseable");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
       // Try to repair truncated JSON
       const repaired = repairTruncatedJson(text);
       if (repaired) {
@@ -105,14 +109,9 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error("La proposition est trop longue pour être structurée en une seule fois. Essaie de coller un texte plus court.");
+      throw new Error("JSON invalide dans la réponse IA");
     }
 
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Réponse IA non parseable");
-
-    const parsed = JSON.parse(jsonMatch[0]);
     if (!parsed.sections || !Array.isArray(parsed.sections)) {
       throw new Error("Format de sections invalide");
     }
@@ -134,19 +133,16 @@ serve(async (req) => {
 
 function repairTruncatedJson(text: string): { sections: Array<{ title: string; content: string }> } | null {
   try {
-    // Find the start of the JSON
     const startIdx = text.indexOf('{"sections"');
     if (startIdx === -1) return null;
 
-    let jsonStr = text.substring(startIdx);
+    const jsonStr = text.substring(startIdx);
 
-    // Try parsing as-is first
     try {
       const parsed = JSON.parse(jsonStr);
       if (parsed.sections) return parsed;
     } catch { /* continue with repair */ }
 
-    // Find all complete section objects
     const sections: Array<{ title: string; content: string }> = [];
     const sectionRegex = /\{\s*"title"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*,\s*"content"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*\}/g;
     let match;
