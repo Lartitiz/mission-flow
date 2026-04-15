@@ -63,7 +63,7 @@ SECTION 4 — "Investissement"
 
 Tableau clair avec le prix.
 
-- Binôme standard : 250€ HT/mois × 6 mois = 1 500€ HT, paiement mensuel
+- Binôme standard : 290€ HT/mois × 6 mois = 1 740€ HT, paiement mensuel
 
 - Agency : adapter au devis
 
