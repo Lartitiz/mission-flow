@@ -24,7 +24,7 @@ interface KickoffStructuredSection {
 }
 
 export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
-  const { kickoff, isLoading, saveNotes, saveField, saveImmediate, isSaving } = useKickoff(missionId);
+  const { kickoff, isLoading, saveNotes, flushNotesNow, saveField, saveImmediate, isSaving } = useKickoff(missionId);
   const { discoveryCall } = useDiscoveryCall(missionId);
   const { toast } = useToast();
 
@@ -306,6 +306,8 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
                 notes={notes}
                 onChange={handleNotesChange}
                 isSaving={isSaving}
+                draftKey={`kickoff-notes:${missionId}`}
+                onFlush={flushNotesNow}
               />
 
               <Button

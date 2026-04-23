@@ -17,7 +17,7 @@ interface DiscoveryTabProps {
 }
 
 export function DiscoveryTab({ missionId, clientName, currentMissionType }: DiscoveryTabProps) {
-  const { discoveryCall, isLoading, saveNotes, saveQuestions, saveStructuredNotes, isSaving } =
+  const { discoveryCall, isLoading, saveNotes, flushNotesNow, saveQuestions, saveStructuredNotes, isSaving } =
     useDiscoveryCall(missionId);
   const { toast } = useToast();
 
@@ -156,6 +156,8 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
           notes={notes}
           onChange={handleNotesChange}
           isSaving={isSaving}
+          draftKey={`discovery-notes:${missionId}`}
+          onFlush={flushNotesNow}
         />
 
         <Button
