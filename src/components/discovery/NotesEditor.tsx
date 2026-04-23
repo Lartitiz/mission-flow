@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Mic, MicOff, ClipboardPaste } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -11,10 +11,17 @@ interface NotesEditorProps {
 
 export function NotesEditor({ notes, onChange, isSaving }: NotesEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef(notes);
+
+  useEffect(() => {
+    notesRef.current = notes;
+  }, [notes]);
 
   const { isListening, isSupported, toggle } = useSpeechRecognition({
     onResult: (transcript) => {
-      const newNotes = notes ? `${notes} ${transcript}` : transcript;
+      const current = notesRef.current;
+      const newNotes = current ? `${current} ${transcript}` : transcript;
+      notesRef.current = newNotes;
       onChange(newNotes);
     },
   });
