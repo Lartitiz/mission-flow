@@ -153,10 +153,22 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       let orderOffset = 0;
       setLastGenContext({ context_summary: step1.context_summary, prompt_system: step1.prompt_system });
 
-      // Step 2: Phase A (Recherche)
+      // Step 2: Phase K (Kick-off) — préparation de l'atelier
+      setStep('phase_k');
+      const { data: phaseK, error: errK } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'K', previous_prompts: [] },
+      });
+      if (!errK && !phaseK?.error && phaseK?.prompts) {
+        const mapped = phaseK.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'K' as const }));
+        allPrompts.push(...mapped);
+        orderOffset += mapped.length;
+        if (phaseK.warnings) allWarnings.push(...phaseK.warnings);
+      }
+
+      // Step 3: Phase A (Recherche)
       setStep('phase_a');
       const { data: phaseA, error: errA } = await supabase.functions.invoke('generate-claude-project-chain', {
-        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'A', previous_prompts: [] },
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'A', previous_prompts: allPrompts.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })) },
       });
       if (!errA && !phaseA?.error && phaseA?.prompts) {
         const mapped = phaseA.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'A' as const }));
