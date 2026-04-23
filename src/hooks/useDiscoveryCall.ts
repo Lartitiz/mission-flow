@@ -84,6 +84,27 @@ export function useDiscoveryCall(missionId: string) {
     [discoveryCall, updateMutation, createMutation]
   );
 
+  const flushNotesNow = useCallback(
+    (notes: string) => {
+      if (debounceTimerNotes.current) {
+        clearTimeout(debounceTimerNotes.current);
+        debounceTimerNotes.current = null;
+      }
+      pendingNotesRef.current = null;
+      if (discoveryCall) {
+        // Fire-and-forget direct update to avoid debounce
+        supabase
+          .from('discovery_calls')
+          .update({ raw_notes: notes })
+          .eq('id', discoveryCall.id)
+          .then(() => {});
+      } else {
+        createMutation.mutate({ raw_notes: notes });
+      }
+    },
+    [discoveryCall, createMutation]
+  );
+
   const saveQuestions = useCallback(
     (questions: Record<string, boolean>) => {
       pendingQuestionsRef.current = questions;
@@ -141,6 +162,7 @@ export function useDiscoveryCall(missionId: string) {
     discoveryCall,
     isLoading,
     saveNotes,
+    flushNotesNow,
     saveQuestions,
     saveStructuredNotes,
     isSaving: createMutation.isPending || updateMutation.isPending,
