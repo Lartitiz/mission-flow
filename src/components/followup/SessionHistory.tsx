@@ -573,6 +573,8 @@ export function SessionHistory({
                       notes={notes}
                       onChange={(val) => handleNotesChange(session.id, val)}
                       isSaving={isSaving}
+                      draftKey={`session-notes:${session.id}`}
+                      onFlush={(val) => flushSessionNotes(session.id, val)}
                     />
 
                     {/* Structure button */}
