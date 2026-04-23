@@ -10,7 +10,7 @@ import { saveAs } from 'file-saver';
 
 interface PromptChainItem {
   order: number;
-  phase: 'A' | 'B' | 'C';
+  phase: 'K' | 'A' | 'B' | 'C';
   title: string;
   prompt: string;
   output_format: string;
@@ -35,12 +35,14 @@ interface ClaudeProjectExportProps {
 }
 
 const PHASE_COLORS: Record<string, string> = {
+  K: 'bg-rose-100 text-rose-800',
   A: 'bg-blue-100 text-blue-800',
   B: 'bg-purple-100 text-purple-800',
   C: 'bg-green-100 text-green-800',
 };
 
 const PHASE_LABELS: Record<string, string> = {
+  K: 'Kick-off',
   A: 'Recherche',
   B: 'Stratégie',
   C: 'Production',
