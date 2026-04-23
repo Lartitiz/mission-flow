@@ -111,7 +111,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     },
   });
 
-  const isBinome = readiness?.missionType === 'done_with_you';
+  const isBinome = readiness?.missionType === 'binome';
 
   const downloadAtelierInstructions = async () => {
     try {
