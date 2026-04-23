@@ -115,6 +115,24 @@ export function useKickoff(missionId: string) {
     [kickoff, updateMutation]
   );
 
+  const flushNotesNow = useCallback(
+    (notes: string) => {
+      if (debounceNotes.current) {
+        clearTimeout(debounceNotes.current);
+        debounceNotes.current = null;
+      }
+      pendingNotesRef.current = null;
+      if (kickoff) {
+        supabase
+          .from('kickoffs')
+          .update({ raw_notes: notes })
+          .eq('id', kickoff.id)
+          .then(() => {});
+      }
+    },
+    [kickoff]
+  );
+
   // Flush pending saves on unmount
   useEffect(() => {
     const currentKickoff = kickoff;
@@ -143,6 +161,7 @@ export function useKickoff(missionId: string) {
     kickoff,
     isLoading,
     saveNotes,
+    flushNotesNow,
     saveField,
     saveImmediate,
     isSaving: createMutation.isPending || updateMutation.isPending,

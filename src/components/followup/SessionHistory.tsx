@@ -79,7 +79,17 @@ export function SessionHistory({
 
   // --- Debounced notes saving ---
   const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
+  const localNotesRef = useRef<Record<string, string>>({});
+  const sessionsRef = useRef<Session[]>(sessions);
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // Keep refs fresh
+  useEffect(() => {
+    localNotesRef.current = localNotes;
+  }, [localNotes]);
+  useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
 
   // Initialize local notes from session data
   useEffect(() => {
@@ -96,7 +106,11 @@ export function SessionHistory({
 
   const handleNotesChange = useCallback(
     (sessionId: string, value: string) => {
-      setLocalNotes((prev) => ({ ...prev, [sessionId]: value }));
+      setLocalNotes((prev) => {
+        const next = { ...prev, [sessionId]: value };
+        localNotesRef.current = next;
+        return next;
+      });
       if (debounceTimers.current[sessionId]) {
         clearTimeout(debounceTimers.current[sessionId]);
       }
@@ -107,20 +121,58 @@ export function SessionHistory({
     [onUpdate]
   );
 
-  // Flush on unmount
+  // Immediate flush for a single session (used by NotesEditor on tab hide)
+  const flushSessionNotes = useCallback(
+    (sessionId: string, value: string) => {
+      if (debounceTimers.current[sessionId]) {
+        clearTimeout(debounceTimers.current[sessionId]);
+        delete debounceTimers.current[sessionId];
+      }
+      const session = sessionsRef.current.find((s) => s.id === sessionId);
+      if (session && value !== (session.raw_notes || '')) {
+        onUpdate(sessionId, { raw_notes: value });
+      }
+    },
+    [onUpdate]
+  );
+
+  // Flush ALL pending sessions on tab hide (covers cases beyond the open editor)
+  useEffect(() => {
+    const flushAll = () => {
+      Object.entries(localNotesRef.current).forEach(([id, value]) => {
+        const session = sessionsRef.current.find((s) => s.id === id);
+        if (session && value !== (session.raw_notes || '')) {
+          if (debounceTimers.current[id]) {
+            clearTimeout(debounceTimers.current[id]);
+            delete debounceTimers.current[id];
+          }
+          onUpdate(id, { raw_notes: value });
+        }
+      });
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flushAll();
+    };
+    window.addEventListener('pagehide', flushAll);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushAll);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [onUpdate]);
+
+  // Flush on unmount — uses refs to avoid stale closures
   useEffect(() => {
     return () => {
-      Object.entries(debounceTimers.current).forEach(([id, timer]) => {
-        clearTimeout(timer);
-      });
-      // Flush pending saves
-      Object.entries(localNotes).forEach(([id, notes]) => {
-        const session = sessions.find((s) => s.id === id);
+      Object.values(debounceTimers.current).forEach((timer) => clearTimeout(timer));
+      Object.entries(localNotesRef.current).forEach(([id, notes]) => {
+        const session = sessionsRef.current.find((s) => s.id === id);
         if (session && notes !== (session.raw_notes || '')) {
           onUpdate(id, { raw_notes: notes });
         }
       });
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Structuring + AI extraction ---
@@ -521,6 +573,8 @@ export function SessionHistory({
                       notes={notes}
                       onChange={(val) => handleNotesChange(session.id, val)}
                       isSaving={isSaving}
+                      draftKey={`session-notes:${session.id}`}
+                      onFlush={(val) => flushSessionNotes(session.id, val)}
                     />
 
                     {/* Structure button */}
