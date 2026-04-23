@@ -10,7 +10,7 @@ import { saveAs } from 'file-saver';
 
 interface PromptChainItem {
   order: number;
-  phase: 'A' | 'B' | 'C';
+  phase: 'K' | 'A' | 'B' | 'C';
   title: string;
   prompt: string;
   output_format: string;
@@ -35,12 +35,14 @@ interface ClaudeProjectExportProps {
 }
 
 const PHASE_COLORS: Record<string, string> = {
+  K: 'bg-rose-100 text-rose-800',
   A: 'bg-blue-100 text-blue-800',
   B: 'bg-purple-100 text-purple-800',
   C: 'bg-green-100 text-green-800',
 };
 
 const PHASE_LABELS: Record<string, string> = {
+  K: 'Kick-off',
   A: 'Recherche',
   B: 'Stratégie',
   C: 'Production',
@@ -58,7 +60,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRetryingC, setIsRetryingC] = useState(false);
   const [data, setData] = useState<ClaudeProjectData | null>(null);
-  const [step, setStep] = useState<'idle' | 'system' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
+  const [step, setStep] = useState<'idle' | 'system' | 'phase_k' | 'phase_a' | 'phase_b' | 'phase_c'>('idle');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
   const [completedPrompts, setCompletedPrompts] = useState<number[]>([]);
   const [lastGenContext, setLastGenContext] = useState<{ context_summary: string; prompt_system: string } | null>(null);
@@ -151,10 +153,22 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       let orderOffset = 0;
       setLastGenContext({ context_summary: step1.context_summary, prompt_system: step1.prompt_system });
 
-      // Step 2: Phase A (Recherche)
+      // Step 2: Phase K (Kick-off) — préparation de l'atelier
+      setStep('phase_k');
+      const { data: phaseK, error: errK } = await supabase.functions.invoke('generate-claude-project-chain', {
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'K', previous_prompts: [] },
+      });
+      if (!errK && !phaseK?.error && phaseK?.prompts) {
+        const mapped = phaseK.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'K' as const }));
+        allPrompts.push(...mapped);
+        orderOffset += mapped.length;
+        if (phaseK.warnings) allWarnings.push(...phaseK.warnings);
+      }
+
+      // Step 3: Phase A (Recherche)
       setStep('phase_a');
       const { data: phaseA, error: errA } = await supabase.functions.invoke('generate-claude-project-chain', {
-        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'A', previous_prompts: [] },
+        body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'A', previous_prompts: allPrompts.map(p => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format })) },
       });
       if (!errA && !phaseA?.error && phaseA?.prompts) {
         const mapped = phaseA.prompts.map((p: any, i: number) => ({ ...p, order: orderOffset + i + 1, phase: 'A' as const }));
@@ -389,6 +403,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span className="font-body text-sm text-muted-foreground">
             {step === 'system' && 'Génération du prompt système...'}
+            {step === 'phase_k' && 'Phase Kick-off : préparation de l\'atelier...'}
             {step === 'phase_a' && 'Phase A : prompts de recherche...'}
             {step === 'phase_b' && 'Phase B : prompts stratégiques...'}
             {step === 'phase_c' && 'Phase C : prompts de production (le plus long)...'}
