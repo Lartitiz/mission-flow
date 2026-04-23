@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2 } from 'lucide-react';
+import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { saveAs } from 'file-saver';
@@ -97,17 +97,33 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const { data: readiness } = useQuery({
     queryKey: ['claude-project-readiness', missionId],
     queryFn: async () => {
-      const [proposalRes, kickoffRes] = await Promise.all([
+      const [proposalRes, kickoffRes, missionRes] = await Promise.all([
         supabase.from('proposals').select('id').eq('mission_id', missionId).limit(1).maybeSingle(),
         supabase.from('kickoffs').select('id, structured_notes').eq('mission_id', missionId).maybeSingle(),
+        supabase.from('missions').select('mission_type').eq('id', missionId).maybeSingle(),
       ]);
       return {
         hasProposal: !!proposalRes.data,
         hasKickoff: !!kickoffRes.data,
         hasStructuredKickoff: !!kickoffRes.data?.structured_notes,
+        missionType: missionRes.data?.mission_type as string | undefined,
       };
     },
   });
+
+  const isBinome = readiness?.missionType === 'done_with_you';
+
+  const downloadAtelierInstructions = async () => {
+    try {
+      const response = await fetch('/assets/instructions-ateliers-binome.md');
+      if (!response.ok) throw new Error('fetch failed');
+      const blob = await response.blob();
+      saveAs(blob, 'Instructions_Ateliers_Binome.md');
+      toast({ title: 'Instructions ateliers téléchargées ✓' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de télécharger les instructions.', variant: 'destructive' });
+    }
+  };
 
   const canGenerate = readiness?.hasProposal || readiness?.hasStructuredKickoff;
 
@@ -367,7 +383,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
 
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
           {savedProject && (
@@ -376,12 +392,27 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
             </p>
           )}
         </div>
-        {data && (
-          <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
-            <Download className="h-3.5 w-3.5" />
-            Exporter en .md
-          </Button>
-        )}
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-2">
+            {data && (
+              <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
+                <Download className="h-3.5 w-3.5" />
+                Exporter en .md
+              </Button>
+            )}
+            {isBinome && (
+              <Button variant="outline" size="sm" onClick={downloadAtelierInstructions} className="font-body gap-2">
+                <BookOpen className="h-3.5 w-3.5" />
+                Instructions ateliers
+              </Button>
+            )}
+          </div>
+          {isBinome && (
+            <p className="font-body text-[11px] text-muted-foreground max-w-[280px] text-right leading-snug">
+              À glisser dans les fichiers du projet Claude de ta cliente, en plus du prompt système.
+            </p>
+          )}
+        </div>
       </div>
 
       {!data && !isGenerating && (
