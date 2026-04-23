@@ -298,7 +298,7 @@ serve(async (req) => {
     }
 
     if (!PHASE_PROMPTS[phase]) {
-      return new Response(JSON.stringify({ error: "Phase invalide. Utiliser A, B ou C." }), {
+      return new Response(JSON.stringify({ error: "Phase invalide. Utiliser K, A, B ou C." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
