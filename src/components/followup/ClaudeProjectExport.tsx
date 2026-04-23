@@ -403,6 +403,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span className="font-body text-sm text-muted-foreground">
             {step === 'system' && 'Génération du prompt système...'}
+            {step === 'phase_k' && 'Phase Kick-off : préparation de l\'atelier...'}
             {step === 'phase_a' && 'Phase A : prompts de recherche...'}
             {step === 'phase_b' && 'Phase B : prompts stratégiques...'}
             {step === 'phase_c' && 'Phase C : prompts de production (le plus long)...'}
