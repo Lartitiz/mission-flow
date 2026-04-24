@@ -575,7 +575,8 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                       {item.prompt}
                     </pre>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleContent>
           </Collapsible>
