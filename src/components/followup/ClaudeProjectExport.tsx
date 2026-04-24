@@ -634,6 +634,16 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
           </div>
         </div>
       )}
+
+      {data && (
+        <ClaudeActionMatcherDialog
+          open={matcherOpen}
+          onOpenChange={setMatcherOpen}
+          missionId={missionId}
+          prompts={data.prompt_chain.map((p) => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format }))}
+          actions={actions}
+        />
+      )}
     </div>
   );
 }
