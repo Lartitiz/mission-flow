@@ -57,7 +57,7 @@ export function useActions(missionId: string) {
             .order('version', { ascending: false })
             .limit(1)
             .maybeSingle();
-          const project = projectRaw as { id: string; completed_prompts: unknown } | null;
+          const project = projectRaw as unknown as { id: string; completed_prompts: unknown } | null;
           if (project?.id) {
             const completed: number[] = Array.isArray((project as any).completed_prompts)
               ? ((project as any).completed_prompts as number[])
