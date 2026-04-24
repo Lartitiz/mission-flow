@@ -3,10 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2, BookOpen } from 'lucide-react';
+import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2, BookOpen, ListChecks, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { saveAs } from 'file-saver';
+import { useActions } from '@/hooks/useActions';
+import { ClaudeActionMatcherDialog } from './ClaudeActionMatcherDialog';
 
 interface PromptChainItem {
   order: number;
@@ -64,6 +66,9 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ system: true, chain: true, warnings: true });
   const [completedPrompts, setCompletedPrompts] = useState<number[]>([]);
   const [lastGenContext, setLastGenContext] = useState<{ context_summary: string; prompt_system: string } | null>(null);
+  const [matcherOpen, setMatcherOpen] = useState(false);
+
+  const { actions } = useActions(missionId);
 
   const { data: savedProject, refetch: refetchProject } = useQuery({
     queryKey: ['claude-project', missionId],
@@ -137,7 +142,8 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   };
 
   const togglePromptComplete = async (order: number) => {
-    const updated = completedPrompts.includes(order)
+    const wasChecked = completedPrompts.includes(order);
+    const updated = wasChecked
       ? completedPrompts.filter(o => o !== order)
       : [...completedPrompts, order];
     setCompletedPrompts(updated);
@@ -147,6 +153,20 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         .from('claude_projects' as any)
         .update({ completed_prompts: updated } as any)
         .eq('id', savedProject.id);
+    }
+
+    // Sync linked action status
+    const linkedAction = actions.find((a) => (a as any).claude_prompt_order === order);
+    if (linkedAction) {
+      const newStatus = wasChecked ? 'not_started' : 'in_progress';
+      // Don't override 'to_validate' / 'validated' / 'delivered' on uncheck — only reset 'in_progress'
+      const skip = wasChecked && !['in_progress', 'not_started'].includes(linkedAction.status);
+      if (!skip && linkedAction.status !== newStatus) {
+        await supabase
+          .from('actions')
+          .update({ status: newStatus } as any)
+          .eq('id', linkedAction.id);
+      }
     }
   };
 
@@ -395,10 +415,16 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         <div className="flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-2">
             {data && (
-              <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
-                <Download className="h-3.5 w-3.5" />
-                Exporter en .md
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => setMatcherOpen(true)} className="font-body gap-2">
+                  <ListChecks className="h-3.5 w-3.5" />
+                  Lier au plan d'actions
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
+                  <Download className="h-3.5 w-3.5" />
+                  Exporter en .md
+                </Button>
+              </>
             )}
             {isBinome && (
               <Button variant="outline" size="sm" onClick={downloadAtelierInstructions} className="font-body gap-2">
@@ -492,7 +518,9 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
             </div>
             <CollapsibleContent>
               <div className="mt-2 space-y-2">
-                {data.prompt_chain.map((item) => (
+                {data.prompt_chain.map((item) => {
+                  const linkedAction = actions.find((a) => (a as any).claude_prompt_order === item.order);
+                  return (
                   <div key={item.order} className={`border rounded-lg p-3 transition-opacity ${completedPrompts.includes(item.order) ? 'bg-muted/50 opacity-60' : 'bg-background'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -524,6 +552,19 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                             dépend de #{item.depends_on}
                           </span>
                         )}
+                        {linkedAction ? (
+                          <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 text-primary">
+                            <CheckCircle2 className="h-2.5 w-2.5" />
+                            Action : {(linkedAction.task || '(sans titre)').slice(0, 32)}{(linkedAction.task?.length ?? 0) > 32 ? '…' : ''}
+                          </Badge>
+                        ) : (
+                          <button
+                            onClick={() => setMatcherOpen(true)}
+                            className="text-[10px] text-muted-foreground hover:text-primary font-body underline underline-offset-2"
+                          >
+                            non lié
+                          </button>
+                        )}
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => copyToClipboard(item.prompt, `Prompt #${item.order}`)} className="font-body gap-1.5 h-7 text-xs shrink-0">
                         <Copy className="h-3 w-3" />
@@ -534,7 +575,8 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                       {item.prompt}
                     </pre>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -591,6 +633,16 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
             </Button>
           </div>
         </div>
+      )}
+
+      {data && (
+        <ClaudeActionMatcherDialog
+          open={matcherOpen}
+          onOpenChange={setMatcherOpen}
+          missionId={missionId}
+          prompts={data.prompt_chain.map((p) => ({ order: p.order, phase: p.phase, title: p.title, output_format: p.output_format }))}
+          actions={actions}
+        />
       )}
     </div>
   );

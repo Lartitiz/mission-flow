@@ -1,0 +1,2 @@
+ALTER TABLE public.actions ADD COLUMN claude_prompt_order INTEGER;
+CREATE INDEX idx_actions_claude_prompt_order ON public.actions(mission_id, claude_prompt_order) WHERE claude_prompt_order IS NOT NULL;
