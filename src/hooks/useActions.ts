@@ -44,6 +44,41 @@ export function useActions(missionId: string) {
         .update(updates)
         .eq('id', id);
       if (error) throw error;
+
+      // Sync to claude_projects.completed_prompts when status changes on a linked action
+      if ('status' in updates && updates.status) {
+        const linkedAction = actions.find((a) => a.id === id);
+        const promptOrder = (linkedAction as any)?.claude_prompt_order as number | null | undefined;
+        if (promptOrder != null) {
+          const { data: project } = await supabase
+            .from('claude_projects' as any)
+            .select('id, completed_prompts')
+            .eq('mission_id', missionId)
+            .order('version', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (project?.id) {
+            const completed: number[] = Array.isArray((project as any).completed_prompts)
+              ? ((project as any).completed_prompts as number[])
+              : [];
+            const shouldBeChecked = ['in_progress', 'to_validate', 'validated', 'delivered'].includes(updates.status as string);
+            const isChecked = completed.includes(promptOrder);
+            if (shouldBeChecked && !isChecked) {
+              await supabase
+                .from('claude_projects' as any)
+                .update({ completed_prompts: [...completed, promptOrder] } as any)
+                .eq('id', project.id);
+              queryClient.invalidateQueries({ queryKey: ['claude-project', missionId] });
+            } else if (!shouldBeChecked && isChecked) {
+              await supabase
+                .from('claude_projects' as any)
+                .update({ completed_prompts: completed.filter((o) => o !== promptOrder) } as any)
+                .eq('id', project.id);
+              queryClient.invalidateQueries({ queryKey: ['claude-project', missionId] });
+            }
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
