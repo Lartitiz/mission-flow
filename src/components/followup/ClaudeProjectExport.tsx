@@ -518,7 +518,9 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
             </div>
             <CollapsibleContent>
               <div className="mt-2 space-y-2">
-                {data.prompt_chain.map((item) => (
+                {data.prompt_chain.map((item) => {
+                  const linkedAction = actions.find((a) => (a as any).claude_prompt_order === item.order);
+                  return (
                   <div key={item.order} className={`border rounded-lg p-3 transition-opacity ${completedPrompts.includes(item.order) ? 'bg-muted/50 opacity-60' : 'bg-background'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -549,6 +551,19 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
                           <span className="text-[10px] text-muted-foreground font-body">
                             dépend de #{item.depends_on}
                           </span>
+                        )}
+                        {linkedAction ? (
+                          <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 text-primary">
+                            <CheckCircle2 className="h-2.5 w-2.5" />
+                            Action : {(linkedAction.task || '(sans titre)').slice(0, 32)}{(linkedAction.task?.length ?? 0) > 32 ? '…' : ''}
+                          </Badge>
+                        ) : (
+                          <button
+                            onClick={() => setMatcherOpen(true)}
+                            className="text-[10px] text-muted-foreground hover:text-primary font-body underline underline-offset-2"
+                          >
+                            non lié
+                          </button>
                         )}
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => copyToClipboard(item.prompt, `Prompt #${item.order}`)} className="font-body gap-1.5 h-7 text-xs shrink-0">
