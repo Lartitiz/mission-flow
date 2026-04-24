@@ -142,7 +142,8 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
   };
 
   const togglePromptComplete = async (order: number) => {
-    const updated = completedPrompts.includes(order)
+    const wasChecked = completedPrompts.includes(order);
+    const updated = wasChecked
       ? completedPrompts.filter(o => o !== order)
       : [...completedPrompts, order];
     setCompletedPrompts(updated);
@@ -152,6 +153,20 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         .from('claude_projects' as any)
         .update({ completed_prompts: updated } as any)
         .eq('id', savedProject.id);
+    }
+
+    // Sync linked action status
+    const linkedAction = actions.find((a) => (a as any).claude_prompt_order === order);
+    if (linkedAction) {
+      const newStatus = wasChecked ? 'not_started' : 'in_progress';
+      // Don't override 'to_validate' / 'validated' / 'delivered' on uncheck — only reset 'in_progress'
+      const skip = wasChecked && !['in_progress', 'not_started'].includes(linkedAction.status);
+      if (!skip && linkedAction.status !== newStatus) {
+        await supabase
+          .from('actions')
+          .update({ status: newStatus } as any)
+          .eq('id', linkedAction.id);
+      }
     }
   };
 
