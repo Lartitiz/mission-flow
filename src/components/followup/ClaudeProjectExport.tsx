@@ -415,10 +415,16 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         <div className="flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-2">
             {data && (
-              <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
-                <Download className="h-3.5 w-3.5" />
-                Exporter en .md
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => setMatcherOpen(true)} className="font-body gap-2">
+                  <ListChecks className="h-3.5 w-3.5" />
+                  Lier au plan d'actions
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportFullMd} className="font-body gap-2">
+                  <Download className="h-3.5 w-3.5" />
+                  Exporter en .md
+                </Button>
+              </>
             )}
             {isBinome && (
               <Button variant="outline" size="sm" onClick={downloadAtelierInstructions} className="font-body gap-2">
