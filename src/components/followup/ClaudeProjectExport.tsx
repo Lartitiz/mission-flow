@@ -3,10 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2, BookOpen } from 'lucide-react';
+import { Sparkles, Copy, ChevronDown, ChevronRight, Download, Loader2, AlertTriangle, Info, AlertCircle, Link2, BookOpen, ListChecks, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { saveAs } from 'file-saver';
+import { useActions } from '@/hooks/useActions';
+import { ClaudeActionMatcherDialog } from './ClaudeActionMatcherDialog';
 
 interface PromptChainItem {
   order: number;
