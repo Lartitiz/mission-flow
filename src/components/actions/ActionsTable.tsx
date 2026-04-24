@@ -204,7 +204,23 @@ function SortableRow({ action, onUpdate, onDelete }: {
         </Select>
       </td>
       <td className="px-1 py-1 w-[160px]">
-        <EditableCell value={action.task} onSave={(v) => onUpdate(action.id, { task: v })} />
+        <div className="flex items-center gap-1">
+          {(action as any).claude_prompt_order != null && (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Sparkles className="h-3 w-3 text-primary shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-body text-xs">Liée au prompt #{(action as any).claude_prompt_order} du kit Claude</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          <div className="flex-1 min-w-0">
+            <EditableCell value={action.task} onSave={(v) => onUpdate(action.id, { task: v })} />
+          </div>
+        </div>
       </td>
       <td className="px-1 py-1 w-[200px]">
         <EditableCell value={action.description} onSave={(v) => onUpdate(action.id, { description: v })} />
