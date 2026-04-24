@@ -50,13 +50,14 @@ export function useActions(missionId: string) {
         const linkedAction = actions.find((a) => a.id === id);
         const promptOrder = (linkedAction as any)?.claude_prompt_order as number | null | undefined;
         if (promptOrder != null) {
-          const { data: project } = await supabase
+          const { data: projectRaw } = await supabase
             .from('claude_projects' as any)
             .select('id, completed_prompts')
             .eq('mission_id', missionId)
             .order('version', { ascending: false })
             .limit(1)
             .maybeSingle();
+          const project = projectRaw as { id: string; completed_prompts: unknown } | null;
           if (project?.id) {
             const completed: number[] = Array.isArray((project as any).completed_prompts)
               ? ((project as any).completed_prompts as number[])
