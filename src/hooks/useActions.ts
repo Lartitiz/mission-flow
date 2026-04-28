@@ -114,9 +114,9 @@ export function useActions(missionId: string) {
   // Realtime: auto-refresh when actions change (e.g. client updates status)
   useEffect(() => {
     if (!missionId) return;
-    const channel = supabase
-      .channel(`actions-${missionId}`)
-      .on('postgres_changes', {
+    const channel = supabase.channel(`actions-${missionId}-${Math.random().toString(36).slice(2)}`);
+    channel
+      .on('postgres_changes' as any, {
         event: '*',
         schema: 'public',
         table: 'actions',
