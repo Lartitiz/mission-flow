@@ -284,6 +284,67 @@ export function SessionHistory({
     }
   };
 
+  const [isExtracting, setIsExtracting] = useState<string | null>(null);
+
+  const handleExtractActions = async (session: Session) => {
+    const structured = session.structured_notes as { sections?: { title: string; content: string }[] } | null;
+    const sections = structured?.sections;
+    if (!sections?.length) {
+      toast({ title: 'Notes non structurées', description: 'Structure d\'abord les notes.', variant: 'destructive' });
+      return;
+    }
+    setIsExtracting(session.id);
+    try {
+      const structuredText = sections.map((s) => `## ${s.title}\n${s.content}`).join('\n\n');
+      const { data: extractData, error: extractError } = await supabase.functions.invoke(
+        'extract-actions-from-cr',
+        {
+          body: {
+            meeting_notes: structuredText,
+            existing_actions: actions.map((a) => ({
+              id: a.id,
+              task: a.task,
+              description: a.description,
+              status: a.status,
+              assignee: a.assignee,
+              target_date: a.target_date,
+              category: a.category,
+              channel: a.channel,
+            })),
+            mission_type: missionType,
+          },
+        }
+      );
+      if (extractError) throw extractError;
+      const newActions = extractData?.new_actions ?? [];
+      const updates = extractData?.updates ?? [];
+      if (newActions.length === 0 && updates.length === 0) {
+        toast({ title: 'Aucune action détectée', description: 'L\'IA n\'a rien proposé de nouveau.' });
+        return;
+      }
+      setExtractionResults({ sessionId: session.id, new_actions: newActions, updates });
+      onUpdate(session.id, {
+        structured_notes: {
+          ...(structured || {}),
+          _pending_extracted: {
+            new_actions: newActions,
+            updates,
+            generated_at: new Date().toISOString(),
+          },
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      toast({
+        title: `${newActions.length + updates.length} action(s) proposée(s)`,
+        description: 'À valider dans l\'onglet Plan d\'action.',
+      });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible d\'extraire les actions.', variant: 'destructive' });
+    } finally {
+      setIsExtracting(null);
+    }
+  };
+
   const handleApplyExtraction = async (selectedNew: AiNewAction[], selectedUpdates: AiUpdate[]) => {
     setIsApplying(true);
     try {
