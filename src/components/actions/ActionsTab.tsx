@@ -91,6 +91,80 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
     enabled: !!missionId,
   });
 
+  // Pending AI extraction suggestions persisted on sessions
+  const { data: pendingSessions } = useQuery({
+    queryKey: ['pending-extracted-sessions', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id, session_date, session_type, structured_notes')
+        .eq('mission_id', missionId)
+        .order('session_date', { ascending: false });
+      return (data || []).filter((s) => {
+        const sn = s.structured_notes as Record<string, unknown> | null;
+        const pending = sn?._pending_extracted as { new_actions?: unknown[]; updates?: unknown[] } | undefined;
+        return pending && ((pending.new_actions?.length ?? 0) > 0 || (pending.updates?.length ?? 0) > 0);
+      });
+    },
+    enabled: !!missionId,
+  });
+  const [openPendingSessionId, setOpenPendingSessionId] = useState<string | null>(null);
+
+  const handleApplyPending = async (
+    sessionId: string,
+    selectedNew: AiNewAction[],
+    selectedUpdates: AiUpdate[]
+  ) => {
+    setIsApplying(true);
+    try {
+      for (const action of selectedNew) {
+        const maxSort = actions.length > 0
+          ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
+          : 0;
+        await supabase.from('actions').insert({
+          mission_id: missionId,
+          assignee: action.assignee,
+          task: action.task,
+          description: action.description || null,
+          category: action.category || null,
+          channel: action.channel || null,
+          phase: (action as unknown as { phase?: string }).phase || null,
+          target_date: action.target_date || null,
+          sort_order: maxSort,
+          status: 'not_started',
+        });
+      }
+      for (const update of selectedUpdates) {
+        const updateData: Record<string, string> = {};
+        updateData[update.field] = update.new_value;
+        await supabase.from('actions').update(updateData as any).eq('id', update.action_id);
+      }
+      // Clear pending on the source session
+      const session = pendingSessions?.find((s) => s.id === sessionId);
+      const sn = (session?.structured_notes as Record<string, unknown>) || {};
+      const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+      await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
+      toast({ title: 'Suggestions appliquées', description: `${selectedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.` });
+      setOpenPendingSessionId(null);
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['pending-extracted-sessions', missionId] });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erreur', description: "Erreur lors de l'application.", variant: 'destructive' });
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const handleDismissPending = async (sessionId: string) => {
+    const session = pendingSessions?.find((s) => s.id === sessionId);
+    const sn = (session?.structured_notes as Record<string, unknown>) || {};
+    const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+    await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
+    setOpenPendingSessionId(null);
+    queryClient.invalidateQueries({ queryKey: ['pending-extracted-sessions', missionId] });
+  };
+
   const myActions = actions.filter((a) => a.assignee === 'laetitia');
   const clientActions = actions.filter((a) => a.assignee === 'client');
   const actionsWithoutPhase = actions.filter((a) => !a.phase);
