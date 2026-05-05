@@ -691,19 +691,34 @@ export function SessionHistory({
                           </div>
                         ))}
                         {/* Re-structure button */}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleStructure(session)}
-                          disabled={!notes.trim() || isStructuring === session.id}
-                          className="font-body text-xs gap-1.5"
-                        >
-                          {isStructuring === session.id ? (
-                            <><Loader2 className="h-3 w-3 animate-spin" /> Restructuration...</>
-                          ) : (
-                            <><Sparkles className="h-3 w-3" /> Re-structurer</>
-                          )}
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleStructure(session)}
+                            disabled={!notes.trim() || isStructuring === session.id}
+                            className="font-body text-xs gap-1.5"
+                          >
+                            {isStructuring === session.id ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Restructuration...</>
+                            ) : (
+                              <><Sparkles className="h-3 w-3" /> Re-structurer</>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleExtractActions(session)}
+                            disabled={isExtracting === session.id}
+                            className="font-body text-xs gap-1.5 text-white"
+                            style={{ background: '#91014b' }}
+                          >
+                            {isExtracting === session.id ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Extraction...</>
+                            ) : (
+                              <><Sparkles className="h-3 w-3" /> Envoyer les actions vers le plan d'action</>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     )}
 
