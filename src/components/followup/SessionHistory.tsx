@@ -257,6 +257,18 @@ export function SessionHistory({
           new_actions: newActions,
           updates,
         });
+        // Persist pending suggestions so they remain available in the Action plan tab
+        onUpdate(session.id, {
+          structured_notes: {
+            ...(data || {}),
+            _pending_extracted: {
+              new_actions: newActions,
+              updates,
+              generated_at: new Date().toISOString(),
+            },
+          },
+        });
+        queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
       }
 
       // Step C: Toast
