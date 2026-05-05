@@ -326,12 +326,20 @@ export function SessionHistory({
           .update(updateData as any)
           .eq('id', update.action_id);
       }
+      // Clear persisted pending suggestions on the source session
+      if (extractionResults?.sessionId) {
+        const session = sessions.find((s) => s.id === extractionResults.sessionId);
+        const sn = (session?.structured_notes as Record<string, unknown>) || {};
+        const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+        onUpdate(extractionResults.sessionId, { structured_notes: rest });
+      }
       toast({
         title: 'Changements appliqués',
         description: `${sortedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
       });
       setExtractionResults(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
     } catch {
       toast({ title: 'Erreur', description: "Erreur lors de l'application.", variant: 'destructive' });
     } finally {
