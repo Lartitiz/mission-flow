@@ -322,6 +322,57 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
         />
       )}
 
+      {/* Pending AI suggestions from sessions */}
+      {pendingSessions && pendingSessions.length > 0 && (
+        <div className="space-y-3">
+          {pendingSessions.map((s) => {
+            const pending = (s.structured_notes as Record<string, unknown>)._pending_extracted as {
+              new_actions: AiNewAction[];
+              updates: AiUpdate[];
+              generated_at?: string;
+            };
+            const dateStr = new Date(s.session_date).toLocaleDateString('fr-FR');
+            const total = (pending.new_actions?.length ?? 0) + (pending.updates?.length ?? 0);
+            const isOpen = openPendingSessionId === s.id;
+            return (
+              <div key={s.id} className="bg-card rounded-xl shadow-[var(--card-shadow)] border-l-4 border-l-primary">
+                <button
+                  type="button"
+                  onClick={() => setOpenPendingSessionId(isOpen ? null : s.id)}
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="font-body text-sm font-medium text-foreground">
+                        {total} suggestion{total > 1 ? 's' : ''} IA en attente
+                      </p>
+                      <p className="font-body text-xs text-muted-foreground">
+                        Issue de la session du {dateStr} — {pending.new_actions.length} nouvelle{pending.new_actions.length > 1 ? 's' : ''} action{pending.new_actions.length > 1 ? 's' : ''}, {pending.updates.length} mise{pending.updates.length > 1 ? 's' : ''} à jour
+                      </p>
+                    </div>
+                  </div>
+                  <span className="font-body text-xs text-primary">
+                    {isOpen ? 'Masquer' : 'Voir & valider'}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4">
+                    <AiExtractionResults
+                      newActions={pending.new_actions}
+                      updates={pending.updates}
+                      onApply={(n, u) => handleApplyPending(s.id, n, u)}
+                      onCancel={() => handleDismissPending(s.id)}
+                      isApplying={isApplying}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <ActionsStats actions={actions} />
         <div className="flex gap-2">
