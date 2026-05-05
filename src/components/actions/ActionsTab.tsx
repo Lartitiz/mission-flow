@@ -91,6 +91,80 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
     enabled: !!missionId,
   });
 
+  // Pending AI extraction suggestions persisted on sessions
+  const { data: pendingSessions } = useQuery({
+    queryKey: ['pending-extracted-sessions', missionId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id, session_date, session_type, structured_notes')
+        .eq('mission_id', missionId)
+        .order('session_date', { ascending: false });
+      return (data || []).filter((s) => {
+        const sn = s.structured_notes as Record<string, unknown> | null;
+        const pending = sn?._pending_extracted as { new_actions?: unknown[]; updates?: unknown[] } | undefined;
+        return pending && ((pending.new_actions?.length ?? 0) > 0 || (pending.updates?.length ?? 0) > 0);
+      });
+    },
+    enabled: !!missionId,
+  });
+  const [openPendingSessionId, setOpenPendingSessionId] = useState<string | null>(null);
+
+  const handleApplyPending = async (
+    sessionId: string,
+    selectedNew: AiNewAction[],
+    selectedUpdates: AiUpdate[]
+  ) => {
+    setIsApplying(true);
+    try {
+      for (const action of selectedNew) {
+        const maxSort = actions.length > 0
+          ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
+          : 0;
+        await supabase.from('actions').insert({
+          mission_id: missionId,
+          assignee: action.assignee,
+          task: action.task,
+          description: action.description || null,
+          category: action.category || null,
+          channel: action.channel || null,
+          phase: (action as unknown as { phase?: string }).phase || null,
+          target_date: action.target_date || null,
+          sort_order: maxSort,
+          status: 'not_started',
+        });
+      }
+      for (const update of selectedUpdates) {
+        const updateData: Record<string, string> = {};
+        updateData[update.field] = update.new_value;
+        await supabase.from('actions').update(updateData as any).eq('id', update.action_id);
+      }
+      // Clear pending on the source session
+      const session = pendingSessions?.find((s) => s.id === sessionId);
+      const sn = (session?.structured_notes as Record<string, unknown>) || {};
+      const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+      await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
+      toast({ title: 'Suggestions appliquées', description: `${selectedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.` });
+      setOpenPendingSessionId(null);
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['pending-extracted-sessions', missionId] });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Erreur', description: "Erreur lors de l'application.", variant: 'destructive' });
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const handleDismissPending = async (sessionId: string) => {
+    const session = pendingSessions?.find((s) => s.id === sessionId);
+    const sn = (session?.structured_notes as Record<string, unknown>) || {};
+    const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+    await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
+    setOpenPendingSessionId(null);
+    queryClient.invalidateQueries({ queryKey: ['pending-extracted-sessions', missionId] });
+  };
+
   const myActions = actions.filter((a) => a.assignee === 'laetitia');
   const clientActions = actions.filter((a) => a.assignee === 'client');
   const actionsWithoutPhase = actions.filter((a) => !a.phase);
@@ -246,6 +320,57 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           maxSortOrder={-1}
           variant="init"
         />
+      )}
+
+      {/* Pending AI suggestions from sessions */}
+      {pendingSessions && pendingSessions.length > 0 && (
+        <div className="space-y-3">
+          {pendingSessions.map((s) => {
+            const pending = (s.structured_notes as Record<string, unknown>)._pending_extracted as {
+              new_actions: AiNewAction[];
+              updates: AiUpdate[];
+              generated_at?: string;
+            };
+            const dateStr = new Date(s.session_date).toLocaleDateString('fr-FR');
+            const total = (pending.new_actions?.length ?? 0) + (pending.updates?.length ?? 0);
+            const isOpen = openPendingSessionId === s.id;
+            return (
+              <div key={s.id} className="bg-card rounded-xl shadow-[var(--card-shadow)] border-l-4 border-l-primary">
+                <button
+                  type="button"
+                  onClick={() => setOpenPendingSessionId(isOpen ? null : s.id)}
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="font-body text-sm font-medium text-foreground">
+                        {total} suggestion{total > 1 ? 's' : ''} IA en attente
+                      </p>
+                      <p className="font-body text-xs text-muted-foreground">
+                        Issue de la session du {dateStr} — {pending.new_actions.length} nouvelle{pending.new_actions.length > 1 ? 's' : ''} action{pending.new_actions.length > 1 ? 's' : ''}, {pending.updates.length} mise{pending.updates.length > 1 ? 's' : ''} à jour
+                      </p>
+                    </div>
+                  </div>
+                  <span className="font-body text-xs text-primary">
+                    {isOpen ? 'Masquer' : 'Voir & valider'}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4">
+                    <AiExtractionResults
+                      newActions={pending.new_actions}
+                      updates={pending.updates}
+                      onApply={(n, u) => handleApplyPending(s.id, n, u)}
+                      onCancel={() => handleDismissPending(s.id)}
+                      isApplying={isApplying}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <div className="flex items-center justify-between">

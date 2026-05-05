@@ -257,6 +257,18 @@ export function SessionHistory({
           new_actions: newActions,
           updates,
         });
+        // Persist pending suggestions so they remain available in the Action plan tab
+        onUpdate(session.id, {
+          structured_notes: {
+            ...(data || {}),
+            _pending_extracted: {
+              new_actions: newActions,
+              updates,
+              generated_at: new Date().toISOString(),
+            },
+          },
+        });
+        queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
       }
 
       // Step C: Toast
@@ -314,12 +326,20 @@ export function SessionHistory({
           .update(updateData as any)
           .eq('id', update.action_id);
       }
+      // Clear persisted pending suggestions on the source session
+      if (extractionResults?.sessionId) {
+        const session = sessions.find((s) => s.id === extractionResults.sessionId);
+        const sn = (session?.structured_notes as Record<string, unknown>) || {};
+        const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+        onUpdate(extractionResults.sessionId, { structured_notes: rest });
+      }
       toast({
         title: 'Changements appliqués',
         description: `${sortedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
       });
       setExtractionResults(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
     } catch {
       toast({ title: 'Erreur', description: "Erreur lors de l'application.", variant: 'destructive' });
     } finally {
@@ -632,7 +652,14 @@ export function SessionHistory({
                         newActions={extractionResults.new_actions}
                         updates={extractionResults.updates}
                         onApply={handleApplyExtraction}
-                        onCancel={() => setExtractionResults(null)}
+                        onCancel={() => {
+                          // Clear persisted suggestions when user dismisses
+                          const sn = (session.structured_notes as Record<string, unknown>) || {};
+                          const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+                          onUpdate(session.id, { structured_notes: rest });
+                          setExtractionResults(null);
+                          queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+                        }}
                         isApplying={isApplying}
                       />
                     )}
