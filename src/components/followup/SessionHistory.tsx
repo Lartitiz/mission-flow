@@ -652,7 +652,14 @@ export function SessionHistory({
                         newActions={extractionResults.new_actions}
                         updates={extractionResults.updates}
                         onApply={handleApplyExtraction}
-                        onCancel={() => setExtractionResults(null)}
+                        onCancel={() => {
+                          // Clear persisted suggestions when user dismisses
+                          const sn = (session.structured_notes as Record<string, unknown>) || {};
+                          const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+                          onUpdate(session.id, { structured_notes: rest });
+                          setExtractionResults(null);
+                          queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+                        }}
                         isApplying={isApplying}
                       />
                     )}
