@@ -99,7 +99,7 @@ ${mission_context ? `Contexte de la mission :\n${JSON.stringify(mission_context,
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 170000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
