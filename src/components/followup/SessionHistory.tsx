@@ -698,6 +698,23 @@ export function SessionHistory({
                       </div>
                     </div>
 
+
+                    {/* Topic / sujet de la session */}
+                    <div className="space-y-1">
+                      <label className="font-body text-xs text-muted-foreground">Sujet de la session</label>
+                      <Input
+                        defaultValue={(session as any).topic ?? ''}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (((session as any).topic ?? '') as string)) {
+                            onUpdate(session.id, { topic: val || null });
+                          }
+                        }}
+                        placeholder="ex : Atelier de lancement, point stratégie, retour sur livrable…"
+                        className="font-body text-sm"
+                      />
+                    </div>
+
                     {/* Notes editor with voice dictation */}
                     <NotesEditor
                       notes={notes}
@@ -706,6 +723,51 @@ export function SessionHistory({
                       draftKey={`session-notes:${session.id}`}
                       onFlush={(val) => flushSessionNotes(session.id, val)}
                     />
+
+                    {/* Quick add tasks to action plan */}
+                    <div className="bg-[hsl(var(--badge-rose)/0.08)] border border-[hsl(var(--badge-rose)/0.3)] rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ListPlus className="h-3.5 w-3.5 text-primary" />
+                        <span className="font-body text-xs font-medium text-foreground">
+                          Ajouter rapidement des actions au plan
+                        </span>
+                      </div>
+                      <Textarea
+                        value={quickTasks[session.id] ?? ''}
+                        onChange={(e) => setQuickTasks((p) => ({ ...p, [session.id]: e.target.value }))}
+                        placeholder={'Une action par ligne…\n- Préparer le brief\n- Envoyer la maquette'}
+                        rows={3}
+                        className="font-body text-xs"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={quickAssignee[session.id] || 'laetitia'}
+                          onValueChange={(v) =>
+                            setQuickAssignee((p) => ({ ...p, [session.id]: v as 'laetitia' | 'client' }))
+                          }
+                        >
+                          <SelectTrigger className="w-[140px] h-8 font-body text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="laetitia" className="font-body text-xs">Pour Laetitia</SelectItem>
+                            <SelectItem value="client" className="font-body text-xs">Pour le·la client·e</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          onClick={() => handleQuickAddTasks(session.id)}
+                          disabled={!(quickTasks[session.id]?.trim()) || addingQuick === session.id}
+                          className="font-body text-xs gap-1.5"
+                        >
+                          {addingQuick === session.id ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" /> Ajout…</>
+                          ) : (
+                            <><ListPlus className="h-3 w-3" /> Ajouter au plan d'action</>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
 
                     {/* Structure button */}
                     {!hasStructured && (
