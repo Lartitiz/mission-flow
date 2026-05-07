@@ -438,6 +438,7 @@ export type Database = {
           session_date: string
           session_type: string
           structured_notes: Json | null
+          topic: string | null
           updated_at: string
         }
         Insert: {
@@ -450,6 +451,7 @@ export type Database = {
           session_date: string
           session_type?: string
           structured_notes?: Json | null
+          topic?: string | null
           updated_at?: string
         }
         Update: {
@@ -462,6 +464,7 @@ export type Database = {
           session_date?: string
           session_type?: string
           structured_notes?: Json | null
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [
