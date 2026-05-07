@@ -565,6 +565,12 @@ export function SessionHistory({
               </SelectContent>
             </Select>
           </div>
+          <Input
+            value={newTopic}
+            onChange={(e) => setNewTopic(e.target.value)}
+            placeholder="Sujet de la session (ex : Atelier de lancement, Stratégie éditoriale...)"
+            className="font-body text-sm"
+          />
           <Button onClick={handleCreate} disabled={!newDate || isCreating} className="w-full font-body">
             {isCreating ? 'Création...' : 'Créer et ouvrir'}
           </Button>
