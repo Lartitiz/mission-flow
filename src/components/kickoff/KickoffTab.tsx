@@ -332,6 +332,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
         setStructuredNotes(sections);
         saveImmediate({ structured_notes: { sections } });
         toast({ title: 'Notes structurées', description: 'La fiche kick-off a été générée depuis les réponses.' });
+        await syncToFollowUp(sections, rawText);
       }
     } catch (e) {
       console.error('Structure questionnaire responses error:', e);
