@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { QuestionnaireStatus } from './QuestionnaireStatus';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useActions } from '@/hooks/useActions';
 
 interface KickoffTabProps {
   missionId: string;
@@ -26,6 +27,8 @@ interface KickoffStructuredSection {
 export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
   const { kickoff, isLoading, saveNotes, flushNotesNow, saveField, saveImmediate, isSaving } = useKickoff(missionId);
   const { discoveryCall } = useDiscoveryCall(missionId);
+  const { actions } = useActions(missionId);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Fetch proposal for context
@@ -158,6 +161,87 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
     }
   };
 
+  // Push structured kickoff to Suivi (sessions) + extract actions
+  const syncToFollowUp = async (sections: KickoffStructuredSection[], rawText: string) => {
+    if (!kickoff) return;
+    try {
+      const sessionDate = (kickoff.created_at ?? new Date().toISOString()).slice(0, 10);
+      const structuredText = sections.map((s) => `## ${s.title}\n${s.content}`).join('\n\n');
+
+      // Extract actions
+      const { data: extractData } = await supabase.functions.invoke('extract-actions-from-cr', {
+        body: {
+          meeting_notes: structuredText,
+          existing_actions: actions.map((a) => ({
+            id: a.id, task: a.task, description: a.description, status: a.status,
+            assignee: a.assignee, target_date: a.target_date, category: a.category, channel: a.channel,
+          })),
+          mission_type: mission?.mission_type ?? 'binome',
+        },
+      });
+      const newActions = extractData?.new_actions ?? [];
+      const updates = extractData?.updates ?? [];
+
+      const sessionStructured: Record<string, unknown> = {
+        sections,
+        _from_kickoff: kickoff.id,
+      };
+      if (newActions.length > 0 || updates.length > 0) {
+        sessionStructured._pending_extracted = {
+          new_actions: newActions,
+          updates,
+          generated_at: new Date().toISOString(),
+        };
+      }
+
+      // Idempotent upsert: find existing session for this kickoff
+      const { data: existing } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('mission_id', missionId)
+        .filter('structured_notes->>_from_kickoff', 'eq', kickoff.id)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        await supabase
+          .from('sessions')
+          .update({
+            session_date: sessionDate,
+            session_type: 'visio',
+            topic: 'Atelier de lancement (kick-off)',
+            raw_notes: rawText,
+            structured_notes: sessionStructured as any,
+          })
+          .eq('id', existing[0].id);
+      } else {
+        await supabase.from('sessions').insert({
+          mission_id: missionId,
+          session_date: sessionDate,
+          session_type: 'visio',
+          topic: 'Atelier de lancement (kick-off)',
+          raw_notes: rawText,
+          structured_notes: sessionStructured as any,
+        } as any);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      const count = newActions.length + updates.length;
+      toast({
+        title: 'Synchronisé avec le Suivi ✓',
+        description: count > 0
+          ? `${count} action(s) suggérée(s) à valider dans le Plan d'action.`
+          : 'Notes ajoutées à l\'historique de l\'atelier de lancement.',
+      });
+    } catch (e) {
+      console.error('Sync kickoff to follow-up error:', e);
+      toast({
+        title: 'Sync partielle',
+        description: 'Notes structurées enregistrées, mais sync Suivi en échec.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleStructureNotes = async () => {
     if (!notes.trim()) return;
     setIsStructuring(true);
@@ -181,6 +265,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
         setStructuredNotes(sections);
         saveImmediate({ structured_notes: { sections } });
         toast({ title: 'Notes structurées', description: 'La fiche kick-off a été générée.' });
+        await syncToFollowUp(sections, notes);
       }
     } catch (e) {
       console.error('Structure kickoff notes error:', e);
@@ -247,6 +332,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
         setStructuredNotes(sections);
         saveImmediate({ structured_notes: { sections } });
         toast({ title: 'Notes structurées', description: 'La fiche kick-off a été générée depuis les réponses.' });
+        await syncToFollowUp(sections, rawText);
       }
     } catch (e) {
       console.error('Structure questionnaire responses error:', e);
