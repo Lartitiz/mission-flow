@@ -12,6 +12,7 @@ import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 import { ClaudeProjectExport } from './ClaudeProjectExport';
 import { LaunchMessageCard } from './LaunchMessageCard';
+import { NextSessionBookingMessage } from './NextSessionBookingMessage';
 
 interface FollowUpTabProps {
   missionId: string;
@@ -94,6 +95,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
         missionType={missionType}
         isSaving={sessionsSaving}
       />
+
+      <NextSessionBookingMessage clientName={clientName} />
 
       <SessionHistory
         sessions={sessions}
