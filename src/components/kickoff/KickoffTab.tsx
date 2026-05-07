@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { QuestionnaireStatus } from './QuestionnaireStatus';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useActions } from '@/hooks/useActions';
 
 interface KickoffTabProps {
   missionId: string;
