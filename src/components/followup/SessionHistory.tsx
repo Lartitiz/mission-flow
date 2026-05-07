@@ -424,17 +424,54 @@ export function SessionHistory({
         session_date: format(newDate, 'yyyy-MM-dd'),
         session_type: newType,
         raw_notes: null,
-      });
+        topic: newTopic.trim() || null,
+      } as TablesInsert<'sessions'>);
       addJournalEntry(
-        `Session ${sessionTypeLabel(newType)} ajoutée le ${format(newDate, 'dd/MM/yyyy', { locale: fr })}`,
+        `Session ${sessionTypeLabel(newType)}${newTopic.trim() ? ` — ${newTopic.trim()}` : ''} ajoutée le ${format(newDate, 'dd/MM/yyyy', { locale: fr })}`,
         'auto'
       );
       setShowNewForm(false);
+      setNewTopic('');
       setExpandedId(session.id);
       setLocalNotes((prev) => ({ ...prev, [session.id]: '' }));
       toast({ title: 'Session créée' });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Quick-add tasks straight to action plan
+  const handleQuickAddTasks = async (sessionId: string) => {
+    const raw = (quickTasks[sessionId] || '').trim();
+    if (!raw) return;
+    const assignee = quickAssignee[sessionId] || 'laetitia';
+    const lines = raw
+      .split('\n')
+      .map((l) => l.replace(/^[-•*\d.\s]+/, '').trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+    setAddingQuick(sessionId);
+    try {
+      const baseSort =
+        actions.length > 0
+          ? Math.max(0, ...actions.filter((a) => a.assignee === assignee).map((a) => a.sort_order)) + 1
+          : 0;
+      const rows = lines.map((task, i) => ({
+        mission_id: missionId,
+        assignee,
+        task,
+        sort_order: baseSort + i,
+        status: 'not_started',
+      }));
+      const { error } = await supabase.from('actions').insert(rows);
+      if (error) throw error;
+      setQuickTasks((p) => ({ ...p, [sessionId]: '' }));
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      toast({ title: `${lines.length} action(s) ajoutée(s) au plan` });
+    } catch {
+      toast({ title: 'Erreur', description: "Impossible d'ajouter les actions.", variant: 'destructive' });
+    } finally {
+      setAddingQuick(null);
     }
   };
 
