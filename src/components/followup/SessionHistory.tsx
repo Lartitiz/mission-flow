@@ -612,6 +612,11 @@ export function SessionHistory({
                   <Badge variant="secondary" className="font-body text-[10px]">
                     {sessionTypeLabel(session.session_type)}
                   </Badge>
+                  {(session as any).topic && (
+                    <span className="font-body text-xs text-foreground/80 truncate max-w-[280px]">
+                      · {(session as any).topic}
+                    </span>
+                  )}
                   {hasStructured && (
                     <Badge className="bg-primary/10 text-primary font-body text-[10px]">
                       Notes structurées
