@@ -27,6 +27,8 @@ interface KickoffStructuredSection {
 export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
   const { kickoff, isLoading, saveNotes, flushNotesNow, saveField, saveImmediate, isSaving } = useKickoff(missionId);
   const { discoveryCall } = useDiscoveryCall(missionId);
+  const { actions } = useActions(missionId);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Fetch proposal for context
