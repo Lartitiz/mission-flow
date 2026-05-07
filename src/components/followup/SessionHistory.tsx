@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, CalendarIcon, Sparkles, Loader2, Download, ChevronDown, Trash2 } from 'lucide-react';
+import { Plus, CalendarIcon, Sparkles, Loader2, Download, ChevronDown, Trash2, ListPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -76,6 +78,10 @@ export function SessionHistory({
   const [showNewForm, setShowNewForm] = useState(false);
   const [newDate, setNewDate] = useState<Date | undefined>(new Date());
   const [newType, setNewType] = useState('visio');
+  const [newTopic, setNewTopic] = useState('');
+  const [quickTasks, setQuickTasks] = useState<Record<string, string>>({});
+  const [quickAssignee, setQuickAssignee] = useState<Record<string, 'laetitia' | 'client'>>({});
+  const [addingQuick, setAddingQuick] = useState<string | null>(null);
 
   // --- Debounced notes saving ---
   const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
@@ -418,17 +424,54 @@ export function SessionHistory({
         session_date: format(newDate, 'yyyy-MM-dd'),
         session_type: newType,
         raw_notes: null,
-      });
+        topic: newTopic.trim() || null,
+      } as TablesInsert<'sessions'>);
       addJournalEntry(
-        `Session ${sessionTypeLabel(newType)} ajoutée le ${format(newDate, 'dd/MM/yyyy', { locale: fr })}`,
+        `Session ${sessionTypeLabel(newType)}${newTopic.trim() ? ` — ${newTopic.trim()}` : ''} ajoutée le ${format(newDate, 'dd/MM/yyyy', { locale: fr })}`,
         'auto'
       );
       setShowNewForm(false);
+      setNewTopic('');
       setExpandedId(session.id);
       setLocalNotes((prev) => ({ ...prev, [session.id]: '' }));
       toast({ title: 'Session créée' });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Quick-add tasks straight to action plan
+  const handleQuickAddTasks = async (sessionId: string) => {
+    const raw = (quickTasks[sessionId] || '').trim();
+    if (!raw) return;
+    const assignee = quickAssignee[sessionId] || 'laetitia';
+    const lines = raw
+      .split('\n')
+      .map((l) => l.replace(/^[-•*\d.\s]+/, '').trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+    setAddingQuick(sessionId);
+    try {
+      const baseSort =
+        actions.length > 0
+          ? Math.max(0, ...actions.filter((a) => a.assignee === assignee).map((a) => a.sort_order)) + 1
+          : 0;
+      const rows = lines.map((task, i) => ({
+        mission_id: missionId,
+        assignee,
+        task,
+        sort_order: baseSort + i,
+        status: 'not_started',
+      }));
+      const { error } = await supabase.from('actions').insert(rows);
+      if (error) throw error;
+      setQuickTasks((p) => ({ ...p, [sessionId]: '' }));
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      toast({ title: `${lines.length} action(s) ajoutée(s) au plan` });
+    } catch {
+      toast({ title: 'Erreur', description: "Impossible d'ajouter les actions.", variant: 'destructive' });
+    } finally {
+      setAddingQuick(null);
     }
   };
 
@@ -522,6 +565,12 @@ export function SessionHistory({
               </SelectContent>
             </Select>
           </div>
+          <Input
+            value={newTopic}
+            onChange={(e) => setNewTopic(e.target.value)}
+            placeholder="Sujet de la session (ex : Atelier de lancement, Stratégie éditoriale...)"
+            className="font-body text-sm"
+          />
           <Button onClick={handleCreate} disabled={!newDate || isCreating} className="w-full font-body">
             {isCreating ? 'Création...' : 'Créer et ouvrir'}
           </Button>
@@ -563,6 +612,11 @@ export function SessionHistory({
                   <Badge variant="secondary" className="font-body text-[10px]">
                     {sessionTypeLabel(session.session_type)}
                   </Badge>
+                  {(session as any).topic && (
+                    <span className="font-body text-xs text-foreground/80 truncate max-w-[280px]">
+                      · {(session as any).topic}
+                    </span>
+                  )}
                   {hasStructured && (
                     <Badge className="bg-primary/10 text-primary font-body text-[10px]">
                       Notes structurées
@@ -649,6 +703,23 @@ export function SessionHistory({
                       </div>
                     </div>
 
+
+                    {/* Topic / sujet de la session */}
+                    <div className="space-y-1">
+                      <label className="font-body text-xs text-muted-foreground">Sujet de la session</label>
+                      <Input
+                        defaultValue={(session as any).topic ?? ''}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (((session as any).topic ?? '') as string)) {
+                            onUpdate(session.id, { topic: val || null });
+                          }
+                        }}
+                        placeholder="ex : Atelier de lancement, point stratégie, retour sur livrable…"
+                        className="font-body text-sm"
+                      />
+                    </div>
+
                     {/* Notes editor with voice dictation */}
                     <NotesEditor
                       notes={notes}
@@ -657,6 +728,51 @@ export function SessionHistory({
                       draftKey={`session-notes:${session.id}`}
                       onFlush={(val) => flushSessionNotes(session.id, val)}
                     />
+
+                    {/* Quick add tasks to action plan */}
+                    <div className="bg-[hsl(var(--badge-rose)/0.08)] border border-[hsl(var(--badge-rose)/0.3)] rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ListPlus className="h-3.5 w-3.5 text-primary" />
+                        <span className="font-body text-xs font-medium text-foreground">
+                          Ajouter rapidement des actions au plan
+                        </span>
+                      </div>
+                      <Textarea
+                        value={quickTasks[session.id] ?? ''}
+                        onChange={(e) => setQuickTasks((p) => ({ ...p, [session.id]: e.target.value }))}
+                        placeholder={'Une action par ligne…\n- Préparer le brief\n- Envoyer la maquette'}
+                        rows={3}
+                        className="font-body text-xs"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={quickAssignee[session.id] || 'laetitia'}
+                          onValueChange={(v) =>
+                            setQuickAssignee((p) => ({ ...p, [session.id]: v as 'laetitia' | 'client' }))
+                          }
+                        >
+                          <SelectTrigger className="w-[140px] h-8 font-body text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="laetitia" className="font-body text-xs">Pour Laetitia</SelectItem>
+                            <SelectItem value="client" className="font-body text-xs">Pour le·la client·e</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          onClick={() => handleQuickAddTasks(session.id)}
+                          disabled={!(quickTasks[session.id]?.trim()) || addingQuick === session.id}
+                          className="font-body text-xs gap-1.5"
+                        >
+                          {addingQuick === session.id ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" /> Ajout…</>
+                          ) : (
+                            <><ListPlus className="h-3 w-3" /> Ajouter au plan d'action</>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
 
                     {/* Structure button */}
                     {!hasStructured && (
