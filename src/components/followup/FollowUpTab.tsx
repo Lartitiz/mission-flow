@@ -96,6 +96,8 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
         isSaving={sessionsSaving}
       />
 
+      <NextSessionBookingMessage clientName={clientName} />
+
       <SessionHistory
         sessions={sessions}
         missionId={missionId}
