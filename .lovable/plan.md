@@ -1,23 +1,21 @@
-## Contexte
+## Objectif
 
-Sur la session structurée, la section "Actions à mener" liste qui doit faire quoi (Adeline / Laetitia). Aujourd'hui ces actions ne partent dans le plan d'action que **lors de la structuration initiale**. Si l'extraction a raté ou si tu veux les renvoyer après-coup, il n'y a pas de bouton.
+Ajouter dans l'onglet **Suivi** un message prêt-à-copier pour inviter le·la client·e à réserver son prochain atelier via le lien Calendly, à utiliser entre les séances.
 
-## Ce que je vais ajouter
+## Plan
 
-**Un bouton "Envoyer les actions vers le plan d'action"** sous les notes structurées de chaque session :
+1. **Créer `src/components/followup/NextSessionBookingMessage.tsx`**
+   - Carte similaire à `LaunchMessageCard` (même style, même bouton "Copier")
+   - Titre : "Message de réservation — prochaine séance" (icône Calendar)
+   - Texte par défaut éditable (textarea) :
+     > Coucou {prénom}, voici mon agenda pour réserver ton prochain atelier : https://calendly.com/laetitia-mattioli/atelier-2h À très vite !
+   - Bouton "Copier le message"
 
-- Re-lance la fonction edge `extract-actions-from-cr` sur le contenu structuré (en passant aussi les actions existantes pour éviter doublons).
-- Persiste le résultat dans `structured_notes._pending_extracted` (même mécanisme que déjà en place).
-- Bandeau "X suggestions IA en attente" remonte automatiquement dans l'onglet **Plan d'action** où tu valides/rejettes (déjà implémenté).
-- Toast de confirmation : "X action(s) proposée(s) — à valider dans le Plan d'action".
+2. **Intégrer la carte dans `src/components/followup/FollowUpTab.tsx`**
+   - Placement : juste après `NextSessionCard` (logique entre-deux-séances), avant `SessionHistory`
 
-### État du bouton
-- Visible uniquement si `structured_notes` existe.
-- Loading state pendant l'extraction.
-- Si suggestions déjà en attente → libellé "Re-extraire les actions".
+## Détails techniques
 
-## Fichier touché
-- `src/components/followup/SessionHistory.tsx` : nouveau handler `handleExtractActions(session)` + bouton à côté du bouton "Re-structurer".
-
-## Hors scope
-- Pas de duplication de la logique d'application : on réutilise le bandeau existant dans `ActionsTab`.
+- Aucun changement de schéma DB
+- Lien Calendly en dur dans le composant (modifiable plus tard si besoin)
+- Tokens design existants (font-heading, font-body, primary, badge-rose)
