@@ -78,6 +78,10 @@ export function SessionHistory({
   const [showNewForm, setShowNewForm] = useState(false);
   const [newDate, setNewDate] = useState<Date | undefined>(new Date());
   const [newType, setNewType] = useState('visio');
+  const [newTopic, setNewTopic] = useState('');
+  const [quickTasks, setQuickTasks] = useState<Record<string, string>>({});
+  const [quickAssignee, setQuickAssignee] = useState<Record<string, 'laetitia' | 'client'>>({});
+  const [addingQuick, setAddingQuick] = useState<string | null>(null);
 
   // --- Debounced notes saving ---
   const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
