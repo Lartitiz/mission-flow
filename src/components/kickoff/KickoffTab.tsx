@@ -210,7 +210,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
             session_type: 'visio',
             topic: 'Atelier de lancement (kick-off)',
             raw_notes: rawText,
-            structured_notes: sessionStructured,
+            structured_notes: sessionStructured as any,
           })
           .eq('id', existing[0].id);
       } else {
@@ -220,8 +220,8 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
           session_type: 'visio',
           topic: 'Atelier de lancement (kick-off)',
           raw_notes: rawText,
-          structured_notes: sessionStructured,
-        });
+          structured_notes: sessionStructured as any,
+        } as any);
       }
 
       queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
