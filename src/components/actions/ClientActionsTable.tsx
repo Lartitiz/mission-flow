@@ -95,7 +95,7 @@ function EditableCell({ value, onSave, className }: {
   );
 }
 
-function FileCell({ actionId, missionId }: { actionId: string; missionId: string }) {
+function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missionId: string; onUploaded?: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
