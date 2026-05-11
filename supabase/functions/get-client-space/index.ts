@@ -61,7 +61,7 @@ serve(async (req) => {
         .order("sort_order"),
       supabase
         .from("sessions")
-        .select("id, session_date, session_type, structured_notes, next_session_date, next_session_agenda")
+        .select("id, session_date, session_type, structured_notes, client_summary, next_session_date, next_session_agenda")
         .eq("mission_id", missionId)
         .order("session_date", { ascending: false }),
       supabase
