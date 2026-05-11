@@ -1,0 +1,2 @@
+ALTER TABLE public.actions DROP CONSTRAINT actions_status_check;
+ALTER TABLE public.actions ADD CONSTRAINT actions_status_check CHECK (status = ANY (ARRAY['not_started'::text, 'in_progress'::text, 'to_validate'::text, 'validated'::text, 'delivered'::text, 'done'::text]));
