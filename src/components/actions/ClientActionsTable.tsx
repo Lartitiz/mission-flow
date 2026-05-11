@@ -137,6 +137,7 @@ function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missi
     });
 
     queryClient.invalidateQueries({ queryKey: ['action-files', actionId] });
+    onUploaded?.();
     toast({ title: 'Fichier ajouté' });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
