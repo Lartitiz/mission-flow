@@ -25,6 +25,7 @@ interface ClientSession {
   session_date: string;
   session_type: string;
   structured_notes: { sections?: { title: string; content: string }[] } | null;
+  client_summary: { headline: string; bullets: string[] } | null;
 }
 interface ClientFile {
   id: string;
