@@ -95,7 +95,7 @@ function EditableCell({ value, onSave, className }: {
   );
 }
 
-function FileCell({ actionId, missionId }: { actionId: string; missionId: string }) {
+function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missionId: string; onUploaded?: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +137,7 @@ function FileCell({ actionId, missionId }: { actionId: string; missionId: string
     });
 
     queryClient.invalidateQueries({ queryKey: ['action-files', actionId] });
+    onUploaded?.();
     toast({ title: 'Fichier ajouté' });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -285,7 +286,13 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
         </Select>
       </td>
       <td className="px-2 py-1 w-[160px]">
-        <FileCell actionId={action.id} missionId={missionId} />
+        <FileCell
+          actionId={action.id}
+          missionId={missionId}
+          onUploaded={() => {
+            if (action.status !== 'done') onUpdate(action.id, { status: 'done' });
+          }}
+        />
       </td>
       <td className="px-2 py-1">
         <AlertDialog>
