@@ -217,6 +217,15 @@ export function SessionHistory({
 
       onUpdate(session.id, { structured_notes: data });
 
+      // Generate short client-facing summary in background
+      supabase.functions.invoke('summarize-session-for-client', {
+        body: { session_id: session.id },
+      }).then(({ data: summaryData, error: summaryError }) => {
+        if (!summaryError && summaryData?.client_summary) {
+          queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+        }
+      }).catch(() => { /* silent */ });
+
       // Step B: Auto journal entry
       const sections = data?.sections as { title: string; content: string }[] | undefined;
       if (sections?.length) {
