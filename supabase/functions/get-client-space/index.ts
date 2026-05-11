@@ -116,6 +116,7 @@ serve(async (req) => {
           session_date: s.session_date,
           session_type: s.session_type,
           structured_notes: s.structured_notes,
+          client_summary: s.client_summary ?? null,
         })),
         next_session: nextSession,
         files: filesWithUrls,
