@@ -1,37 +1,62 @@
-## Constat
+## Objectif
 
-Quand on clique sur **"Structurer mes notes"** dans l'onglet Kick-off :
-- Les notes structurées sont bien sauvées dans la table `kickoffs.structured_notes` (donc elles persistent côté DB), mais elles ne réapparaissent **nulle part dans l'onglet Suivi**.
-- Aucune extraction d'actions n'est lancée (contrairement aux sessions du Suivi).
+Dans l'espace client (`ClientView.tsx`), réduire le poids visuel des sessions :
+1. Afficher un **résumé ultra-court** généré par IA (pas les `structured_notes` complètes).
+2. **Replier automatiquement** les sessions passées : seule la plus récente est dépliée par défaut, les autres apparaissent en ligne compacte cliquable.
 
-L'utilisatrice veut donc que la structuration du kick-off pousse automatiquement le contenu :
-1. Dans **l'historique des sessions** du Suivi (type visio, sujet "Atelier de lancement").
-2. Dans le **Plan d'action** sous forme de suggestions d'actions à valider.
+## Ma recommandation pour le "cocher"
 
-## Plan
+Plutôt qu'une case à cocher (qui ajoute une action côté client·e et un état à gérer), **repli automatique** : la session la plus récente est ouverte, les précédentes sont condensées en une ligne (date + type + résumé 1 phrase) qu'on peut déplier au clic. C'est plus fluide, ça allège visuellement sans rien demander à la cliente, et ça reste cohérent avec le reste de l'espace.
 
-### 1. `supabase/functions/structure-kickoff-notes/index.ts` — inchangée
-On garde la fonction telle quelle (elle structure déjà bien).
+## Ce qu'on construit
 
-### 2. `src/components/kickoff/KickoffTab.tsx` — étendre `handleStructureNotes` et `handleStructureResponses`
-Après la structuration réussie :
-- **Créer ou mettre à jour une session de Suivi** liée à ce kick-off :
-  - `session_type = 'visio'`
-  - `topic = 'Atelier de lancement (kick-off)'`
-  - `session_date` = date du kick-off (created_at)
-  - `raw_notes` = transcription brute
-  - `structured_notes = { sections, _from_kickoff: kickoff.id }`
-  - Idempotence : on cherche d'abord une session existante avec `structured_notes._from_kickoff = kickoff.id` ; si trouvée → update, sinon → insert.
-- **Lancer `extract-actions-from-cr`** sur les notes structurées (même logique que `SessionHistory.handleStructure`).
-- **Stocker les suggestions** dans `structured_notes._pending_extracted` de cette session pour qu'elles s'affichent dans le bandeau de validation déjà existant de l'onglet Plan d'action.
-- **Toast récapitulatif** : "Notes structurées · ajoutées au Suivi · X action(s) suggérée(s) à valider".
+### 1. Génération du résumé court (IA)
 
-### 3. `src/components/kickoff/KickoffStructuredNotes.tsx` — petit indicateur visuel
-Ajouter un petit badge / texte discret en bas : "✓ Synchronisé avec le Suivi · X action(s) en attente de validation dans le Plan d'action" (lien optionnel pour switcher d'onglet).
+- Nouvelle edge function `summarize-session-for-client`
+  - Input : `structured_notes` ou `raw_notes` d'une session
+  - Output : objet `client_summary` = `{ headline: string, bullets: string[] }`
+    - `headline` : 1 phrase qui dit ce qu'on a fait/décidé (≤ 140 car.)
+    - `bullets` : 2-4 puces très courtes (≤ 80 car. chacune), orientées client·e (décisions / prochaines étapes / livrables)
+  - Filtre : aucune mention budget, heures, marges, notes internes
+  - Modèle : `claude-sonnet-4` (rapide, suffisant pour synthèse)
+  - Ton : warm, "tu", inclusif, pas de jargon (selon mémoire projet)
+
+- Nouvelle colonne `sessions.client_summary jsonb` (nullable)
+
+- Déclenchement :
+  - Bouton dans `SessionHistory.tsx` (côté admin) "Générer le résumé client" sur chaque session structurée
+  - Génération automatique juste après la structuration IA d'une session (dans le flux existant `structure-session-notes`)
+  - Si `client_summary` est vide côté client view → fallback sur les `structured_notes` existantes (compatibilité)
+
+### 2. Affichage condensé dans `ClientView.tsx`
+
+Remplacer le bloc `sessionsBlock` (lignes 806-831) par :
+
+- Session la plus récente (index 0) : **dépliée**
+  - Date + type
+  - `headline` en gras
+  - `bullets` en liste courte
+  - (si pas de `client_summary` → afficher `structured_notes` comme aujourd'hui mais limité à 2 sections max)
+
+- Sessions précédentes : **repliées** par défaut
+  - Ligne unique : `date · type · headline tronquée`
+  - Caret/chevron à droite, clic pour déplier/replier
+  - État local `expandedSessionIds: Set<string>` dans le composant
+
+### 3. Côté admin (mineur)
+
+Dans `SessionHistory.tsx`, afficher le `client_summary` généré avec un bouton "Régénérer" pour que Laetitia puisse contrôler ce que voit la cliente.
 
 ## Détails techniques
 
-- Aucun changement de schéma : on utilise le champ `topic` (déjà ajouté aux sessions) + le marqueur `_from_kickoff` dans `structured_notes` JSONB.
-- Récupérer `actions` via `useActions(missionId)` dans `KickoffTab` pour passer le contexte à l'extraction.
-- Réutiliser exactement le format `_pending_extracted` déjà géré par `ActionsTab` (bandeau "X suggestions IA en attente").
-- Pas de doublon : l'idempotence par `_from_kickoff` garantit qu'une re-structuration met à jour la même session du Suivi plutôt que d'en créer une nouvelle.
+- **Migration** : `ALTER TABLE sessions ADD COLUMN client_summary jsonb;`
+- **Edge function** : `supabase/functions/summarize-session-for-client/index.ts`, `verify_jwt = false`, auth manuelle via token client (cohérent avec les autres fonctions du projet).
+- **Edge function existante** `get-client-space` : ajouter `client_summary` au payload retourné pour chaque session (à côté de `structured_notes`).
+- **Type `ClientSession`** dans `ClientView.tsx` : ajouter `client_summary?: { headline: string; bullets: string[] } | null`.
+- **UI repli** : caret `lucide-react` `ChevronDown` / `ChevronUp`, transition CSS simple (pas d'`Accordion` shadcn pour rester dans le style "papier" inline déjà utilisé).
+- **Pas de case à cocher**, pas de nouvel état persisté côté client·e.
+
+## Hors-scope
+
+- Pas de touchage du flux interne admin (`KickoffStructuredNotes`, `SessionHistory` reste presque identique).
+- Pas de regénération en masse rétroactive automatique : Laetitia déclenche manuellement pour les sessions existantes via le bouton.
