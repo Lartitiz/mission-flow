@@ -31,7 +31,7 @@ Cadrage :
 
 Production :
 4. Un thème = une session complète.
-5. Format de sortie : TOUJOURS des fichiers (.docx, .xlsx, .pptx). Le chat sert à piloter, pas à livrer.
+5. Format de sortie : le chat sert d'abord à poser des questions de cadrage et à valider la stratégie avec Laetitia. Une fois validé, livrer en fichiers (.docx, .xlsx, .pptx) — sauf si Laetitia demande explicitement une réponse directement dans le chat (brouillon court, message à copier-coller, reformulation, etc.).
 6. Briques modulables : chaque document doit pouvoir être découpé.
 7. Architecture d'abord, rédaction ensuite.
 
