@@ -217,6 +217,15 @@ export function SessionHistory({
 
       onUpdate(session.id, { structured_notes: data });
 
+      // Generate short client-facing summary in background
+      supabase.functions.invoke('summarize-session-for-client', {
+        body: { session_id: session.id },
+      }).then(({ data: summaryData, error: summaryError }) => {
+        if (!summaryError && summaryData?.client_summary) {
+          queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+        }
+      }).catch(() => { /* silent */ });
+
       // Step B: Auto journal entry
       const sections = data?.sections as { title: string; content: string }[] | undefined;
       if (sections?.length) {
@@ -291,6 +300,26 @@ export function SessionHistory({
   };
 
   const [isExtracting, setIsExtracting] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
+
+  const handleSummarizeForClient = async (session: Session) => {
+    setIsSummarizing(session.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('summarize-session-for-client', {
+        body: { session_id: session.id },
+      });
+      if (error || data?.error) {
+        toast({ title: 'Erreur', description: data?.error || 'Impossible de générer le résumé.', variant: 'destructive' });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      toast({ title: 'Résumé client généré ✓' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de générer le résumé.', variant: 'destructive' });
+    } finally {
+      setIsSummarizing(null);
+    }
+  };
 
   const handleExtractActions = async (session: Session) => {
     const structured = session.structured_notes as { sections?: { title: string; content: string }[] } | null;
@@ -832,6 +861,20 @@ export function SessionHistory({
                               <><Loader2 className="h-3 w-3 animate-spin" /> Extraction...</>
                             ) : (
                               <><Sparkles className="h-3 w-3" /> Envoyer les actions vers le plan d'action</>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSummarizeForClient(session)}
+                            disabled={isSummarizing === session.id}
+                            className="font-body text-xs gap-1.5"
+                            title="Génère un résumé court (1 phrase + 2-4 puces) affiché dans l'espace client·e"
+                          >
+                            {isSummarizing === session.id ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Résumé client…</>
+                            ) : (
+                              <><Sparkles className="h-3 w-3" /> {(session as any).client_summary ? 'Régénérer le résumé client' : 'Générer le résumé client'}</>
                             )}
                           </Button>
                         </div>

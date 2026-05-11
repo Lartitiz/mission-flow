@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Paperclip } from 'lucide-react';
+import { Loader2, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ interface ClientSession {
   session_date: string;
   session_type: string;
   structured_notes: { sections?: { title: string; content: string }[] } | null;
+  client_summary: { headline: string; bullets: string[] } | null;
 }
 interface ClientFile {
   id: string;
@@ -122,6 +123,7 @@ const ClientView = () => {
   const actionFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -807,25 +809,81 @@ const ClientView = () => {
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
       <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Nos sessions</h2>
       <div style={{ borderLeft: '2px solid #FFD6E8', paddingLeft: 22, marginLeft: 5 }}>
-        {data.sessions.map((session, idx) => (
-          <div key={session.id} style={{ position: 'relative', paddingBottom: idx < data.sessions.length - 1 ? 20 : 0 }}>
-            <span style={{ position: 'absolute', left: -27, top: 4, width: 10, height: 10, borderRadius: 3, background: '#91014b', border: '2px solid #fff', boxShadow: '0 0 0 2px #FFD6E8' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A2E' }}>{format(new Date(session.session_date), 'd MMMM yyyy', { locale: fr })}</span>
-              <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', borderRadius: 99, padding: '2px 8px' }}>{session.session_type === 'visio' ? 'Visio' : session.session_type === 'phone' ? 'Téléphone' : session.session_type}</span>
+        {data.sessions.map((session, idx) => {
+          const isLatest = idx === 0;
+          const isExpanded = isLatest || expandedSessions.has(session.id);
+          const summary = session.client_summary;
+          const toggle = () => {
+            if (isLatest) return;
+            setExpandedSessions((prev) => {
+              const next = new Set(prev);
+              if (next.has(session.id)) next.delete(session.id);
+              else next.add(session.id);
+              return next;
+            });
+          };
+          const typeLabel = session.session_type === 'visio' ? 'Visio' : session.session_type === 'phone' ? 'Téléphone' : session.session_type;
+
+          return (
+            <div key={session.id} style={{ position: 'relative', paddingBottom: idx < data.sessions.length - 1 ? 14 : 0 }}>
+              <span style={{ position: 'absolute', left: -27, top: 6, width: 10, height: 10, borderRadius: 3, background: '#91014b', border: '2px solid #fff', boxShadow: '0 0 0 2px #FFD6E8' }} />
+
+              {/* Header — always shown, clickable for non-latest */}
+              <button
+                type="button"
+                onClick={toggle}
+                disabled={isLatest}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 8, background: 'transparent',
+                  border: 'none', padding: '4px 0', cursor: isLatest ? 'default' : 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A2E' }}>
+                  {format(new Date(session.session_date), 'd MMMM yyyy', { locale: fr })}
+                </span>
+                <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', borderRadius: 99, padding: '2px 8px' }}>{typeLabel}</span>
+                {!isExpanded && summary?.headline && (
+                  <span style={{ fontSize: 12, color: '#6B7280', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    · {summary.headline}
+                  </span>
+                )}
+                {!isLatest && (
+                  isExpanded
+                    ? <ChevronUp size={14} style={{ color: '#9CA3AF', marginLeft: 'auto' }} />
+                    : <ChevronDown size={14} style={{ color: '#9CA3AF', marginLeft: 'auto' }} />
+                )}
+              </button>
+
+              {isExpanded && (
+                <div style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.03)', marginTop: 6 }}>
+                  {summary ? (
+                    <>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A2E', lineHeight: 1.5, marginBottom: summary.bullets?.length ? 8 : 0 }}>
+                        {summary.headline}
+                      </p>
+                      {summary.bullets?.length ? (
+                        <ul style={{ margin: 0, paddingLeft: 18 }}>
+                          {summary.bullets.map((b, i) => (
+                            <li key={i} style={{ fontSize: 12, color: '#4B5563', lineHeight: 1.6, marginBottom: 2 }}>{b}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </>
+                  ) : session.structured_notes?.sections && session.structured_notes.sections.length > 0 ? (
+                    session.structured_notes.sections.slice(0, 2).map((sec, i) => (
+                      <div key={i} style={{ marginBottom: i < Math.min(session.structured_notes!.sections!.length, 2) - 1 ? 10 : 0 }}>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: '#1A1A2E', marginBottom: 4 }}>{sec.title}</p>
+                        <p style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>{sec.content}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>Synthèse en préparation.</p>
+                  )}
+                </div>
+              )}
             </div>
-            {session.structured_notes?.sections && session.structured_notes.sections.length > 0 && (
-              <div style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
-                {session.structured_notes.sections.map((sec, i) => (
-                  <div key={i} style={{ marginBottom: i < session.structured_notes!.sections!.length - 1 ? 12 : 0 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: '#1A1A2E', marginBottom: 4 }}>{sec.title}</p>
-                    <p style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>{sec.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   ) : null;

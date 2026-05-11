@@ -429,6 +429,7 @@ export type Database = {
       }
       sessions: {
         Row: {
+          client_summary: Json | null
           created_at: string
           id: string
           mission_id: string
@@ -442,6 +443,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_summary?: Json | null
           created_at?: string
           id?: string
           mission_id: string
@@ -455,6 +457,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_summary?: Json | null
           created_at?: string
           id?: string
           mission_id?: string
