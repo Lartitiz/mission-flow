@@ -300,6 +300,26 @@ export function SessionHistory({
   };
 
   const [isExtracting, setIsExtracting] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
+
+  const handleSummarizeForClient = async (session: Session) => {
+    setIsSummarizing(session.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('summarize-session-for-client', {
+        body: { session_id: session.id },
+      });
+      if (error || data?.error) {
+        toast({ title: 'Erreur', description: data?.error || 'Impossible de générer le résumé.', variant: 'destructive' });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      toast({ title: 'Résumé client généré ✓' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de générer le résumé.', variant: 'destructive' });
+    } finally {
+      setIsSummarizing(null);
+    }
+  };
 
   const handleExtractActions = async (session: Session) => {
     const structured = session.structured_notes as { sections?: { title: string; content: string }[] } | null;
