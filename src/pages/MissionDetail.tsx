@@ -29,6 +29,9 @@ const MissionDetail = () => {
 
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountValue, setAmountValue] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
@@ -56,6 +59,13 @@ const MissionDetail = () => {
       amountInputRef.current.focus();
     }
   }, [editingAmount]);
+
+  useEffect(() => {
+    if (editingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [editingName]);
 
   // Auto-trigger default actions dialog when mission is signed and no client actions exist
   useEffect(() => {
@@ -148,9 +158,37 @@ const MissionDetail = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-heading text-xl text-foreground mr-2">
-            {mission.client_name}
-          </h1>
+          {editingName ? (
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={nameValue}
+              onChange={(e) => setNameValue(e.target.value)}
+              onBlur={() => {
+                setEditingName(false);
+                const v = nameValue.trim();
+                if (v && v !== mission.client_name) {
+                  updateMission.mutate({ id: mission.id, client_name: v });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setEditingName(false);
+              }}
+              className="font-heading text-xl text-foreground mr-2 border border-input rounded-lg px-2 py-0.5 bg-background outline-none focus:ring-1 focus:ring-ring"
+            />
+          ) : (
+            <h1
+              className="font-heading text-xl text-foreground mr-2 cursor-pointer hover:opacity-70 transition-opacity"
+              onClick={() => {
+                setNameValue(mission.client_name);
+                setEditingName(true);
+              }}
+              title="Cliquer pour modifier"
+            >
+              {mission.client_name}
+            </h1>
+          )}
 
           <MissionTypeBadge
             missionId={mission.id}
