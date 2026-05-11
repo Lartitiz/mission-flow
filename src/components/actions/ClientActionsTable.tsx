@@ -286,7 +286,13 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
         </Select>
       </td>
       <td className="px-2 py-1 w-[160px]">
-        <FileCell actionId={action.id} missionId={missionId} />
+        <FileCell
+          actionId={action.id}
+          missionId={missionId}
+          onUploaded={() => {
+            if (action.status !== 'done') onUpdate(action.id, { status: 'done' });
+          }}
+        />
       </td>
       <td className="px-2 py-1">
         <AlertDialog>
