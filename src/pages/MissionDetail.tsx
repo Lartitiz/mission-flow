@@ -29,6 +29,9 @@ const MissionDetail = () => {
 
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountValue, setAmountValue] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
   const [launchEmailOpen, setLaunchEmailOpen] = useState(false);
