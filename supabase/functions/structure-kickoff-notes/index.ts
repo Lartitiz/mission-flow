@@ -107,36 +107,32 @@ Type de mission : ${mission_type || "non_determine"}
 
 ${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal}` : ""}`;
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) {
-      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY non configurée" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY non configurée" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Toujours Sonnet (plus rapide, évite les timeouts edge function)
-    const inputLength = truncatedNotes.length;
-    const isLongTranscript = inputLength > 8000;
-    const model = "claude-sonnet-4-20250514";
-    const maxTokens = isLongTranscript ? 16000 : 8000;
-    const timeoutMs = 120000; // 2 min max (sous la limite edge function de 150s)
-
+    // Gemini 2.5 Flash via Lovable AI Gateway : rapide, gros contexte, évite les timeouts
+    const timeoutMs = 140000;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
       }),
       signal: controller.signal,
     });
@@ -145,15 +141,27 @@ ${truncatedProposal ? `Contexte (proposition commerciale) :\n${truncatedProposal
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic API error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "Erreur API Claude" }), {
+      console.error("Lovable AI error:", response.status, errText);
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Limite de requêtes atteinte, réessaie dans un instant." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Crédits IA épuisés. Ajoute des crédits dans Lovable Cloud." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "Erreur API IA" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const result = await response.json();
-    const textContent = result.content?.[0]?.text;
+    const textContent = result.choices?.[0]?.message?.content;
     if (!textContent) {
       return new Response(JSON.stringify({ error: "Réponse Claude vide" }), {
         status: 500,
