@@ -863,6 +863,20 @@ export function SessionHistory({
                               <><Sparkles className="h-3 w-3" /> Envoyer les actions vers le plan d'action</>
                             )}
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSummarizeForClient(session)}
+                            disabled={isSummarizing === session.id}
+                            className="font-body text-xs gap-1.5"
+                            title="Génère un résumé court (1 phrase + 2-4 puces) affiché dans l'espace client·e"
+                          >
+                            {isSummarizing === session.id ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Résumé client…</>
+                            ) : (
+                              <><Sparkles className="h-3 w-3" /> {(session as any).client_summary ? 'Régénérer le résumé client' : 'Générer le résumé client'}</>
+                            )}
+                          </Button>
                         </div>
                       </div>
                     )}
