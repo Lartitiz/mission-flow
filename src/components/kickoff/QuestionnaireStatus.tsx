@@ -68,6 +68,65 @@ export function QuestionnaireStatus({ kickoff, clientName, onStructureResponses,
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownloadMarkdown = () => {
+    const aiQs = kickoff.ai_questions ?? [];
+    const checked = (kickoff.fixed_questions ?? {}) as Record<string, boolean>;
+    const declicEnabled = kickoff.declic_questions_enabled ?? false;
+
+    const allQuestions: { id: string; text: string; theme: string }[] = [];
+    for (const q of FIXED_QUESTIONS) if (checked[q.id]) allQuestions.push(q);
+    aiQs.forEach((text, idx) => {
+      if (checked[`ai_${idx}`]) allQuestions.push({ id: `ai_${idx}`, text, theme: 'Questions contextuelles' });
+    });
+    if (declicEnabled) for (const q of DECLIC_QUESTIONS) if (checked[q.id]) allQuestions.push(q);
+
+    const themes: { name: string; items: { text: string; answer: string }[] }[] = [];
+    for (const q of allQuestions) {
+      const answer = (responses[q.id] ?? '').trim();
+      if (!answer) continue;
+      let t = themes.find((x) => x.name === q.theme);
+      if (!t) {
+        t = { name: q.theme, items: [] };
+        themes.push(t);
+      }
+      t.items.push({ text: q.text, answer });
+    }
+
+    const dateLine = kickoff.completed_at
+      ? `Complété le ${format(new Date(kickoff.completed_at), 'dd MMMM yyyy', { locale: fr })}`
+      : '';
+
+    let md = `# Questionnaire — ${clientName}\n`;
+    if (dateLine) md += `${dateLine}\n`;
+    md += '\n';
+    for (const t of themes) {
+      md += `## ${t.name}\n\n`;
+      for (const it of t.items) {
+        md += `**${it.text}**\n\n${it.answer}\n\n`;
+      }
+    }
+
+    const slug = clientName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const dateSuffix = format(new Date(kickoff.completed_at ?? new Date()), 'yyyy-MM-dd');
+    const filename = `questionnaire-${slug || 'client'}-${dateSuffix}.md`;
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Téléchargement lancé' });
+  };
+
   const statusBadge = () => {
     switch (status) {
       case 'draft':
