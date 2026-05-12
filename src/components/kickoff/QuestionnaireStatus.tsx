@@ -1,10 +1,34 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, Sparkles, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+const FIXED_QUESTIONS: { id: string; text: string; theme: string }[] = [
+  { id: "histoire", text: "Quelle est ton histoire ? Comment l'aventure a débuté ?", theme: "Ton histoire" },
+  { id: "anecdotes", text: "As-tu des anecdotes, des moments fondateurs ?", theme: "Ton histoire" },
+  { id: "causes", text: "Pour quelles causes ou valeurs ton projet prend position ?", theme: "Ton identité" },
+  { id: "mission", text: "Ta mission ? Le pourquoi profond ?", theme: "Ton identité" },
+  { id: "positionnement", text: "Définis ton projet en une phrase (positionnement)", theme: "Ton identité" },
+  { id: "mots", text: "Décris-toi en 3 mots", theme: "Ton identité" },
+  { id: "perception", text: "Comment veux-tu être perçu·e ?", theme: "Ton image" },
+  { id: "inspirations", text: "Quelles marques t'inspirent en communication ?", theme: "Ton image" },
+  { id: "offres", text: "Peux-tu détailler tes offres ?", theme: "Ton activité" },
+  { id: "client_ideal", text: "Qui est ton/ta client·e idéal·e ?", theme: "Ton activité" },
+  { id: "style", text: "Quel style et ton souhaites-tu adopter ?", theme: "Ton image" },
+  { id: "attentes", text: "Qu'attends-tu exactement de cet accompagnement ?", theme: "Tes attentes" },
+];
+
+const DECLIC_QUESTIONS: { id: string; text: string; theme: string }[] = [
+  { id: "declic_livre", text: "Quel est le livre que tu as le plus offert et pourquoi ?", theme: "Questions déclic" },
+  { id: "declic_defaite", text: "Raconte quelque chose qui semblait être une défaite mais qui t'a permis d'arriver à une victoire.", theme: "Questions déclic" },
+  { id: "declic_panneau", text: "Si tu pouvais avoir un panneau géant pour écrire un message au monde, tu écrirais quoi ?", theme: "Questions déclic" },
+  { id: "declic_phrase", text: "Complète la phrase : je ne serais pas arrivé·e là si...", theme: "Questions déclic" },
+  { id: "declic_habitude_chelou", text: "Raconte une habitude chelou ou un truc que tu aimes de manière absurde", theme: "Questions déclic" },
+  { id: "declic_habitude_vie", text: "Dans les 5 dernières années, quelle habitude a le plus amélioré ta vie ?", theme: "Questions déclic" },
+];
 
 interface QuestionnaireStatusProps {
   kickoff: {
@@ -18,11 +42,12 @@ interface QuestionnaireStatusProps {
     ai_questions?: string[] | null;
     declic_questions_enabled?: boolean;
   };
+  clientName: string;
   onStructureResponses: () => void;
   isStructuring: boolean;
 }
 
-export function QuestionnaireStatus({ kickoff, onStructureResponses, isStructuring }: QuestionnaireStatusProps) {
+export function QuestionnaireStatus({ kickoff, clientName, onStructureResponses, isStructuring }: QuestionnaireStatusProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -41,6 +66,65 @@ export function QuestionnaireStatus({ kickoff, onStructureResponses, isStructuri
     setCopied(true);
     toast({ title: 'Lien copié !' });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadMarkdown = () => {
+    const aiQs = kickoff.ai_questions ?? [];
+    const checked = (kickoff.fixed_questions ?? {}) as Record<string, boolean>;
+    const declicEnabled = kickoff.declic_questions_enabled ?? false;
+
+    const allQuestions: { id: string; text: string; theme: string }[] = [];
+    for (const q of FIXED_QUESTIONS) if (checked[q.id]) allQuestions.push(q);
+    aiQs.forEach((text, idx) => {
+      if (checked[`ai_${idx}`]) allQuestions.push({ id: `ai_${idx}`, text, theme: 'Questions contextuelles' });
+    });
+    if (declicEnabled) for (const q of DECLIC_QUESTIONS) if (checked[q.id]) allQuestions.push(q);
+
+    const themes: { name: string; items: { text: string; answer: string }[] }[] = [];
+    for (const q of allQuestions) {
+      const answer = (responses[q.id] ?? '').trim();
+      if (!answer) continue;
+      let t = themes.find((x) => x.name === q.theme);
+      if (!t) {
+        t = { name: q.theme, items: [] };
+        themes.push(t);
+      }
+      t.items.push({ text: q.text, answer });
+    }
+
+    const dateLine = kickoff.completed_at
+      ? `Complété le ${format(new Date(kickoff.completed_at), 'dd MMMM yyyy', { locale: fr })}`
+      : '';
+
+    let md = `# Questionnaire — ${clientName}\n`;
+    if (dateLine) md += `${dateLine}\n`;
+    md += '\n';
+    for (const t of themes) {
+      md += `## ${t.name}\n\n`;
+      for (const it of t.items) {
+        md += `**${it.text}**\n\n${it.answer}\n\n`;
+      }
+    }
+
+    const slug = clientName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const dateSuffix = format(new Date(kickoff.completed_at ?? new Date()), 'yyyy-MM-dd');
+    const filename = `questionnaire-${slug || 'client'}-${dateSuffix}.md`;
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Téléchargement lancé' });
   };
 
   const statusBadge = () => {
@@ -108,23 +192,33 @@ export function QuestionnaireStatus({ kickoff, onStructureResponses, isStructuri
             })}
           </div>
 
-          <Button
-            onClick={onStructureResponses}
-            disabled={isStructuring}
-            className="w-full font-body gap-2"
-          >
-            {isStructuring ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Structuration en cours...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Structurer les réponses
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              onClick={onStructureResponses}
+              disabled={isStructuring}
+              className="font-body gap-2 flex-1"
+            >
+              {isStructuring ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Structuration en cours...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Structurer les réponses
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadMarkdown}
+              className="font-body gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger en .md
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -1,62 +1,53 @@
-## Objectif
+# Téléchargement des réponses + flux kit Claude
 
-Dans l'espace client (`ClientView.tsx`), réduire le poids visuel des sessions :
-1. Afficher un **résumé ultra-court** généré par IA (pas les `structured_notes` complètes).
-2. **Replier automatiquement** les sessions passées : seule la plus récente est dépliée par défaut, les autres apparaissent en ligne compacte cliquable.
+## Réponse à ta 2e question
 
-## Ma recommandation pour le "cocher"
+**Oui, les réponses servent bien au kit projet Claude — mais via une étape intermédiaire.**
 
-Plutôt qu'une case à cocher (qui ajoute une action côté client·e et un état à gérer), **repli automatique** : la session la plus récente est ouverte, les précédentes sont condensées en une ligne (date + type + résumé 1 phrase) qu'on peut déplier au clic. C'est plus fluide, ça allège visuellement sans rien demander à la cliente, et ça reste cohérent avec le reste de l'espace.
+Le flux exact :
+1. Client·e remplit le questionnaire → `kickoffs.questionnaire_responses` (JSON brut)
+2. Tu cliques **"Structurer les réponses"** → Claude transforme ça en sections lisibles → `kickoffs.structured_notes`
+3. Lors de la génération du kit projet Claude, c'est `structured_notes` (+ `raw_notes` si dictés en mode visio) qui est injecté dans le contexte.
 
-## Ce qu'on construit
+⚠️ Donc si tu oublies l'étape 2, les réponses du questionnaire **ne sont pas reprises** dans le kit Claude. Veux-tu que je rende cette structuration **automatique** dès soumission du questionnaire ? (à valider, pas inclus par défaut dans ce plan)
 
-### 1. Génération du résumé court (IA)
+## Ce que je vais faire
 
-- Nouvelle edge function `summarize-session-for-client`
-  - Input : `structured_notes` ou `raw_notes` d'une session
-  - Output : objet `client_summary` = `{ headline: string, bullets: string[] }`
-    - `headline` : 1 phrase qui dit ce qu'on a fait/décidé (≤ 140 car.)
-    - `bullets` : 2-4 puces très courtes (≤ 80 car. chacune), orientées client·e (décisions / prochaines étapes / livrables)
-  - Filtre : aucune mention budget, heures, marges, notes internes
-  - Modèle : `claude-sonnet-4` (rapide, suffisant pour synthèse)
-  - Ton : warm, "tu", inclusif, pas de jargon (selon mémoire projet)
+Ajouter un bouton **"Télécharger en .md"** dans le bloc "Questionnaire client·e" de l'onglet Kick-off, visible uniquement quand le statut est `completed`.
 
-- Nouvelle colonne `sessions.client_summary jsonb` (nullable)
+### Comportement
 
-- Déclenchement :
-  - Bouton dans `SessionHistory.tsx` (côté admin) "Générer le résumé client" sur chaque session structurée
-  - Génération automatique juste après la structuration IA d'une session (dans le flux existant `structure-session-notes`)
-  - Si `client_summary` est vide côté client view → fallback sur les `structured_notes` existantes (compatibilité)
+- Génération **côté client** (pas d'edge function nécessaire), à partir des données déjà chargées
+- Format Markdown structuré par thème, avec date de complétion en en-tête :
+  ```md
+  # Questionnaire — {client_name}
+  Complété le 12 mai 2026
 
-### 2. Affichage condensé dans `ClientView.tsx`
+  ## Ton histoire
+  **Quelle est ton histoire ?**
+  …réponse…
 
-Remplacer le bloc `sessionsBlock` (lignes 806-831) par :
+  **As-tu des anecdotes ?**
+  …réponse…
 
-- Session la plus récente (index 0) : **dépliée**
-  - Date + type
-  - `headline` en gras
-  - `bullets` en liste courte
-  - (si pas de `client_summary` → afficher `structured_notes` comme aujourd'hui mais limité à 2 sections max)
+  ## Ton identité
+  …
+  ```
+- Nom de fichier : `questionnaire-{client_slug}-{YYYY-MM-DD}.md`
+- Téléchargement direct via Blob + `<a download>` (zéro dépendance ajoutée)
 
-- Sessions précédentes : **repliées** par défaut
-  - Ligne unique : `date · type · headline tronquée`
-  - Caret/chevron à droite, clic pour déplier/replier
-  - État local `expandedSessionIds: Set<string>` dans le composant
+### Détails techniques
 
-### 3. Côté admin (mineur)
+**Fichier modifié : `src/components/kickoff/QuestionnaireStatus.tsx`**
+- Ajouter prop `clientName: string` (passée depuis `KickoffTab.tsx`)
+- Ajouter une constante locale qui re-déclare la liste des questions fixes/déclic + leur thème (même structure que `get-questionnaire/index.ts`) pour résoudre `questionId → texte + thème`. Pour les questions IA (`ai_*`), récupérer le texte depuis `kickoff.ai_questions`.
+- Nouveau bouton à côté de "Structurer les réponses", icône `Download` (lucide-react), variant `outline`
+- Handler `handleDownload()` : construit la string MD, crée un Blob `text/markdown`, déclenche le téléchargement
 
-Dans `SessionHistory.tsx`, afficher le `client_summary` généré avec un bouton "Régénérer" pour que Laetitia puisse contrôler ce que voit la cliente.
+**Fichier modifié : `src/components/kickoff/KickoffTab.tsx`**
+- Passer `clientName={mission.client_name}` au composant `QuestionnaireStatus`
 
-## Détails techniques
-
-- **Migration** : `ALTER TABLE sessions ADD COLUMN client_summary jsonb;`
-- **Edge function** : `supabase/functions/summarize-session-for-client/index.ts`, `verify_jwt = false`, auth manuelle via token client (cohérent avec les autres fonctions du projet).
-- **Edge function existante** `get-client-space` : ajouter `client_summary` au payload retourné pour chaque session (à côté de `structured_notes`).
-- **Type `ClientSession`** dans `ClientView.tsx` : ajouter `client_summary?: { headline: string; bullets: string[] } | null`.
-- **UI repli** : caret `lucide-react` `ChevronDown` / `ChevronUp`, transition CSS simple (pas d'`Accordion` shadcn pour rester dans le style "papier" inline déjà utilisé).
-- **Pas de case à cocher**, pas de nouvel état persisté côté client·e.
-
-## Hors-scope
-
-- Pas de touchage du flux interne admin (`KickoffStructuredNotes`, `SessionHistory` reste presque identique).
-- Pas de regénération en masse rétroactive automatique : Laetitia déclenche manuellement pour les sessions existantes via le bouton.
+### Hors scope
+- Pas de modification de la structuration ni du flux Claude
+- Pas d'export PDF/DOCX (MD demandé)
+- Pas d'auto-structuration à la soumission (à confirmer séparément si tu le veux)
