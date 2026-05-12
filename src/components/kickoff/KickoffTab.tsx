@@ -441,6 +441,8 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
                     ai_questions: kickoff.ai_questions as string[] | null,
                     declic_questions_enabled: kickoff.declic_questions_enabled,
                   }}
+                  clientName={mission.client_name}
+                  clientSlug={mission.client_slug}
                   onStructureResponses={handleStructureResponses}
                   isStructuring={isStructuring}
                 />
