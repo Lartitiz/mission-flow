@@ -1,10 +1,34 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, Sparkles, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+const FIXED_QUESTIONS: { id: string; text: string; theme: string }[] = [
+  { id: "histoire", text: "Quelle est ton histoire ? Comment l'aventure a débuté ?", theme: "Ton histoire" },
+  { id: "anecdotes", text: "As-tu des anecdotes, des moments fondateurs ?", theme: "Ton histoire" },
+  { id: "causes", text: "Pour quelles causes ou valeurs ton projet prend position ?", theme: "Ton identité" },
+  { id: "mission", text: "Ta mission ? Le pourquoi profond ?", theme: "Ton identité" },
+  { id: "positionnement", text: "Définis ton projet en une phrase (positionnement)", theme: "Ton identité" },
+  { id: "mots", text: "Décris-toi en 3 mots", theme: "Ton identité" },
+  { id: "perception", text: "Comment veux-tu être perçu·e ?", theme: "Ton image" },
+  { id: "inspirations", text: "Quelles marques t'inspirent en communication ?", theme: "Ton image" },
+  { id: "offres", text: "Peux-tu détailler tes offres ?", theme: "Ton activité" },
+  { id: "client_ideal", text: "Qui est ton/ta client·e idéal·e ?", theme: "Ton activité" },
+  { id: "style", text: "Quel style et ton souhaites-tu adopter ?", theme: "Ton image" },
+  { id: "attentes", text: "Qu'attends-tu exactement de cet accompagnement ?", theme: "Tes attentes" },
+];
+
+const DECLIC_QUESTIONS: { id: string; text: string; theme: string }[] = [
+  { id: "declic_livre", text: "Quel est le livre que tu as le plus offert et pourquoi ?", theme: "Questions déclic" },
+  { id: "declic_defaite", text: "Raconte quelque chose qui semblait être une défaite mais qui t'a permis d'arriver à une victoire.", theme: "Questions déclic" },
+  { id: "declic_panneau", text: "Si tu pouvais avoir un panneau géant pour écrire un message au monde, tu écrirais quoi ?", theme: "Questions déclic" },
+  { id: "declic_phrase", text: "Complète la phrase : je ne serais pas arrivé·e là si...", theme: "Questions déclic" },
+  { id: "declic_habitude_chelou", text: "Raconte une habitude chelou ou un truc que tu aimes de manière absurde", theme: "Questions déclic" },
+  { id: "declic_habitude_vie", text: "Dans les 5 dernières années, quelle habitude a le plus amélioré ta vie ?", theme: "Questions déclic" },
+];
 
 interface QuestionnaireStatusProps {
   kickoff: {
@@ -18,11 +42,12 @@ interface QuestionnaireStatusProps {
     ai_questions?: string[] | null;
     declic_questions_enabled?: boolean;
   };
+  clientName: string;
   onStructureResponses: () => void;
   isStructuring: boolean;
 }
 
-export function QuestionnaireStatus({ kickoff, onStructureResponses, isStructuring }: QuestionnaireStatusProps) {
+export function QuestionnaireStatus({ kickoff, clientName, onStructureResponses, isStructuring }: QuestionnaireStatusProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
