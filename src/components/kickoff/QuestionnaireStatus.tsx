@@ -133,23 +133,33 @@ export function QuestionnaireStatus({ kickoff, clientName, onStructureResponses,
             })}
           </div>
 
-          <Button
-            onClick={onStructureResponses}
-            disabled={isStructuring}
-            className="w-full font-body gap-2"
-          >
-            {isStructuring ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Structuration en cours...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Structurer les réponses
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              onClick={onStructureResponses}
+              disabled={isStructuring}
+              className="font-body gap-2 flex-1"
+            >
+              {isStructuring ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Structuration en cours...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Structurer les réponses
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadMarkdown}
+              className="font-body gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger en .md
+            </Button>
+          </div>
         </div>
       )}
     </div>
