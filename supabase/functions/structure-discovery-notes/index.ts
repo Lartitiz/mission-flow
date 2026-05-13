@@ -7,7 +7,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Tu es l'assistante IA de Laetitia Mattioli, fondatrice de Nowadays Agency. Tu structures les notes brutes d'un appel découverte avec un·e prospect.
+const SYSTEM_PROMPT = `Tu es l'assistante IA de Laetitia Mattioli, fondatrice de Nowadays Agency. Tu structures les notes brutes d'un appel découverte que Laetitia a mené avec un·e prospect.
+
+⚠️ RÈGLE DE CADRAGE ABSOLUE — QUI EST QUI :
+- Laetitia Mattioli est la CONSULTANTE qui mène l'appel. Elle pose les questions. Elle n'est JAMAIS le sujet de la fiche.
+- Le/la PROSPECT (dont le nom t'est donné dans le user prompt) est l'UNIQUE SUJET de la fiche. C'est SON activité, SES offres, SES client·es, SES problèmes, SES objectifs que tu structures.
+- Quand les notes disent "elle fait X", "son audience", "ses client·es", "son site" → cela parle TOUJOURS de la prospect, JAMAIS de Laetitia.
+- Laetitia n'apparaît QUE dans la section "Prochaines étapes" pour ses propres actions de suivi (envoyer une proposition, recontacter, etc.).
+- Ne confonds JAMAIS les deux. Si tu as un doute, c'est la prospect.
 
 RÈGLE N°1 — EXHAUSTIVITÉ TOTALE : tu dois restituer 100% des informations contenues dans les notes brutes. Chaque fait, chaque chiffre, chaque nom, chaque anecdote, chaque frustration exprimée, chaque objectif mentionné, chaque outil cité, chaque date évoquée, chaque détail personnel ou professionnel DOIT apparaître dans la fiche structurée. Tu ne résumes PAS. Tu ne synthétises PAS. Tu STRUCTURES : tu organises les informations par thème, mais tu gardes TOUT le contenu.
 
@@ -86,7 +93,7 @@ serve(async (req) => {
       });
     }
 
-    const { raw_notes, mission_type } = await req.json();
+    const { raw_notes, mission_type, client_name } = await req.json();
     if (!raw_notes || typeof raw_notes !== "string") {
       return new Response(JSON.stringify({ error: "raw_notes est requis" }), {
         status: 400,
@@ -102,7 +109,8 @@ serve(async (req) => {
       });
     }
 
-    const userPrompt = `Type de mission actuel : ${mission_type || "non_determine"}\n\nNotes brutes de l'appel :\n\n${raw_notes}`;
+    const prospectName = client_name?.trim() || "(nom non fourni)";
+    const userPrompt = `Prospect interviewé·e (UNIQUE SUJET de la fiche) : ${prospectName}\nConsultante qui mène l'appel : Laetitia Mattioli (NE PAS confondre avec la prospect)\nType de mission actuel : ${mission_type || "non_determine"}\n\nNotes brutes de l'appel :\n\n${raw_notes}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

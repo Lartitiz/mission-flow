@@ -57,7 +57,7 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
 
     try {
       const { data, error } = await supabase.functions.invoke('structure-discovery-notes', {
-        body: { raw_notes: notes, mission_type: currentMissionType },
+        body: { raw_notes: notes, mission_type: currentMissionType, client_name: clientName },
       });
 
       if (error) throw error;
