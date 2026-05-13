@@ -173,6 +173,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
           clarification_qa: qa.length > 0 ? qa : null,
           mission_type: missionType,
           tutoiement,
+          client_name: clientName,
         },
       });
       if (error) throw error;

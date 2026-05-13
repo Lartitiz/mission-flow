@@ -13,61 +13,104 @@ import {
   PageNumber,
   NumberFormat,
   ShadingType,
-  HeadingLevel,
   Header,
   convertInchesToTwip,
-  TabStopPosition,
-  TabStopType,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import { Packer } from 'docx';
 
-const BRAND_DARK = '91014B';
-const BRAND_PINK = 'E91E8C';
-const LIGHT_GRAY = 'F9F9F9';
+const BRAND_DARK = '91014B';      // pourpre
+const BRAND_PINK = 'FB3D80';      // rose vif
+const BRAND_PINK_SOFT = 'FCE4EC'; // rose pâle (header de tableau)
+const BG_GRAY = 'FAFAFA';         // fond encart
+const BORDER_GRAY = 'E0E0E0';
+const RULE_GRAY = 'BDBDBD';
 const GRAY_TEXT = '888888';
-const BLACK = '000000';
+const BLACK = '1A1A1A';
 const WHITE = 'FFFFFF';
-const BORDER_GRAY = 'CCCCCC';
 
 interface ProposalSection {
   title: string;
   content: string;
 }
 
-function createEncartParagraph(content: string): Paragraph {
-  return new Paragraph({
-    spacing: { before: 200, after: 200 },
-    border: {
-      top: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-      bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-      left: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-      right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-    },
-    shading: { type: ShadingType.CLEAR, color: LIGHT_GRAY, fill: LIGHT_GRAY },
-    indent: { left: convertInchesToTwip(0.3), right: convertInchesToTwip(0.3) },
-    children: [
-      new TextRun({
-        text: content,
-        bold: true,
-        size: 22,
-        font: 'Arial',
-      }),
-    ],
+// ============ INLINE FORMATTING (bold + italic) ============
+
+function parseInlineFormatting(text: string): TextRun[] {
+  // Tokenize **bold** and *italic*
+  const runs: TextRun[] = [];
+  const regex = /(\*\*([^*]+)\*\*|\*([^*\n]+)\*)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      runs.push(new TextRun({ text: text.slice(lastIndex, match.index), size: 22, font: 'Arial', color: BLACK }));
+    }
+    if (match[2] !== undefined) {
+      runs.push(new TextRun({ text: match[2], bold: true, size: 22, font: 'Arial', color: BLACK }));
+    } else if (match[3] !== undefined) {
+      runs.push(new TextRun({ text: match[3], italics: true, size: 22, font: 'Arial', color: BLACK }));
+    }
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    runs.push(new TextRun({ text: text.slice(lastIndex), size: 22, font: 'Arial', color: BLACK }));
+  }
+  return runs.length > 0 ? runs : [new TextRun({ text, size: 22, font: 'Arial', color: BLACK })];
+}
+
+// ============ ENCART (bordure gauche pourpre + fond gris + italique) ============
+
+function createEncartParagraphs(content: string, opts?: { signature?: boolean }): Paragraph[] {
+  const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const fillColor = opts?.signature ? 'FFF5F8' : BG_GRAY;
+  const borderColor = BRAND_DARK;
+
+  return lines.map((line, idx) => {
+    const isFirst = idx === 0;
+    const isLast = idx === lines.length - 1;
+    return new Paragraph({
+      spacing: { before: isFirst ? 200 : 0, after: isLast ? 200 : 60 },
+      border: {
+        left: { style: BorderStyle.SINGLE, size: 18, color: borderColor },
+        top: isFirst ? { style: BorderStyle.SINGLE, size: 4, color: fillColor } : undefined,
+        bottom: isLast ? { style: BorderStyle.SINGLE, size: 4, color: fillColor } : undefined,
+      },
+      shading: { type: ShadingType.CLEAR, color: 'auto', fill: fillColor },
+      indent: { left: convertInchesToTwip(0.25), right: convertInchesToTwip(0.25) },
+      children: parseInlineFormatting(line).map(
+        (r) =>
+          new TextRun({
+            text: (r as unknown as { text: string }).text ?? '',
+            italics: true,
+            bold: (r as unknown as { bold?: boolean }).bold,
+            size: 22,
+            font: 'Arial',
+            color: BLACK,
+          })
+      ),
+    });
   });
 }
 
-function parseMarkdownToParagraphs(text: string): Paragraph[] {
+// ============ MARKDOWN PARSING ============
+
+function parseMarkdownToBlocks(text: string): (Paragraph | Table)[] {
   const lines = text.split('\n');
-  const paragraphs: Paragraph[] = [];
-  let inTable = false;
+  const blocks: (Paragraph | Table)[] = [];
   let tableRows: string[][] = [];
+  let inTable = false;
   let inEncart = false;
+  let encartType: 'normal' | 'signature' = 'normal';
   let encartLines: string[] = [];
 
   const flushTable = () => {
     if (tableRows.length > 0) {
-      paragraphs.push(...createTable(tableRows));
+      const tbl = createTable(tableRows);
+      if (tbl) blocks.push(tbl);
       tableRows = [];
     }
     inTable = false;
@@ -75,19 +118,20 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
 
   const flushEncart = () => {
     if (encartLines.length > 0) {
-      paragraphs.push(createEncartParagraph(encartLines.join(' ')));
+      blocks.push(...createEncartParagraphs(encartLines.join('\n'), { signature: encartType === 'signature' }));
       encartLines = [];
     }
     inEncart = false;
+    encartType = 'normal';
   };
 
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Handle multi-line encart accumulation
     if (inEncart) {
-      if (trimmed.includes('[/ENCART]')) {
-        encartLines.push(trimmed.replace('[/ENCART]', '').trim());
+      const closeTag = encartType === 'signature' ? '[/ENCART_SIGNATURE]' : '[/ENCART]';
+      if (trimmed.includes(closeTag)) {
+        encartLines.push(trimmed.replace(closeTag, '').trim());
         flushEncart();
       } else {
         encartLines.push(trimmed);
@@ -95,72 +139,85 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
       continue;
     }
 
-    // Detect [ENCART]...[/ENCART] blocks (single-line)
-    if (trimmed.startsWith('[ENCART]')) {
+    if (trimmed.startsWith('[ENCART_SIGNATURE]')) {
       if (inTable) flushTable();
-      if (trimmed.includes('[/ENCART]')) {
-        const encartContent = trimmed.replace('[ENCART]', '').replace('[/ENCART]', '').trim();
-        paragraphs.push(createEncartParagraph(encartContent));
+      const inline = trimmed.replace('[ENCART_SIGNATURE]', '');
+      if (inline.includes('[/ENCART_SIGNATURE]')) {
+        blocks.push(...createEncartParagraphs(inline.replace('[/ENCART_SIGNATURE]', '').trim(), { signature: true }));
       } else {
-        // Multi-line encart starts
         inEncart = true;
-        encartLines = [trimmed.replace('[ENCART]', '').trim()];
+        encartType = 'signature';
+        encartLines = [inline.trim()].filter(Boolean);
       }
       continue;
     }
 
-    // Table detection
+    if (trimmed.startsWith('[ENCART]')) {
+      if (inTable) flushTable();
+      const inline = trimmed.replace('[ENCART]', '');
+      if (inline.includes('[/ENCART]')) {
+        blocks.push(...createEncartParagraphs(inline.replace('[/ENCART]', '').trim()));
+      } else {
+        inEncart = true;
+        encartType = 'normal';
+        encartLines = [inline.trim()].filter(Boolean);
+      }
+      continue;
+    }
+
+    // Table
     if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      // Skip separator rows
       if (/^\|[\s\-:|]+\|$/.test(trimmed)) {
         inTable = true;
         continue;
       }
       inTable = true;
-      const cells = trimmed
-        .slice(1, -1)
-        .split('|')
-        .map((c) => c.trim());
-      tableRows.push(cells);
+      tableRows.push(trimmed.slice(1, -1).split('|').map((c) => c.trim()));
       continue;
     }
-
     if (inTable) flushTable();
 
     if (trimmed === '') {
-      paragraphs.push(new Paragraph({ spacing: { after: 100 } }));
+      blocks.push(new Paragraph({ spacing: { after: 80 } }));
       continue;
     }
 
-    // Subtitle (### or ##)
-    if (trimmed.startsWith('## ') || trimmed.startsWith('### ')) {
+    // Subtitle
+    if (trimmed.startsWith('### ') || trimmed.startsWith('## ')) {
       const subtitle = trimmed.replace(/^#{2,3}\s+/, '');
-      paragraphs.push(
+      blocks.push(
         new Paragraph({
-          spacing: { before: 200, after: 100 },
+          spacing: { before: 240, after: 100 },
+          children: [new TextRun({ text: subtitle, bold: true, size: 24, font: 'Arial', color: BLACK })],
+        })
+      );
+      continue;
+    }
+
+    // ✓ list
+    if (trimmed.startsWith('✓ ')) {
+      blocks.push(
+        new Paragraph({
+          spacing: { after: 60 },
+          indent: { left: convertInchesToTwip(0.3), hanging: convertInchesToTwip(0.2) },
           children: [
-            new TextRun({
-              text: subtitle,
-              bold: true,
-              size: 24, // 12pt
-              font: 'Arial',
-              color: BLACK,
-            }),
+            new TextRun({ text: '✓  ', bold: true, size: 22, font: 'Arial', color: BRAND_DARK }),
+            ...parseInlineFormatting(trimmed.slice(2)),
           ],
         })
       );
       continue;
     }
 
-    // Checkmark list (✓)
-    if (trimmed.startsWith('✓ ')) {
-      const content = trimmed.slice(2);
-      paragraphs.push(
+    // bullet
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+      const content = trimmed.replace(/^[-*•]\s+/, '');
+      blocks.push(
         new Paragraph({
           spacing: { after: 60 },
-          indent: { left: convertInchesToTwip(0.3) },
+          indent: { left: convertInchesToTwip(0.3), hanging: convertInchesToTwip(0.2) },
           children: [
-            new TextRun({ text: '✓ ', bold: true, size: 22, font: 'Arial', color: BRAND_PINK }),
+            new TextRun({ text: '•  ', size: 22, font: 'Arial', color: BLACK }),
             ...parseInlineFormatting(content),
           ],
         })
@@ -168,36 +225,36 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
       continue;
     }
 
-    // Bullet list
-    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      const content = trimmed.slice(2);
-      paragraphs.push(
-        new Paragraph({
-          bullet: { level: 0 },
-          spacing: { after: 60 },
-          children: parseInlineFormatting(content),
-        })
-      );
-      continue;
-    }
-
-    // Numbered list
-    const numberedMatch = trimmed.match(/^\d+\.\s+(.+)/);
+    // Numbered list — keep numbering visible
+    const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
     if (numberedMatch) {
-      paragraphs.push(
+      blocks.push(
         new Paragraph({
-          bullet: { level: 0 },
-          spacing: { after: 60 },
-          children: parseInlineFormatting(numberedMatch[1]),
+          spacing: { before: 160, after: 80 },
+          children: [
+            new TextRun({ text: `${numberedMatch[1]}. `, bold: true, size: 22, font: 'Arial', color: BRAND_DARK }),
+            ...parseInlineFormatting(numberedMatch[2]).map(
+              (r) =>
+                new TextRun({
+                  text: (r as unknown as { text: string }).text ?? '',
+                  bold: true,
+                  italics: (r as unknown as { italics?: boolean }).italics,
+                  size: 22,
+                  font: 'Arial',
+                  color: BLACK,
+                })
+            ),
+          ],
         })
       );
       continue;
     }
 
-    // Regular paragraph
-    paragraphs.push(
+    // paragraph
+    blocks.push(
       new Paragraph({
-        spacing: { after: 80, line: 312 },
+        spacing: { after: 120, line: 312 },
+        alignment: AlignmentType.LEFT,
         children: parseInlineFormatting(trimmed),
       })
     );
@@ -205,82 +262,44 @@ function parseMarkdownToParagraphs(text: string): Paragraph[] {
 
   if (inEncart) flushEncart();
   if (inTable) flushTable();
-  return paragraphs;
+  return blocks;
 }
 
-function parseInlineFormatting(text: string): TextRun[] {
-  const runs: TextRun[] = [];
-  const regex = /\*\*(.+?)\*\*/g;
-  let lastIndex = 0;
-  let match;
+// ============ TABLES ============
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      runs.push(
-        new TextRun({
-          text: text.slice(lastIndex, match.index),
-          size: 22, // 11pt
-          font: 'Arial',
-        })
-      );
-    }
-    runs.push(
-      new TextRun({
-        text: match[1],
-        bold: true,
-        size: 22,
-        font: 'Arial',
-      })
-    );
-    lastIndex = regex.lastIndex;
-  }
+function createTable(rows: string[][]): Table | null {
+  if (rows.length === 0) return null;
 
-  if (lastIndex < text.length) {
-    runs.push(
-      new TextRun({
-        text: text.slice(lastIndex),
-        size: 22,
-        font: 'Arial',
-      })
-    );
-  }
+  const cellBorders = {
+    top: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+    bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+    left: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+    right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
+  };
 
-  return runs.length > 0
-    ? runs
-    : [new TextRun({ text, size: 22, font: 'Arial' })];
-}
-
-function createTable(rows: string[][]): Paragraph[] {
-  if (rows.length === 0) return [];
-
-  const isHeader = (idx: number) => idx === 0;
-
-  const table = new Table({
+  return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: rows.map((cells, rowIdx) =>
-      new TableRow({
+    rows: rows.map((cells, rowIdx) => {
+      const isHeader = rowIdx === 0;
+      return new TableRow({
         children: cells.map(
           (cellText) =>
             new TableCell({
               shading: {
-                type: ShadingType.SOLID,
-                color: isHeader(rowIdx) ? BRAND_PINK : rowIdx % 2 === 0 ? WHITE : LIGHT_GRAY,
-                fill: isHeader(rowIdx) ? BRAND_PINK : rowIdx % 2 === 0 ? WHITE : LIGHT_GRAY,
+                type: ShadingType.CLEAR,
+                color: 'auto',
+                fill: isHeader ? BRAND_PINK_SOFT : WHITE,
               },
-              borders: {
-                top: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-                bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-                left: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-                right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_GRAY },
-              },
+              borders: cellBorders,
+              margins: { top: 100, bottom: 100, left: 140, right: 140 },
               children: [
                 new Paragraph({
-                  spacing: { before: 60, after: 60 },
+                  spacing: { before: 40, after: 40 },
                   children: [
                     new TextRun({
-                      text: cellText,
-                      bold: isHeader(rowIdx),
-                      color: isHeader(rowIdx) ? WHITE : BLACK,
+                      text: cellText.replace(/\*\*/g, ''),
+                      bold: isHeader,
+                      color: BLACK,
                       size: 22,
                       font: 'Arial',
                     }),
@@ -289,64 +308,105 @@ function createTable(rows: string[][]): Paragraph[] {
               ],
             })
         ),
-      })
-    ),
-  });
-
-  return [
-    new Paragraph({ spacing: { before: 100 } }),
-    // We need to return the table as a paragraph-level element
-    // docx library handles Table at the same level as Paragraph in sections
-    table as unknown as Paragraph,
-    new Paragraph({ spacing: { after: 100 } }),
-  ];
-}
-
-function pinkSeparator(): Paragraph {
-  return new Paragraph({
-    spacing: { before: 200, after: 200 },
-    border: {
-      bottom: {
-        style: BorderStyle.SINGLE,
-        size: 4, // 2pt
-        color: BRAND_PINK,
-      },
-    },
-  });
-}
-
-function importantBlock(text: string): Paragraph[] {
-  return [
-    new Paragraph({
-      spacing: { before: 100, after: 100 },
-      border: {
-        left: {
-          style: BorderStyle.SINGLE,
-          size: 8, // 4pt
-          color: BRAND_PINK,
-        },
-      },
-      shading: {
-        type: ShadingType.SOLID,
-        color: LIGHT_GRAY,
-        fill: LIGHT_GRAY,
-      },
-      indent: { left: convertInchesToTwip(0.2) },
-      children: [
-        new TextRun({
-          text,
-          size: 22,
-          font: 'Arial',
-          italics: true,
-        }),
-      ],
+      });
     }),
-  ];
+  });
 }
+
+// ============ COVER PAGE ============
+
+function buildCoverChildren(clientName: string, dateStr: string, baseline?: string): Paragraph[] {
+  const c: Paragraph[] = [];
+
+  // Logo top-left + ligne pourpre
+  c.push(
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [
+        new TextRun({ text: 'NOWADAYS AGENCY', bold: true, size: 24, font: 'Arial', color: BRAND_DARK }),
+      ],
+    })
+  );
+  c.push(
+    new Paragraph({
+      spacing: { after: 1200 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: BRAND_DARK } },
+    })
+  );
+
+  // Titre principal
+  c.push(
+    new Paragraph({
+      spacing: { after: 200 },
+      children: [
+        new TextRun({ text: "Proposition d'accompagnement", bold: true, size: 56, font: 'Arial', color: BLACK }),
+      ],
+    })
+  );
+
+  // Prénom client en rose
+  c.push(
+    new Paragraph({
+      spacing: { after: 240 },
+      children: [
+        new TextRun({ text: clientName, bold: true, size: 56, font: 'Arial', color: BRAND_PINK }),
+      ],
+    })
+  );
+
+  // Baseline italique
+  if (baseline && baseline.trim()) {
+    c.push(
+      new Paragraph({
+        spacing: { after: 600 },
+        children: [
+          new TextRun({ text: baseline.trim(), italics: true, size: 26, font: 'Arial', color: GRAY_TEXT }),
+        ],
+      })
+    );
+  } else {
+    c.push(new Paragraph({ spacing: { after: 600 } }));
+  }
+
+  // Date
+  c.push(
+    new Paragraph({
+      spacing: { after: 200 },
+      children: [new TextRun({ text: dateStr, size: 24, font: 'Arial', color: GRAY_TEXT })],
+    })
+  );
+
+  // Spacer
+  c.push(new Paragraph({ spacing: { before: 4000 } }));
+
+  // Signature
+  c.push(
+    new Paragraph({
+      spacing: { after: 80 },
+      children: [new TextRun({ text: 'Laetitia Mattioli', bold: true, size: 22, font: 'Arial', color: BLACK })],
+    })
+  );
+  c.push(
+    new Paragraph({
+      spacing: { after: 40 },
+      children: [new TextRun({ text: 'laetitia@nowadaysagency.com', size: 20, font: 'Arial', color: BRAND_DARK })],
+    })
+  );
+  c.push(
+    new Paragraph({
+      children: [new TextRun({ text: 'nowadaysagency.com', size: 20, font: 'Arial', color: GRAY_TEXT })],
+    })
+  );
+
+  return c;
+}
+
+// ============ MAIN ============
 
 export async function generateProposalDocx(
   clientName: string,
-  sections: ProposalSection[]
+  sections: ProposalSection[],
+  baseline?: string
 ) {
   const now = new Date();
   const monthNames = [
@@ -355,96 +415,62 @@ export async function generateProposalDocx(
   ];
   const dateStr = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
-  // Cover page children
-  const coverChildren: Paragraph[] = [
-    new Paragraph({ spacing: { before: 4000 } }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 300 },
-      children: [
-        new TextRun({
-          text: 'PROPOSITION',
-          size: 44, // 22pt
-          font: 'Arial',
-          color: BRAND_DARK,
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 200 },
-      children: [
-        new TextRun({
-          text: `Pour ${clientName}`,
-          size: 28, // 14pt
-          font: 'Arial',
-          color: GRAY_TEXT,
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 600 },
-      children: [
-        new TextRun({
-          text: dateStr,
-          size: 24, // 12pt
-          font: 'Arial',
-          color: GRAY_TEXT,
-        }),
-      ],
-    }),
-    new Paragraph({ spacing: { before: 6000 } }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [
-        new TextRun({
-          text: 'Nowadays Agency',
-          size: 20, // 10pt
-          font: 'Arial',
-          color: GRAY_TEXT,
-        }),
-      ],
-    }),
-  ];
+  const coverChildren = buildCoverChildren(clientName, dateStr, baseline);
 
-  // Content section children
+  // Content
   const contentChildren: (Paragraph | Table)[] = [];
-
   sections.forEach((section, idx) => {
     if (idx > 0) {
-      // Page break between sections
-      contentChildren.push(
-        new Paragraph({
-          children: [new PageBreak()],
-        })
-      );
+      contentChildren.push(new Paragraph({ children: [new PageBreak()] }));
     }
-
-    // Section title
+    // Section title (noir gras, gauche)
     contentChildren.push(
       new Paragraph({
-        spacing: { before: 200, after: 200 },
+        spacing: { before: 200, after: 120 },
         children: [
-          new TextRun({
-            text: section.title,
-            size: 32, // 16pt
-            font: 'Arial',
-            color: BRAND_DARK,
-          }),
+          new TextRun({ text: section.title, bold: true, size: 36, font: 'Arial', color: BLACK }),
         ],
       })
     );
-
-    // Pink separator
-    contentChildren.push(pinkSeparator());
-
-    // Section content
-    const parsedParagraphs = parseMarkdownToParagraphs(section.content);
-    contentChildren.push(...(parsedParagraphs as (Paragraph | Table)[]));
+    // Ligne grise fine
+    contentChildren.push(
+      new Paragraph({
+        spacing: { after: 240 },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: RULE_GRAY } },
+      })
+    );
+    contentChildren.push(...parseMarkdownToBlocks(section.content));
   });
 
-  const footerText = 'Nowadays Agency — nowadaysagency.com/accompagnement-communication';
+  // Header running text
+  const runningHeader = new Header({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [
+          new TextRun({
+            text: `Nowadays Agency × ${clientName}`,
+            size: 16,
+            font: 'Arial',
+            color: GRAY_TEXT,
+            italics: true,
+          }),
+        ],
+      }),
+    ],
+  });
+
+  const runningFooter = new Footer({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({ text: 'Page ', size: 16, font: 'Arial', color: GRAY_TEXT }),
+          new TextRun({ children: [PageNumber.CURRENT], size: 16, font: 'Arial', color: GRAY_TEXT }),
+        ],
+      }),
+    ],
+  });
 
   const doc = new Document({
     sections: [
@@ -470,36 +496,12 @@ export async function generateProposalDocx(
               left: convertInchesToTwip(1.2),
               right: convertInchesToTwip(1.2),
             },
-            pageNumbers: {
-              start: 1,
-              formatType: NumberFormat.DECIMAL,
-            },
+            pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL },
           },
         },
-        footers: {
-          default: new Footer({
-            children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [
-                  new TextRun({
-                    text: footerText + '  —  Page ',
-                    size: 16,
-                    font: 'Arial',
-                    color: GRAY_TEXT,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.CURRENT],
-                    size: 16,
-                    font: 'Arial',
-                    color: GRAY_TEXT,
-                  }),
-                ],
-              }),
-            ],
-          }),
-        },
-        children: contentChildren,
+        headers: { default: runningHeader },
+        footers: { default: runningFooter },
+        children: contentChildren as Paragraph[],
       },
     ],
   });
