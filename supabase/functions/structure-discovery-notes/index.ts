@@ -93,7 +93,7 @@ serve(async (req) => {
       });
     }
 
-    const { raw_notes, mission_type } = await req.json();
+    const { raw_notes, mission_type, client_name } = await req.json();
     if (!raw_notes || typeof raw_notes !== "string") {
       return new Response(JSON.stringify({ error: "raw_notes est requis" }), {
         status: 400,
