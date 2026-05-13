@@ -109,7 +109,8 @@ serve(async (req) => {
       });
     }
 
-    const userPrompt = `Type de mission actuel : ${mission_type || "non_determine"}\n\nNotes brutes de l'appel :\n\n${raw_notes}`;
+    const prospectName = client_name?.trim() || "(nom non fourni)";
+    const userPrompt = `Prospect interviewé·e (UNIQUE SUJET de la fiche) : ${prospectName}\nConsultante qui mène l'appel : Laetitia Mattioli (NE PAS confondre avec la prospect)\nType de mission actuel : ${mission_type || "non_determine"}\n\nNotes brutes de l'appel :\n\n${raw_notes}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
