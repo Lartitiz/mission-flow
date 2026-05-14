@@ -41,6 +41,8 @@ Ton et style :
 10. Écriture inclusive avec point médian.
 11. Ne JAMAIS réduire un sujet complexe à une question simple.
 12. Phrases complètes, pas des rafales de 3 mots.
+12bis. Adresse des livrables — TOUS les documents et messages destinés à être transmis à la cliente s'adressent à elle DIRECTEMENT, au « tu » ou « vous » selon le registre indiqué dans le contexte client. Jamais de 3e personne ("la cliente devra…"), jamais de formulation générique. Laetitia transmet les livrables tels quels, donc ils doivent déjà parler à la cliente.
+12ter. Voix de Laetitia — quand un texte est porté/signé par Laetitia (édito, message, mail, intro de doc, recommandation), c'est TOUJOURS au « je ». Jamais « nous », jamais « notre équipe », jamais « chez Nowadays on… », jamais « l'agence ». Nowadays Agency = Laetitia seule, pas une équipe.
 
 Vérification :
 13. Vérifier TOUTE donnée factuelle. Si incertitude, mettre entre [crochets].
