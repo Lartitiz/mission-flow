@@ -139,27 +139,52 @@ export function useKickoff(missionId: string) {
     [kickoff]
   );
 
-  // Flush pending saves on unmount
+  // Flush pending saves on unmount + on page unload (F5, tab close)
   useEffect(() => {
     const currentKickoff = kickoff;
+
+    const flushPending = () => {
+      if (!currentKickoff) return;
+      const updates: Record<string, unknown> = {};
+      if (pendingNotesRef.current !== null) updates.raw_notes = pendingNotesRef.current;
+      if (pendingFieldsRef.current !== null) Object.assign(updates, pendingFieldsRef.current);
+      if (Object.keys(updates).length === 0) return;
+
+      // Try sendBeacon first (survives page unload), fall back to fetch
+      try {
+        const url = `${(supabase as any).supabaseUrl}/rest/v1/kickoffs?id=eq.${currentKickoff.id}`;
+        const apikey = (supabase as any).supabaseKey;
+        const headers = {
+          'Content-Type': 'application/json',
+          apikey,
+          Authorization: `Bearer ${apikey}`,
+          Prefer: 'return=minimal',
+        };
+        // sendBeacon doesn't support PATCH → use fetch with keepalive
+        fetch(url, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify(updates),
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        supabase.from('kickoffs').update(updates as any).eq('id', currentKickoff.id).then(() => {});
+      }
+      pendingNotesRef.current = null;
+      pendingFieldsRef.current = null;
+    };
+
+    const handleBeforeUnload = () => flushPending();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushPending();
+    });
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       if (debounceNotes.current) clearTimeout(debounceNotes.current);
       if (debounceFields.current) clearTimeout(debounceFields.current);
-
-      if (currentKickoff && pendingNotesRef.current !== null) {
-        supabase
-          .from('kickoffs')
-          .update({ raw_notes: pendingNotesRef.current })
-          .eq('id', currentKickoff.id)
-          .then(() => {});
-      }
-      if (currentKickoff && pendingFieldsRef.current !== null) {
-        supabase
-          .from('kickoffs')
-          .update(pendingFieldsRef.current as any)
-          .eq('id', currentKickoff.id)
-          .then(() => {});
-      }
+      flushPending();
     };
   }, [kickoff]);
 
