@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useKickoff } from '@/hooks/useKickoff';
 import { useDiscoveryCall } from '@/hooks/useDiscoveryCall';
-import { KickoffQuestions } from './KickoffQuestions';
+import { KickoffQuestions, FIXED_QUESTIONS, DECLIC_QUESTIONS } from './KickoffQuestions';
 import { QuestionnairePreview } from './QuestionnairePreview';
+import { QuestionnaireLinkCard } from './QuestionnaireLinkCard';
+import { QuestionnaireResponses } from './QuestionnaireResponses';
 import { NotesEditor } from '@/components/discovery/NotesEditor';
 import { KickoffStructuredNotes } from './KickoffStructuredNotes';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
-import { QuestionnaireStatus } from './QuestionnaireStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActions } from '@/hooks/useActions';
@@ -286,21 +287,12 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
     saveImmediate({ structured_notes: { sections: updated } });
   };
 
-  const handleSendQuestionnaire = () => {
-    const allSelected = Object.entries(checkedQuestions)
-      .filter(([, v]) => v)
-      .map(([k]) => k);
-
+  const handleMarkAsSent = () => {
     saveImmediate({
       fixed_questions: checkedQuestions,
       ai_questions: aiQuestions,
       questionnaire_status: 'sent',
       sent_at: new Date().toISOString(),
-    });
-
-    toast({
-      title: 'Questionnaire envoyé',
-      description: `${allSelected.length} question(s) prêtes. Copie le lien pour l'envoyer à ${clientName}.`,
     });
   };
 
@@ -344,6 +336,17 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
 
   const questionnaireStatus = kickoff?.questionnaire_status ?? 'draft';
 
+  // Compute selected questions count (for LinkCard)
+  const selectedCount = (() => {
+    let n = 0;
+    for (const q of FIXED_QUESTIONS) if (checkedQuestions[q.id]) n++;
+    aiQuestions.forEach((_, idx) => { if (checkedQuestions[`ai_${idx}`]) n++; });
+    if (declicEnabled) for (const q of DECLIC_QUESTIONS) if (checkedQuestions[q.id]) n++;
+    return n;
+  })();
+  const responses = (kickoff?.questionnaire_responses ?? {}) as Record<string, string>;
+  const responseCount = Object.values(responses).filter((v) => v && v.trim().length > 0).length;
+
   if (isLoading) {
     return <p className="font-body text-muted-foreground py-8">Chargement...</p>;
   }
@@ -370,7 +373,12 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT — Questions (40%) */}
         <div className="w-full lg:w-[40%]">
-          <div className="max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+          <div className="flex items-center justify-end mb-2 h-5">
+            <span className="font-body text-xs text-muted-foreground">
+              {isSaving ? 'Sauvegarde…' : 'Sauvegardé ✓'}
+            </span>
+          </div>
+          <div className="max-h-[calc(100vh-340px)] overflow-y-auto pr-1">
             <KickoffQuestions
               checkedQuestions={checkedQuestions}
               onToggle={handleQuestionToggle}
@@ -428,30 +436,38 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
             </>
           ) : (
             <>
-              {(questionnaireStatus === 'sent' || questionnaireStatus === 'completed') && kickoff ? (
-                <QuestionnaireStatus
-                  kickoff={{
-                    id: kickoff.id,
-                    questionnaire_token: kickoff.questionnaire_token,
-                    questionnaire_status: kickoff.questionnaire_status,
-                    sent_at: kickoff.sent_at,
-                    completed_at: kickoff.completed_at,
-                    questionnaire_responses: kickoff.questionnaire_responses as Record<string, string> | null,
-                    fixed_questions: kickoff.fixed_questions as Record<string, boolean> | null,
-                    ai_questions: kickoff.ai_questions as string[] | null,
-                    declic_questions_enabled: kickoff.declic_questions_enabled,
-                  }}
+              {kickoff && (
+                <QuestionnaireLinkCard
+                  token={kickoff.questionnaire_token}
+                  status={questionnaireStatus}
+                  sentAt={kickoff.sent_at}
+                  completedAt={kickoff.completed_at}
+                  selectedCount={selectedCount}
+                  responseCount={responseCount}
                   clientName={clientName}
-                  onStructureResponses={handleStructureResponses}
-                  isStructuring={isStructuring}
+                  onMarkAsSent={handleMarkAsSent}
+                  isSaving={isSaving}
                 />
-              ) : (
+              )}
+
+              {questionnaireStatus !== 'completed' && (
                 <QuestionnairePreview
                   checkedQuestions={checkedQuestions}
                   aiQuestions={aiQuestions}
                   declicEnabled={declicEnabled}
-                  onSend={handleSendQuestionnaire}
-                  isSaving={isSaving}
+                />
+              )}
+
+              {questionnaireStatus === 'completed' && Object.keys(responses).length > 0 && kickoff && (
+                <QuestionnaireResponses
+                  responses={responses}
+                  fixedQuestions={(kickoff.fixed_questions as Record<string, boolean>) ?? {}}
+                  aiQuestions={(kickoff.ai_questions as string[]) ?? []}
+                  declicEnabled={kickoff.declic_questions_enabled ?? false}
+                  completedAt={kickoff.completed_at}
+                  clientName={clientName}
+                  onStructureResponses={handleStructureResponses}
+                  isStructuring={isStructuring}
                 />
               )}
 
