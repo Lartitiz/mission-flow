@@ -287,21 +287,12 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
     saveImmediate({ structured_notes: { sections: updated } });
   };
 
-  const handleSendQuestionnaire = () => {
-    const allSelected = Object.entries(checkedQuestions)
-      .filter(([, v]) => v)
-      .map(([k]) => k);
-
+  const handleMarkAsSent = () => {
     saveImmediate({
       fixed_questions: checkedQuestions,
       ai_questions: aiQuestions,
       questionnaire_status: 'sent',
       sent_at: new Date().toISOString(),
-    });
-
-    toast({
-      title: 'Questionnaire envoyé',
-      description: `${allSelected.length} question(s) prêtes. Copie le lien pour l'envoyer à ${clientName}.`,
     });
   };
 
