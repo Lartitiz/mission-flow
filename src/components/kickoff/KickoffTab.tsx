@@ -373,7 +373,12 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT — Questions (40%) */}
         <div className="w-full lg:w-[40%]">
-          <div className="max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+          <div className="flex items-center justify-end mb-2 h-5">
+            <span className="font-body text-xs text-muted-foreground">
+              {isSaving ? 'Sauvegarde…' : 'Sauvegardé ✓'}
+            </span>
+          </div>
+          <div className="max-h-[calc(100vh-340px)] overflow-y-auto pr-1">
             <KickoffQuestions
               checkedQuestions={checkedQuestions}
               onToggle={handleQuestionToggle}
