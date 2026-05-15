@@ -1,6 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 import type { Json } from '@/integrations/supabase/types';
 
@@ -68,6 +69,10 @@ export function useKickoff(missionId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kickoff', missionId] });
     },
+    onError: (err: any) => {
+      console.error('[useKickoff] save failed', err);
+      toast.error('Sauvegarde échouée — réessaie ou recharge la page.');
+    },
   });
 
   // Auto-create kickoff if it doesn't exist
@@ -94,14 +99,15 @@ export function useKickoff(missionId: string) {
 
   const saveField = useCallback(
     (updates: Record<string, unknown>) => {
-      pendingFieldsRef.current = updates;
+      pendingFieldsRef.current = { ...(pendingFieldsRef.current ?? {}), ...updates };
       if (debounceFields.current) clearTimeout(debounceFields.current);
       debounceFields.current = setTimeout(() => {
-        if (kickoff) {
-          updateMutation.mutate({ id: kickoff.id, ...updates } as any);
+        if (kickoff && pendingFieldsRef.current) {
+          const toSave = pendingFieldsRef.current;
           pendingFieldsRef.current = null;
+          updateMutation.mutate({ id: kickoff.id, ...toSave } as any);
         }
-      }, 500);
+      }, 250);
     },
     [kickoff, updateMutation]
   );
@@ -133,27 +139,52 @@ export function useKickoff(missionId: string) {
     [kickoff]
   );
 
-  // Flush pending saves on unmount
+  // Flush pending saves on unmount + on page unload (F5, tab close)
   useEffect(() => {
     const currentKickoff = kickoff;
+
+    const flushPending = () => {
+      if (!currentKickoff) return;
+      const updates: Record<string, unknown> = {};
+      if (pendingNotesRef.current !== null) updates.raw_notes = pendingNotesRef.current;
+      if (pendingFieldsRef.current !== null) Object.assign(updates, pendingFieldsRef.current);
+      if (Object.keys(updates).length === 0) return;
+
+      // Try sendBeacon first (survives page unload), fall back to fetch
+      try {
+        const url = `${(supabase as any).supabaseUrl}/rest/v1/kickoffs?id=eq.${currentKickoff.id}`;
+        const apikey = (supabase as any).supabaseKey;
+        const headers = {
+          'Content-Type': 'application/json',
+          apikey,
+          Authorization: `Bearer ${apikey}`,
+          Prefer: 'return=minimal',
+        };
+        // sendBeacon doesn't support PATCH → use fetch with keepalive
+        fetch(url, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify(updates),
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        supabase.from('kickoffs').update(updates as any).eq('id', currentKickoff.id).then(() => {});
+      }
+      pendingNotesRef.current = null;
+      pendingFieldsRef.current = null;
+    };
+
+    const handleBeforeUnload = () => flushPending();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushPending();
+    });
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       if (debounceNotes.current) clearTimeout(debounceNotes.current);
       if (debounceFields.current) clearTimeout(debounceFields.current);
-
-      if (currentKickoff && pendingNotesRef.current !== null) {
-        supabase
-          .from('kickoffs')
-          .update({ raw_notes: pendingNotesRef.current })
-          .eq('id', currentKickoff.id)
-          .then(() => {});
-      }
-      if (currentKickoff && pendingFieldsRef.current !== null) {
-        supabase
-          .from('kickoffs')
-          .update(pendingFieldsRef.current as any)
-          .eq('id', currentKickoff.id)
-          .then(() => {});
-      }
+      flushPending();
     };
   }, [kickoff]);
 
