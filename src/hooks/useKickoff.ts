@@ -99,14 +99,15 @@ export function useKickoff(missionId: string) {
 
   const saveField = useCallback(
     (updates: Record<string, unknown>) => {
-      pendingFieldsRef.current = updates;
+      pendingFieldsRef.current = { ...(pendingFieldsRef.current ?? {}), ...updates };
       if (debounceFields.current) clearTimeout(debounceFields.current);
       debounceFields.current = setTimeout(() => {
-        if (kickoff) {
-          updateMutation.mutate({ id: kickoff.id, ...updates } as any);
+        if (kickoff && pendingFieldsRef.current) {
+          const toSave = pendingFieldsRef.current;
           pendingFieldsRef.current = null;
+          updateMutation.mutate({ id: kickoff.id, ...toSave } as any);
         }
-      }, 500);
+      }, 250);
     },
     [kickoff, updateMutation]
   );
