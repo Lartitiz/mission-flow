@@ -69,6 +69,10 @@ export function useKickoff(missionId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kickoff', missionId] });
     },
+    onError: (err: any) => {
+      console.error('[useKickoff] save failed', err);
+      toast.error('Sauvegarde échouée — réessaie ou recharge la page.');
+    },
   });
 
   // Auto-create kickoff if it doesn't exist
