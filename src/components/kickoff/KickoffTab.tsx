@@ -10,7 +10,7 @@ import { KickoffStructuredNotes } from './KickoffStructuredNotes';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Video, FileText, Sparkles, Loader2, Check } from 'lucide-react';
+import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActions } from '@/hooks/useActions';
