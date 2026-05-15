@@ -336,6 +336,17 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
 
   const questionnaireStatus = kickoff?.questionnaire_status ?? 'draft';
 
+  // Compute selected questions count (for LinkCard)
+  const selectedCount = (() => {
+    let n = 0;
+    for (const q of FIXED_QUESTIONS) if (checkedQuestions[q.id]) n++;
+    aiQuestions.forEach((_, idx) => { if (checkedQuestions[`ai_${idx}`]) n++; });
+    if (declicEnabled) for (const q of DECLIC_QUESTIONS) if (checkedQuestions[q.id]) n++;
+    return n;
+  })();
+  const responses = (kickoff?.questionnaire_responses ?? {}) as Record<string, string>;
+  const responseCount = Object.values(responses).filter((v) => v && v.trim().length > 0).length;
+
   if (isLoading) {
     return <p className="font-body text-muted-foreground py-8">Chargement...</p>;
   }
@@ -420,30 +431,38 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
             </>
           ) : (
             <>
-              {(questionnaireStatus === 'sent' || questionnaireStatus === 'completed') && kickoff ? (
-                <QuestionnaireStatus
-                  kickoff={{
-                    id: kickoff.id,
-                    questionnaire_token: kickoff.questionnaire_token,
-                    questionnaire_status: kickoff.questionnaire_status,
-                    sent_at: kickoff.sent_at,
-                    completed_at: kickoff.completed_at,
-                    questionnaire_responses: kickoff.questionnaire_responses as Record<string, string> | null,
-                    fixed_questions: kickoff.fixed_questions as Record<string, boolean> | null,
-                    ai_questions: kickoff.ai_questions as string[] | null,
-                    declic_questions_enabled: kickoff.declic_questions_enabled,
-                  }}
+              {kickoff && (
+                <QuestionnaireLinkCard
+                  token={kickoff.questionnaire_token}
+                  status={questionnaireStatus}
+                  sentAt={kickoff.sent_at}
+                  completedAt={kickoff.completed_at}
+                  selectedCount={selectedCount}
+                  responseCount={responseCount}
                   clientName={clientName}
-                  onStructureResponses={handleStructureResponses}
-                  isStructuring={isStructuring}
+                  onMarkAsSent={handleMarkAsSent}
+                  isSaving={isSaving}
                 />
-              ) : (
+              )}
+
+              {questionnaireStatus !== 'completed' && (
                 <QuestionnairePreview
                   checkedQuestions={checkedQuestions}
                   aiQuestions={aiQuestions}
                   declicEnabled={declicEnabled}
-                  onSend={handleSendQuestionnaire}
-                  isSaving={isSaving}
+                />
+              )}
+
+              {questionnaireStatus === 'completed' && Object.keys(responses).length > 0 && kickoff && (
+                <QuestionnaireResponses
+                  responses={responses}
+                  fixedQuestions={(kickoff.fixed_questions as Record<string, boolean>) ?? {}}
+                  aiQuestions={(kickoff.ai_questions as string[]) ?? []}
+                  declicEnabled={kickoff.declic_questions_enabled ?? false}
+                  completedAt={kickoff.completed_at}
+                  clientName={clientName}
+                  onStructureResponses={handleStructureResponses}
+                  isStructuring={isStructuring}
                 />
               )}
 
