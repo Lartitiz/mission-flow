@@ -145,6 +145,11 @@ Les prompts doivent :
 2. Poser des QUESTIONS OUVERTES à Laetitia (pas des QCM)
 3. Signaler les écarts entre hypothèses kick-off et réalité du marché
 
+RÈGLE LEXIQUE AUDIENCE (OBLIGATOIRE) : les messages clés, le positionnement et la ligne éditoriale doivent OBLIGATOIREMENT s'appuyer sur le LEXIQUE DÉSIRABLE issu de l'étude de verbatims (document dans le projet). Concrètement :
+- Citer dans les propositions de messages les mots/expressions exacts repérés chez l'audience
+- Bannir explicitement les mots du LEXIQUE À ÉVITER
+- Si un message clé proposé n'utilise AUCUN mot du lexique audience, le signaler comme alerte à Laetitia ("ce message ne s'appuie sur aucun verbatim — risque de projection")
+
 Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) qui inclut un RECALIBRAGE DU PÉRIMÈTRE : comparer les missions prévues dans la proposition avec ce que la recherche et le kick-off ont révélé. Signaler :
 - Ce qui est confirmé (dans le périmètre, on continue)
 - Ce qui n'est plus pertinent (le marché a révélé autre chose)
