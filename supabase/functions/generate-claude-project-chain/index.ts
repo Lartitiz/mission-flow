@@ -84,7 +84,30 @@ RÈGLE NE PAS PRÉSUPPOSER : les informations du kick-off sont des HYPOTHÈSES. 
 - Ne PAS pré-découper le terrain en catégories
 - Signaler ce qui contredit les hypothèses initiales
 
-Génère entre 2 et 5 prompts adaptés à CETTE cliente.
+Génère entre 3 et 6 prompts adaptés à CETTE cliente, en incluant SYSTÉMATIQUEMENT l'audit concurrentiel ET l'étude de désirabilité (voir règle ci-dessous).
+
+RÈGLE LIVRABLES OBLIGATOIRES — quelle que soit la cliente, la chaîne phase A DOIT contenir au minimum deux livrables distincts :
+
+1. AUDIT CONCURRENTIEL / PAYSAGE — positionnement, offres, ton, prix, points forts/faibles des concurrent·es directes et indirectes (que Claude doit identifier lui-même à partir des hypothèses kick-off, pas à partir d'une liste pré-fournie).
+
+2. ÉTUDE DE DÉSIRABILITÉ — VERBATIMS AUDIENCE (NON NÉGOCIABLE). Objectif : trouver les MOTS EXACTS utilisés par l'audience cible pour parler de ses problèmes, désirs, frustrations, attentes — afin de nourrir une communication réellement désirable (pas une projection de la marque sur sa cible).
+
+   Le prompt doit demander à Claude d'aller chercher du verbatim BRUT dans :
+   - Avis clients sur les sites/marketplaces des concurrent·es (5 étoiles ET 1 étoile — les deux extrêmes sont les plus riches)
+   - Commentaires sous les publications Instagram / TikTok / YouTube des concurrent·es et des comptes de référence du sujet
+   - Threads Reddit pertinents (subreddits liés au sujet, à la cible, aux problèmes traités)
+   - Groupes Facebook publics, forums spécialisés, sections commentaires de blogs/médias du secteur
+   - Questions Google "People also ask", AnswerThePublic, autocomplétions
+   - Témoignages / interviews / podcasts où la cible parle elle-même (transcriptions)
+
+   Livrable attendu (format .docx) :
+   - CITATIONS BRUTES entre guillemets, avec source mentionnée pour chacune (URL ou plateforme)
+   - Regroupées par THÈME ÉMOTIONNEL : douleurs/frustrations, désirs/aspirations, objections/freins, déclencheurs d'achat, mots interdits (formulations qui agacent ou font fuir)
+   - Synthèse finale : LEXIQUE DÉSIRABLE (mots/expressions à utiliser dans la communication) et LEXIQUE À ÉVITER (jargon, formulations rejetées par la cible)
+
+   Si Claude ne trouve pas de verbatim sur certains thèmes ou certaines sources, il doit le SIGNALER explicitement plutôt que d'inventer ou de paraphraser.
+
+Ces deux livrables peuvent être lancés en parallèle (pas de dépendance entre eux). Les autres prompts (analyse Instagram, analyse de marché, etc.) s'ajoutent selon le contexte de CETTE cliente.
 
 Règles :
 - Format : "chat" pour l'exploratoire rapide, ".docx" pour les audits structurés
@@ -121,6 +144,11 @@ Les prompts doivent :
 1. Demander à Claude de synthétiser les observations des audits uploadés
 2. Poser des QUESTIONS OUVERTES à Laetitia (pas des QCM)
 3. Signaler les écarts entre hypothèses kick-off et réalité du marché
+
+RÈGLE LEXIQUE AUDIENCE (OBLIGATOIRE) : les messages clés, le positionnement et la ligne éditoriale doivent OBLIGATOIREMENT s'appuyer sur le LEXIQUE DÉSIRABLE issu de l'étude de verbatims (document dans le projet). Concrètement :
+- Citer dans les propositions de messages les mots/expressions exacts repérés chez l'audience
+- Bannir explicitement les mots du LEXIQUE À ÉVITER
+- Si un message clé proposé n'utilise AUCUN mot du lexique audience, le signaler comme alerte à Laetitia ("ce message ne s'appuie sur aucun verbatim — risque de projection")
 
 Au moins un prompt doit être une PAUSE STRATÉGIQUE (is_pause: true) qui inclut un RECALIBRAGE DU PÉRIMÈTRE : comparer les missions prévues dans la proposition avec ce que la recherche et le kick-off ont révélé. Signaler :
 - Ce qui est confirmé (dans le périmètre, on continue)
