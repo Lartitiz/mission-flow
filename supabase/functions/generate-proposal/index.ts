@@ -245,7 +245,7 @@ ${JSON.stringify(structured_notes, null, 2)}`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-20250514",
+        model: "claude-opus-4-1-20250805",
         max_tokens: 16000,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
