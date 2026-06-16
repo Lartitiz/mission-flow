@@ -139,8 +139,10 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
       }
     } catch (err: any) {
       console.error("Clarification error:", err);
-      toast.error("Erreur lors de l'analyse : " + (err?.message || "Réessaie."));
-      setFlowStep('idle');
+      toast.warning("Clarification indisponible, on passe directement à la génération.");
+      setClarificationQuestions([]);
+      setClarificationAnswers([]);
+      setFlowStep('ready_to_generate');
     }
   };
 
