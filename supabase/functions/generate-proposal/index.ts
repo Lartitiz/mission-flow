@@ -258,7 +258,9 @@ ${JSON.stringify(structured_notes, null, 2)}`;
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "Erreur API Claude" }), {
+      let detail = errText;
+      try { detail = JSON.parse(errText)?.error?.message || errText; } catch {}
+      return new Response(JSON.stringify({ error: `Claude ${response.status}: ${detail}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
