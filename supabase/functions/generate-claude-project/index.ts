@@ -202,7 +202,7 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-20250514",
+        model: "claude-opus-4-1-20250805",
         max_tokens: 6000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: context }],
