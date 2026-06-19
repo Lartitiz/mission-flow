@@ -14,6 +14,8 @@ import QuestionnaireView from './pages/QuestionnaireView';
 import Alumni from './pages/Alumni';
 import NotFound from './pages/NotFound';
 import ResetPassword from './pages/ResetPassword';
+import Unsubscribe from './pages/Unsubscribe';
+
 
 const queryClient = new QueryClient();
 
@@ -43,7 +45,9 @@ const App = () => (
           <Route path="/client/:token" element={<ClientView />} />
           <Route path="/c/:token" element={<ClientView />} />
           <Route path="/questionnaire/:token" element={<QuestionnaireView />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
