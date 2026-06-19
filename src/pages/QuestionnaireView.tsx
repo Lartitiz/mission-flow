@@ -26,6 +26,7 @@ export default function QuestionnaireView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
   const savingRef = useRef<Set<string>>(new Set());
+  const latestResponsesRef = useRef<Record<string, string>>({});
 
   // Dynamic title
   useEffect(() => {
@@ -55,7 +56,9 @@ export default function QuestionnaireView() {
         }
         setClientName(data.client_name);
         setQuestions(data.questions ?? []);
-        setResponses(data.responses ?? {});
+        const initialResponses = data.responses ?? {};
+        setResponses(initialResponses);
+        latestResponsesRef.current = initialResponses;
         setStatus('active');
       } catch {
         setErrorMsg("Ce lien n'est pas valide");
@@ -69,9 +72,12 @@ export default function QuestionnaireView() {
       if (savingRef.current.has(questionId)) return;
       savingRef.current.add(questionId);
       try {
-        await supabase.functions.invoke('save-questionnaire-response', {
+        const { data, error } = await supabase.functions.invoke('save-questionnaire-response', {
           body: { token, responses: { [questionId]: value }, submit: false },
         });
+        if (error || data?.error) {
+          throw new Error(data?.error || error?.message || 'Auto-save failed');
+        }
       } catch (e) {
         console.error('Auto-save error:', e);
       } finally {
@@ -92,7 +98,11 @@ export default function QuestionnaireView() {
   );
 
   const handleChange = useCallback((questionId: string, value: string) => {
-    setResponses((prev) => ({ ...prev, [questionId]: value }));
+    setResponses((prev) => {
+      const next = { ...prev, [questionId]: value };
+      latestResponsesRef.current = next;
+      return next;
+    });
   }, []);
 
   const answeredCount = questions.filter((q) => (responses[q.id] ?? '').trim().length > 0).length;
@@ -102,7 +112,7 @@ export default function QuestionnaireView() {
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('save-questionnaire-response', {
-        body: { token, responses, submit: true },
+        body: { token, responses: latestResponsesRef.current, submit: true },
       });
       if (error || data?.error) {
         toast({ title: 'Erreur', description: data?.error || 'Erreur lors de la soumission', variant: 'destructive' });
