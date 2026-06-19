@@ -52,12 +52,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (status !== "sent" && status !== "ready") {
-      return new Response(JSON.stringify({ error: "Ce questionnaire n'est pas encore disponible" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Any status other than completed is fillable — token presence is the gate.
+    // (Previously we required 'sent' or 'ready', which blocked draft questionnaires
+    //  when the client opened the link before Laetitia clicked "Marquer comme envoyé".)
+
 
     // Build the question list from fixed_questions, ai_questions, declic
     const fixedQuestions = [
