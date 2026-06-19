@@ -1,17 +1,30 @@
-## Diagnostic
+## Objectif
 
-L'erreur vient de `clarify-proposal` (appel fait juste avant `generate-proposal` dans le flux du bouton "Générer la proposition"). Les logs montrent un 500 — c'était dû au modèle Claude obsolète (`claude-sonnet-4-20250514`), corrigé au tour précédent vers `claude-sonnet-4-5-20250929`.
+Quand une cliente dépose un fichier dans son espace client, envoyer un email automatique à `laetitia@nowadaysagency.com` pour la prévenir.
 
-Si l'erreur revient, deux causes possibles :
-1. La nouvelle version n'est pas encore active côté serveur.
-2. Un autre échec API (rate-limit 429, crédits, timeout Opus pour generate-proposal) masqué par le message générique "Erreur API Claude".
+## Ce qui sera fait
 
-## Plan
+1. **Configurer l'envoi d'emails** (prérequis)
+   - Configurer un domaine d'envoi (ex. `notify.nowadaysagency.com`) via le dialogue de setup. Tu devras ajouter quelques enregistrements DNS chez ton registrar — ça prend ~5 min.
+   - Mettre en place l'infrastructure email (file d'attente, logs, etc.) — automatique.
+   - Scaffolder le système d'emails applicatifs — automatique.
 
-1. **Améliorer le reporting d'erreur** dans `clarify-proposal/index.ts` et `generate-proposal/index.ts` : au lieu de renvoyer `"Erreur API Claude"`, propager le status + le message Anthropic (ex : `"Claude 404: model not found"`, `"Claude 529: overloaded"`, `"Claude 429: rate limit"`). Cela permet d'identifier immédiatement la vraie cause au prochain essai.
+2. **Créer le template d'email** `client-file-uploaded`
+   - Sujet : `📎 [Nom cliente] a déposé un nouveau document`
+   - Contenu : nom de la cliente, nom du fichier, taille, date, + lien direct vers la mission dans l'app.
+   - Style cohérent avec la charte (Libre Baskerville, IBM Plex Sans, #91014b).
 
-2. **Skip intelligent de `clarify-proposal`** côté frontend (`ProposalTab.tsx`) : si la clarification échoue (500/timeout), continuer quand même vers `generate-proposal` au lieu de bloquer toute la génération. Une clarification ratée ne doit pas empêcher de produire la proposition.
+3. **Brancher le trigger** dans `supabase/functions/upload-client-file/index.ts`
+   - Après l'insertion réussie du fichier dans `files`, appeler `send-transactional-email` avec `recipientEmail: "laetitia@nowadaysagency.com"`.
+   - Idempotency key basée sur l'ID du fichier pour éviter les doublons.
+   - L'envoi ne bloque pas l'upload : si l'email échoue, le fichier reste bien enregistré (try/catch silencieux + log).
 
-3. **Vérifier le modèle Opus** dans `generate-proposal` (`claude-opus-4-1-20250805`) — confirmer qu'il répond bien via un appel test et, sinon, basculer sur l'alias stable `claude-opus-4-5` si nécessaire.
+## À noter
 
-Aucune modification du prompt, de la structure de proposition, ni du modèle si l'API répond — uniquement résilience et lisibilité des erreurs.
+- L'email part dès que le DNS est vérifié (sinon il est mis en file d'attente).
+- Tu pourras suivre les envois dans Cloud → Emails.
+- Aucune modification du portail client (UX cliente inchangée).
+
+## Question
+
+L'adresse de destination est-elle bien `laetitia@nowadaysagency.com` (fixée en dur), ou veux-tu pouvoir la modifier plus tard depuis l'app ?
