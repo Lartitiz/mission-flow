@@ -92,7 +92,31 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true, storage_path: storagePath }), {
+    // Notify Laetitia via email (non-blocking)
+    try {
+      const fileSizeKb = file_size ? (file_size < 1048576 ? `${Math.round(file_size / 1024)} Ko` : `${(file_size / 1048576).toFixed(1)} Mo`) : '';
+      const uploadedAt = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      const missionUrl = `https://nowadays-mission-flow.lovable.app/missions/${mission.id}`;
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'client-file-uploaded',
+          recipientEmail: 'laetitia@nowadaysagency.com',
+          idempotencyKey: `client-upload-${mission.id}-${file_name}-${Date.now()}`,
+          templateData: {
+            clientName: mission.client_name || 'Une cliente',
+            fileName: file_name,
+            fileSize: fileSizeKb,
+            uploadedAt,
+            missionUrl,
+          },
+        },
+      });
+    } catch (notifyErr) {
+      console.error('Email notification failed (non-blocking):', notifyErr);
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
