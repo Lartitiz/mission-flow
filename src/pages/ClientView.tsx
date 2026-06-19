@@ -207,8 +207,8 @@ const ClientView = () => {
 
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const clientFolder = (data?.mission.client_name || 'client').replace(/\s+/g, '_');
-      const path = `${clientFolder}/actions/${actionId}/${Date.now()}_${safeName}`;
+      const path = `${data!.mission.id}/actions/${actionId}/${Date.now()}_${safeName}`;
+
 
       const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file, {
         contentType: file.type || 'application/octet-stream',
@@ -251,8 +251,8 @@ const ClientView = () => {
 
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const clientFolder = (data?.mission.client_name || 'client').replace(/\s+/g, '_');
-      const path = `${clientFolder}/uploads/${Date.now()}_${safeName}`;
+      const path = `${data!.mission.id}/uploads/${Date.now()}_${safeName}`;
+
 
       const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file, {
         contentType: file.type || 'application/octet-stream',
