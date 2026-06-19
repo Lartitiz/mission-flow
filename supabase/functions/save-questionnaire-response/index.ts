@@ -46,13 +46,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (kickoff.questionnaire_status !== "sent" && kickoff.questionnaire_status !== "ready") {
-      return new Response(JSON.stringify({ error: "Ce questionnaire n'est pas disponible" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Merge responses
     const existingResponses = (kickoff.questionnaire_responses as Record<string, string>) ?? {};
     const mergedResponses = { ...existingResponses, ...responses };
@@ -61,10 +54,17 @@ Deno.serve(async (req) => {
       questionnaire_responses: mergedResponses,
     };
 
+    // Auto-promote draft → sent on first save so the dashboard stays accurate.
+    if (kickoff.questionnaire_status === "draft") {
+      updates.questionnaire_status = "sent";
+      updates.sent_at = new Date().toISOString();
+    }
+
     if (submit) {
       updates.questionnaire_status = "completed";
       updates.completed_at = new Date().toISOString();
     }
+
 
     const { error: updateError } = await supabase
       .from("kickoffs")
