@@ -6,13 +6,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function normalizeResponses(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => key.length > 0 && key.length <= 120)
+      .map(([key, answer]) => [key, answer == null ? "" : String(answer)])
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { token, responses, submit } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const token = typeof body?.token === "string" ? body.token : "";
+    const responses = normalizeResponses(body?.responses);
+    const submit = body?.submit === true;
     if (!token) {
       return new Response(JSON.stringify({ error: "Token manquant" }), {
         status: 400,
@@ -40,8 +52,8 @@ Deno.serve(async (req) => {
     }
 
     if (kickoff.questionnaire_status === "completed") {
-      return new Response(JSON.stringify({ error: "Ce questionnaire a déjà été soumis" }), {
-        status: 400,
+      return new Response(JSON.stringify({ success: true, status: "completed" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -65,10 +77,17 @@ Deno.serve(async (req) => {
       updates.completed_at = new Date().toISOString();
     }
 
-    const { error: updateError } = await supabase
+    let updateQuery = supabase
       .from("kickoffs")
       .update(updates)
       .eq("id", kickoff.id);
+
+    // A late auto-save must never reopen a questionnaire already submitted.
+    if (!submit) {
+      updateQuery = updateQuery.neq("questionnaire_status", "completed");
+    }
+
+    const { error: updateError } = await updateQuery;
 
     if (updateError) throw updateError;
 
