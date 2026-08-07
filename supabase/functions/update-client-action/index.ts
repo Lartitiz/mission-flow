@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const { data: mission, error: missionError } = await supabase
       .from("missions")
-      .select("id, client_link_active")
+      .select("id, client_name, client_link_active")
       .eq("client_token", token)
       .single();
 
@@ -97,6 +97,7 @@ serve(async (req) => {
     }
 
     // Upload file if base64 provided (legacy)
+    let fileRecorded = false;
     if (file_name && file_base64) {
       const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${mission.id}/actions/${action_id}/${Date.now()}_${safeName}`;
@@ -119,6 +120,7 @@ serve(async (req) => {
         uploaded_by: "client",
       });
       if (fileError) throw fileError;
+      fileRecorded = true;
     }
     // Or record file if already uploaded directly (new: direct upload from client)
     else if (file_name && storage_path) {
@@ -139,6 +141,54 @@ serve(async (req) => {
         uploaded_by: "client",
       });
       if (fileError) throw fileError;
+      fileRecorded = true;
+    }
+
+    // Notify Laetitia via email (non-blocking) — même modèle que upload-client-file :
+    // jusqu'ici, un fichier déposé sur une action ne notifiait PAS.
+    // Anti-rafale : un seul e-mail par salve. La clé d'idempotence est par
+    // tranche d'heure, et comme l'infra e-mail ne prouve pas de déduplication
+    // par idempotency_key (le dispatcher ne dédoublonne que par message_id),
+    // on garde aussi une garde locale : si un autre fichier client de cette
+    // mission a déjà été enregistré dans la même tranche d'heure, il a déjà
+    // déclenché l'e-mail → on saute l'envoi.
+    if (fileRecorded) {
+      try {
+        const hourSlice = new Date().toISOString().slice(0, 13); // ex: 2026-08-07T14
+        const { count: uploadsThisHour, error: countError } = await supabase
+          .from("files")
+          .select("id", { count: "exact", head: true })
+          .eq("mission_id", mission.id)
+          .eq("uploaded_by", "client")
+          .gte("created_at", `${hourSlice}:00:00.000Z`);
+
+        // Le fichier qu'on vient d'insérer compte pour 1 : au-delà, un e-mail
+        // est déjà parti cette heure-ci. En cas d'erreur de comptage, on envoie
+        // quand même (mieux vaut un e-mail en trop qu'aucun).
+        if (countError || uploadsThisHour === null || uploadsThisHour <= 1) {
+          const fileSizeKb = file_size ? (file_size < 1048576 ? `${Math.round(file_size / 1024)} Ko` : `${(file_size / 1048576).toFixed(1)} Mo`) : '';
+          const uploadedAt = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+          const missionUrl = `https://nowadays-mission-flow.lovable.app/missions/${mission.id}`;
+          await supabase.functions.invoke('send-transactional-email', {
+            body: {
+              templateName: 'client-file-uploaded',
+              recipientEmail: 'laetitia@nowadaysagency.com',
+              idempotencyKey: `client-upload-${mission.id}-${hourSlice}`,
+              templateData: {
+                clientName: mission.client_name || 'Une cliente',
+                fileName: file_name,
+                fileSize: fileSizeKb,
+                uploadedAt,
+                missionUrl,
+              },
+            },
+          });
+        } else {
+          console.log('Notification déjà envoyée cette heure-ci, e-mail sauté', { mission_id: mission.id, hourSlice });
+        }
+      } catch (notifyErr) {
+        console.error('Email notification failed (non-blocking):', notifyErr);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {
