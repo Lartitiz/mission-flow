@@ -27,7 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const CATEGORIES = ['Cadrage', 'Messages', 'Site web', 'Social media', 'Emailing', 'Branding', 'Cross-posting', 'Influence/Presse', 'Formation', 'Commercial', 'Support', 'Préparation session', 'Finalisation', 'Autre'];
+const CATEGORIES = ['Cadrage', 'Messages', 'Site web', 'Social media', 'Emailing', 'Branding', 'Cross-posting', 'Influence/Presse', 'Formation', 'Commercial', 'Support', 'Finalisation', 'Autre'];
 
 const PHASE_OPTIONS = [
   { value: '', label: '(aucune)' },
