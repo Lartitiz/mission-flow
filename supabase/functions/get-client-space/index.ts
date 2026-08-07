@@ -26,15 +26,21 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get mission by slug or token
+    // Seul le client_token (UUID aléatoire) donne accès : le slug est devinable
+    // (dérivé du nom de la cliente), il ne doit jamais servir de clé d'accès.
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
-    const query = supabase
+    if (!isUuid) {
+      return new Response(JSON.stringify({ error: "Token invalide" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: mission, error: missionError } = await supabase
       .from("missions")
       .select("id, client_name, mission_type, status, amount, client_link_active")
-    
-    const { data: mission, error: missionError } = isUuid
-      ? await query.eq("client_token", token).single()
-      : await query.eq("client_slug", token).single();
+      .eq("client_token", token)
+      .single();
 
     if (missionError || !mission) {
       return new Response(JSON.stringify({ error: "Token invalide" }), {
@@ -53,7 +59,7 @@ serve(async (req) => {
     const missionId = mission.id;
 
     // Fetch all data in parallel
-    const [actionsRes, sessionsRes, filesRes, nextSessionRes] = await Promise.all([
+    const [actionsRes, sessionsRes, filesRes] = await Promise.all([
       supabase
         .from("actions")
         .select("id, task, description, category, channel, target_date, status, assignee, sort_order, client_comment, phase")
@@ -61,7 +67,7 @@ serve(async (req) => {
         .order("sort_order"),
       supabase
         .from("sessions")
-        .select("id, session_date, session_type, structured_notes, client_summary, next_session_date, next_session_agenda")
+        .select("id, session_date, session_type, client_summary, next_session_date, next_session_agenda")
         .eq("mission_id", missionId)
         .order("session_date", { ascending: false }),
       supabase
@@ -90,9 +96,12 @@ serve(async (req) => {
       : null;
 
     // Generate signed URLs for files
+    // Ne signe jamais un chemin hors du dossier de la mission : la ligne
+    // `files` peut être insérée par un client anonyme, son storage_path
+    // ne fait pas foi.
     const filesWithUrls = await Promise.all(
       files.map(async (f: any) => {
-        if (f.url) {
+        if (f.url || !f.storage_path?.startsWith(`${missionId}/`)) {
           return { ...f, download_url: null };
         }
         const { data } = await supabase.storage
@@ -115,7 +124,6 @@ serve(async (req) => {
           id: s.id,
           session_date: s.session_date,
           session_type: s.session_type,
-          structured_notes: s.structured_notes,
           client_summary: s.client_summary ?? null,
         })),
         next_session: nextSession,

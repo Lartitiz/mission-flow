@@ -24,7 +24,6 @@ interface ClientSession {
   id: string;
   session_date: string;
   session_type: string;
-  structured_notes: { sections?: { title: string; content: string }[] } | null;
   client_summary: { headline: string; bullets: string[] } | null;
 }
 interface ClientFile {
@@ -869,13 +868,6 @@ const ClientView = () => {
                         </ul>
                       ) : null}
                     </>
-                  ) : session.structured_notes?.sections && session.structured_notes.sections.length > 0 ? (
-                    session.structured_notes.sections.slice(0, 2).map((sec, i) => (
-                      <div key={i} style={{ marginBottom: i < Math.min(session.structured_notes!.sections!.length, 2) - 1 ? 10 : 0 }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: '#1A1A2E', marginBottom: 4 }}>{sec.title}</p>
-                        <p style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>{sec.content}</p>
-                      </div>
-                    ))
                   ) : (
                     <p style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>Synthèse en préparation.</p>
                   )}
