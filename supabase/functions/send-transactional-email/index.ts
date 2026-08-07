@@ -174,12 +174,15 @@ Deno.serve(async (req) => {
 
   if (suppressed) {
     // Log the suppressed attempt
-    await supabase.from('email_send_log').insert({
+    const { error: suppressedLogError } = await supabase.from('email_send_log').insert({
       message_id: messageId,
       template_name: templateName,
       recipient_email: effectiveRecipient,
       status: 'suppressed',
     })
+    if (suppressedLogError) {
+      console.error('Failed to log suppressed email', { messageId, error: suppressedLogError })
+    }
 
     console.log('Email suppressed', { effectiveRecipient, templateName })
     return new Response(
@@ -327,12 +330,15 @@ Deno.serve(async (req) => {
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
 
   // Log pending BEFORE enqueue so we have a record even if enqueue crashes
-  await supabase.from('email_send_log').insert({
+  const { error: pendingLogError } = await supabase.from('email_send_log').insert({
     message_id: messageId,
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
   })
+  if (pendingLogError) {
+    console.error('Failed to log pending email', { messageId, error: pendingLogError })
+  }
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {
     queue_name: 'transactional_emails',
