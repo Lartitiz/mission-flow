@@ -35,13 +35,67 @@ interface ClientFile {
   created_at: string;
   download_url: string | null;
   url: string | null;
+  uploaded_by?: string | null;
 }
 interface ClientData {
-  mission: { id: string; client_name: string; mission_type: string; status: string };
+  mission: { id: string; client_name: string; mission_type: string; status: string; client_note?: string | null };
   actions: ClientAction[];
   sessions: ClientSession[];
   next_session: { date: string; agenda: string | null } | null;
   files: ClientFile[];
+}
+
+/* ─── CONFETTIS (charte : célébration à l'interaction, jamais en décor) ───
+   Petite salve (6) quand une action est cochée ; grande salve (36) réservée
+   aux jalons (pin's gagné, palier franchi). Coupés en prefers-reduced-motion. */
+const CONFETTI_COLORS = ['#FB3D80', '#FFE561', '#FF7A33', '#91014B', '#FFA7C6', '#E8402E'];
+function fireConfetti(x: number, y: number, count: number) {
+  if (typeof document === 'undefined') return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < count; i++) {
+    const bit = document.createElement('span');
+    bit.className = 'cv-confetti-bit';
+    const big = count > 10;
+    bit.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${big ? 9 : 7}px;height:${big ? 13 : 11}px;border-radius:2px;pointer-events:none;z-index:9999;background:${CONFETTI_COLORS[i % CONFETTI_COLORS.length]};`;
+    bit.style.setProperty('--dx', `${(Math.random() * 2 - 1) * (big ? 220 : 70)}px`);
+    bit.style.setProperty('--dy', `${-(big ? 60 : 40) - Math.random() * (big ? 200 : 70)}px`);
+    bit.style.setProperty('--rot', `${Math.random() * 520 - 260}deg`);
+    bit.style.animation = `cv-confetti ${(big ? 1 : 0.7) + Math.random() * 0.5}s ease-out forwards`;
+    document.body.appendChild(bit);
+    setTimeout(() => bit.remove(), 1800);
+  }
+}
+
+/* ─── PIN'S : des jalons RÉELS de la mission, jamais des points ─── */
+interface Pin {
+  emoji: string;
+  label: string;
+  won: boolean;
+  bg: string;
+}
+function computePins(data: ClientData): Pin[] {
+  const clientActions = data.actions.filter((a) => a.assignee === 'client');
+  const doneClient = clientActions.filter((a) => a.status === 'done').length;
+  const doneAll = data.actions.filter((a) => ['done', 'delivered', 'validated'].includes(a.status)).length;
+  const pct = data.actions.length > 0 ? (doneAll / data.actions.length) * 100 : 0;
+  const hasClientFile = data.files.some((f) => f.uploaded_by === 'client');
+  return [
+    { emoji: '🚀', label: "C'est parti", won: true, bg: '#FFE561' },
+    { emoji: '📎', label: '1er fichier envoyé', won: hasClientFile, bg: '#FFD6E8' },
+    { emoji: '✅', label: '1re action bouclée', won: doneClient >= 1, bg: '#FFE561' },
+    { emoji: '🔥', label: 'Mi-parcours', won: pct >= 50, bg: '#FB3D80' },
+    { emoji: '💪', label: 'Toutes tes actions', won: clientActions.length > 0 && doneClient === clientActions.length, bg: '#FFD6E8' },
+    { emoji: '🎉', label: 'Mission bouclée', won: data.mission.status === 'completed', bg: '#FFE561' },
+  ];
+}
+
+/* Palier nommé de la jauge : le chiffre raconte au lieu de compter */
+function palierFor(pct: number): string {
+  if (pct >= 100) return 'Mission accomplie 🎉';
+  if (pct >= 75) return 'Dernière ligne droite';
+  if (pct >= 50) return 'À mi-chemin : ça avance fort';
+  if (pct >= 25) return 'Ça prend forme';
+  return "En route !";
 }
 
 /* ─── CHARTE NOWADAYS ───
@@ -172,6 +226,8 @@ if (typeof document !== 'undefined' && !document.getElementById(ANIM_ID)) {
   style.textContent = `
     @keyframes cv-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
     .cv-anim { animation: cv-fade-up 0.4s ease both }
+    @keyframes cv-confetti { 0% { opacity:1; transform:translate(0,0) rotate(0) } 100% { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) } }
+    @media (prefers-reduced-motion: reduce) { .cv-confetti-bit { display:none } }
   `;
   document.head.appendChild(style);
 }
@@ -232,17 +288,31 @@ const ClientView = () => {
     return () => { document.title = 'Nowadays Missions'; };
   }, [data]);
 
-  const handleToggleAction = async (actionId: string, done: boolean) => {
+  const handleToggleAction = async (actionId: string, done: boolean, clickRect?: DOMRect) => {
     setUpdatingAction(actionId);
     try {
       const { data: result, error } = await supabase.functions.invoke('update-client-action', {
         body: { token, action_id: actionId, status: done ? 'done' : 'not_started' }
       });
       if (error || result?.error) throw new Error(result?.error || 'Erreur');
-      setData(p => p ? {
-        ...p,
-        actions: p.actions.map(a => a.id === actionId ? { ...a, status: done ? 'done' : 'not_started' } : a)
-      } : p);
+      setData(p => {
+        if (!p) return p;
+        const next = {
+          ...p,
+          actions: p.actions.map(a => a.id === actionId ? { ...a, status: done ? 'done' : 'not_started' } : a)
+        };
+        if (done) {
+          // Petite salve sur la coche ; GRANDE salve seulement si un jalon tombe
+          const wonBefore = computePins(p).filter(pin => pin.won).length;
+          const wonAfter = computePins(next).filter(pin => pin.won).length;
+          if (wonAfter > wonBefore) {
+            fireConfetti(window.innerWidth / 2, window.innerHeight / 3, 36);
+          } else if (clickRect) {
+            fireConfetti(clickRect.left + clickRect.width / 2, clickRect.top, 6);
+          }
+        }
+        return next;
+      });
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de sauvegarder. Réessaie.', variant: 'destructive' });
     } finally {
@@ -506,6 +576,55 @@ const ClientView = () => {
 
   /* ─── RENDERABLE BLOCKS ─── */
 
+  const pins = computePins(data);
+  const wonPins = pins.filter((p) => p.won).length;
+
+  const pinsBlock = (
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 20 }}>
+      <p style={{ fontSize: 12, color: '#6B5A62', marginBottom: 8 }}>
+        Ta collection de pin's · {wonPins} sur {pins.length}
+      </p>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {pins.map((pin) => (
+          <div key={pin.label} style={{ width: 72, textAlign: 'center' }}>
+            <div style={{
+              width: 52, height: 52, margin: '0 auto',
+              borderRadius: '16px 9px 14px 9px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+              background: pin.won ? pin.bg : '#F1EAEE',
+              border: `2.5px solid ${pin.won ? '#91014b' : '#D9CCD3'}`,
+              boxShadow: pin.won ? 'inset 0 -3px 0 rgba(145,1,75,0.18), 0 2px 6px rgba(145,1,75,0.12)' : 'none',
+              filter: pin.won ? 'none' : 'grayscale(1)',
+              opacity: pin.won ? 1 : 0.55,
+            }}>
+              {pin.emoji}
+            </div>
+            <p style={{
+              fontSize: 10, fontWeight: pin.won ? 700 : 600, lineHeight: 1.25, marginTop: 5,
+              color: pin.won ? '#91014b' : '#B9A8B1',
+            }}>
+              {pin.label}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Le mot de Laetitia : un sticker penché, UNIQUEMENT si elle a écrit un mot
+  const stickerBlock = data.mission.client_note?.trim() ? (
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, display: 'flex' }}>
+      <div style={{
+        background: '#FFE561', color: '#91014b', transform: 'rotate(-2deg)',
+        borderRadius: '6px 14px 6px 12px', padding: '13px 16px', maxWidth: 480,
+        boxShadow: '2px 3px 0 rgba(145,1,75,0.15)', fontSize: 13, fontWeight: 600, lineHeight: 1.45,
+      }}>
+        <p style={{ fontFamily: SERIF, fontWeight: 'normal', fontSize: 15, marginBottom: 2 }}>Le mot de Laetitia</p>
+        {data.mission.client_note}
+      </div>
+    </div>
+  ) : null;
+
   const nextSessionBlock = data.next_session?.date ? (
     <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 28, background: '#fff', borderRadius: '14px 22px 12px 18px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
       {/* Badge de date : fond jaune, chiffre du jour en serif bordeaux */}
@@ -514,9 +633,18 @@ const ClientView = () => {
         <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#91014b', marginTop: 2 }}>{format(new Date(data.next_session.date), 'MMM', { locale: fr })}</span>
       </div>
       <div>
-        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#91014b' }}>PROCHAINE SESSION</p>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#91014b' }}>
+          PROCHAINE SESSION
+          {(() => {
+            // J-moins : l'attente fait partie du plaisir
+            const days = Math.ceil((new Date(data.next_session.date).getTime() - Date.now()) / 86400000);
+            return days > 0 ? ` · J-${days}` : days === 0 ? " · C'EST AUJOURD'HUI ✨" : '';
+          })()}
+        </p>
         <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A', marginTop: 4 }}>
-          {format(new Date(data.next_session.date), "EEEE d MMMM yyyy 'à' HH'h'mm", { locale: fr })}
+          {/* session_date est une DATE sans heure : afficher « à 00h00 » (ou 02h00
+              après fuseau) serait un mensonge d'affichage */}
+          {format(new Date(data.next_session.date), 'EEEE d MMMM yyyy', { locale: fr })}
         </p>
         {data.next_session.agenda && <p style={{ fontSize: 12, color: '#6B5A62', marginTop: 2 }}>{data.next_session.agenda}</p>}
       </div>
@@ -525,12 +653,32 @@ const ClientView = () => {
 
   const progressBlock = showProgress && allActions.length > 0 ? (
     <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: '18px 12px 22px 14px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A1A' }}>Avancement de la mission</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b' }}>{progressPct}%</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        {/* Le palier nommé : la jauge raconte au lieu de compter */}
+        <span style={{ fontFamily: SERIF, fontSize: 19, color: '#91014b' }}>{palierFor(progressPct)}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b', whiteSpace: 'nowrap' }}>{progressPct}%</span>
       </div>
-      <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: '#FFD6E8' }}>
-        <div style={{ height: '100%', borderRadius: 3, background: '#FB3D80', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
+      <div style={{ marginTop: 12, height: 8, borderRadius: 4, background: '#FFD6E8', position: 'relative' }}>
+        <div style={{ height: '100%', borderRadius: 4, background: '#FB3D80', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
+        {/* Jalons sur la jauge : ils s'allument quand on les dépasse */}
+        {[
+          { at: 25, emoji: '✨' },
+          { at: 50, emoji: '🔥' },
+          { at: 75, emoji: '💪' },
+          { at: 100, emoji: '🎉' },
+        ].map((m) => (
+          <span key={m.at} style={{
+            position: 'absolute', top: -7, left: `${m.at}%`, transform: 'translateX(-100%)',
+            width: 22, height: 22, borderRadius: '50%', fontSize: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: progressPct >= m.at ? '#FFE561' : '#fff',
+            border: `2px solid ${progressPct >= m.at ? '#91014b' : '#FFA7C6'}`,
+            filter: progressPct >= m.at ? 'none' : 'grayscale(1)',
+            opacity: progressPct >= m.at ? 1 : 0.6,
+          }}>
+            {m.emoji}
+          </span>
+        ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
         <span style={{ fontSize: 11, color: '#6B5A62' }}>{inProgressAll} en cours</span>
@@ -748,7 +896,7 @@ const ClientView = () => {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button
-                  onClick={() => handleToggleAction(action.id, !isDone)}
+                  onClick={(e) => handleToggleAction(action.id, !isDone, e.currentTarget.getBoundingClientRect())}
                   disabled={isUpdating}
                   style={{
                     width: 20, height: 20, minWidth: 20, borderRadius: 6,
@@ -995,6 +1143,7 @@ const ClientView = () => {
       <main style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 80px' }} className="sm:px-6">
         {isPhase1 && (
           <>
+            {stickerBlock}
             {nextSessionBlock}
             {laetitiaBlock}
             {documentsBlock}
@@ -1004,8 +1153,10 @@ const ClientView = () => {
         )}
         {isPhase2 && (
           <>
+            {stickerBlock}
             {nextSessionBlock}
             {progressBlock}
+            {pinsBlock}
             {laetitiaBlock}
             {documentsBlock}
             {softMessageBlock}
@@ -1014,8 +1165,10 @@ const ClientView = () => {
         )}
         {isPhase3 && (
           <>
+            {stickerBlock}
             {nextSessionBlock}
             {progressBlock}
+            {pinsBlock}
             {laetitiaBlock}
             {clientActionsBlock}
             {documentsBlock}

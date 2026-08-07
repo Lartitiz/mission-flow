@@ -14,6 +14,7 @@ import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 import { ClaudeProjectExport } from './ClaudeProjectExport';
 import { AteliersCard } from './AteliersCard';
+import { ClientNoteCard } from './ClientNoteCard';
 
 interface FollowUpTabProps {
   missionId: string;
@@ -143,6 +144,7 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
             missionId={missionId}
             clientName={clientName}
           />
+          <ClientNoteCard missionId={missionId} clientName={clientName} />
           <SessionHistory
             sessions={pastSessions}
             missionId={missionId}

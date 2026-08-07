@@ -38,7 +38,7 @@ serve(async (req) => {
 
     const { data: mission, error: missionError } = await supabase
       .from("missions")
-      .select("id, client_name, mission_type, status, amount, client_link_active")
+      .select("id, client_name, mission_type, status, amount, client_link_active, client_note")
       .eq("client_token", token)
       .single();
 
@@ -75,7 +75,7 @@ serve(async (req) => {
         .order("session_date", { ascending: false }),
       supabase
         .from("files")
-        .select("id, file_name, file_size, storage_path, category, created_at, url")
+        .select("id, file_name, file_size, storage_path, category, created_at, url, uploaded_by")
         .eq("mission_id", missionId)
         .order("created_at", { ascending: false }),
     ]);
@@ -133,6 +133,7 @@ serve(async (req) => {
           client_name: mission.client_name,
           mission_type: mission.mission_type,
           status: mission.status,
+          client_note: mission.client_note ?? null,
         },
         actions,
         sessions: sessions.map((s: any) => ({
