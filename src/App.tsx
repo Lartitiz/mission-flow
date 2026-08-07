@@ -13,6 +13,7 @@ import MissionDetail from './pages/MissionDetail';
 import ClientView from './pages/ClientView';
 import QuestionnaireView from './pages/QuestionnaireView';
 import Alumni from './pages/Alumni';
+import Ateliers from './pages/Ateliers';
 import NotFound from './pages/NotFound';
 import ResetPassword from './pages/ResetPassword';
 import Unsubscribe from './pages/Unsubscribe';

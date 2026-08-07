@@ -1,4 +1,4 @@
-import { LayoutDashboard, List, Heart, LogOut } from 'lucide-react';
+import { LayoutDashboard, List, Heart, LogOut, CalendarDays } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -15,6 +15,7 @@ import {
 
 const navItems = [
   { title: 'Pipeline', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Ateliers', url: '/dashboard/ateliers', icon: CalendarDays },
   { title: 'Liste des missions', url: '/dashboard/missions', icon: List },
   { title: 'Ancien·nes', url: '/dashboard/alumni', icon: Heart },
 ];
