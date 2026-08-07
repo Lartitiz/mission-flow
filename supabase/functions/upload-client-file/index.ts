@@ -30,13 +30,20 @@ serve(async (req) => {
 
     const { data: mission, error: missionError } = await supabase
       .from("missions")
-      .select("id, client_name")
+      .select("id, client_name, client_link_active")
       .eq("client_token", token)
       .single();
 
     if (missionError || !mission) {
       return new Response(JSON.stringify({ error: "Token invalide" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (mission.client_link_active === false) {
+      return new Response(JSON.stringify({ error: "Ce lien a été désactivé" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -51,8 +58,7 @@ serve(async (req) => {
     // Legacy mode: base64 upload
     if (file_base64) {
       const safeName = file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const clientFolder = (mission.client_name || 'client').replace(/\s+/g, '_');
-      const storagePath = `${clientFolder}/uploads/${Date.now()}_${safeName}`;
+      const storagePath = `${mission.id}/uploads/${Date.now()}_${safeName}`;
 
       const fileBytes = decode(file_base64);
       const { error: uploadError } = await supabase.storage
@@ -76,6 +82,14 @@ serve(async (req) => {
     }
     // New mode: file already uploaded directly, just record it
     else if (storage_path) {
+      // Le chemin vient du client : il doit rester dans le dossier de SA mission,
+      // sinon la ligne files permettrait de faire signer n'importe quel fichier.
+      if (typeof storage_path !== "string" || !storage_path.startsWith(`${mission.id}/`)) {
+        return new Response(JSON.stringify({ error: "Chemin de fichier invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { error: insertError } = await supabase.from("files").insert({
         mission_id: mission.id,
         file_name,

@@ -28,15 +28,21 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify token (support both UUID and slug)
+    // Seul le client_token (UUID aléatoire) donne accès : le slug est devinable
+    // (dérivé du nom de la cliente), il ne doit jamais servir de clé d'accès.
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
-    const missionQuery = supabase
-      .from("missions")
-      .select("id, client_link_active");
+    if (!isUuid) {
+      return new Response(JSON.stringify({ error: "Token invalide" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const { data: mission, error: missionError } = isUuid
-      ? await missionQuery.eq("client_token", token).single()
-      : await missionQuery.eq("client_slug", token).single();
+    const { data: mission, error: missionError } = await supabase
+      .from("missions")
+      .select("id, client_link_active")
+      .eq("client_token", token)
+      .single();
 
     if (missionError || !mission) {
       return new Response(JSON.stringify({ error: "Token invalide" }), {
@@ -69,6 +75,15 @@ serve(async (req) => {
     }
 
     // Update status and/or client_comment
+    // Le client ne peut que cocher/décocher : pas question de passer une
+    // action en "validated"/"delivered" (statuts réservés au suivi interne).
+    const CLIENT_STATUSES = ["not_started", "done"];
+    if (status && !CLIENT_STATUSES.includes(status)) {
+      return new Response(JSON.stringify({ error: "Statut non autorisé" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const updates: Record<string, unknown> = {};
     if (status) updates.status = status;
     if (typeof client_comment === "string") updates.client_comment = client_comment;
@@ -107,6 +122,14 @@ serve(async (req) => {
     }
     // Or record file if already uploaded directly (new: direct upload from client)
     else if (file_name && storage_path) {
+      // Le chemin vient du client : il doit rester dans le dossier de SA mission,
+      // sinon la ligne files permettrait de faire signer n'importe quel fichier.
+      if (typeof storage_path !== "string" || !storage_path.startsWith(`${mission.id}/`)) {
+        return new Response(JSON.stringify({ error: "Chemin de fichier invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { error: fileError } = await supabase.from("files").insert({
         mission_id: mission.id,
         file_name,
