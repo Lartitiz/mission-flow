@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDiscoveryCall } from '@/hooks/useDiscoveryCall';
 import { DiscoveryQuestions } from '@/components/discovery/DiscoveryQuestions';
 import { SalesScripts } from '@/components/discovery/SalesScripts';
@@ -27,18 +27,27 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
   const [isStructuring, setIsStructuring] = useState(false);
   const [structuredNotes, setStructuredNotes] = useState<StructuredNotes | null>(null);
 
-  // Sync from DB on load
+  // Sync from DB au premier chargement UNIQUEMENT. Chaque sauvegarde
+  // debouncée déclenche un refetch : re-synchroniser à chaque fois remettait
+  // la valeur serveur (plus vieille de ~500 ms) par-dessus la frappe en cours
+  // — en dictée vocale, les derniers mots disparaissaient régulièrement.
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (discoveryCall) {
-      setNotes(discoveryCall.raw_notes ?? '');
-      setCheckedQuestions(
-        (discoveryCall.questions_asked as Record<string, boolean>) ?? {}
-      );
-      if (discoveryCall.structured_notes) {
-        setStructuredNotes(discoveryCall.structured_notes as unknown as StructuredNotes);
-      }
+    initializedRef.current = false;
+  }, [missionId]);
+  useEffect(() => {
+    if (!discoveryCall || initializedRef.current) return;
+    initializedRef.current = true;
+    setNotes((prev) => prev || (discoveryCall.raw_notes ?? ''));
+    setCheckedQuestions((prev) =>
+      Object.keys(prev).length > 0
+        ? prev
+        : ((discoveryCall.questions_asked as Record<string, boolean>) ?? {})
+    );
+    if (discoveryCall.structured_notes) {
+      setStructuredNotes(discoveryCall.structured_notes as unknown as StructuredNotes);
     }
-  }, [discoveryCall]);
+  }, [discoveryCall, missionId]);
 
   const handleNotesChange = (value: string) => {
     setNotes(value);
