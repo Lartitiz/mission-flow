@@ -132,7 +132,10 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
           <AteliersCard
             pastSessions={pastSessions}
             futureSessions={futureSessions}
-            plannedTotal={mission?.planned_sessions_total ?? null}
+            plannedTotal={
+              mission?.planned_sessions_total ??
+              (missionType === 'binome' ? 6 : null)
+            }
             onUpdatePlannedTotal={handleUpdatePlannedTotal}
             onCreate={createSession}
             onUpdate={updateSession}
