@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessions } from '@/hooks/useSessions';
 import { useJournal } from '@/hooks/useJournal';
 import { useActions } from '@/hooks/useActions';
+import { format } from 'date-fns';
 import { MissionRecap } from './MissionRecap';
+import { LaunchMessageCard } from './LaunchMessageCard';
 import { NextSessionCard } from './NextSessionCard';
+import { NextSessionBookingMessage } from './NextSessionBookingMessage';
 import { SessionHistory } from './SessionHistory';
 import { JournalSection } from './JournalSection';
 import { DocumentsSection } from './DocumentsSection';
 import { ContextExport } from './ContextExport';
 import { ClaudeProjectExport } from './ClaudeProjectExport';
-import { LaunchMessageCard } from './LaunchMessageCard';
-import { NextSessionBookingMessage } from './NextSessionBookingMessage';
+import { AteliersCard } from './AteliersCard';
 
 interface FollowUpTabProps {
   missionId: string;
@@ -21,10 +23,21 @@ interface FollowUpTabProps {
   amount?: number | null;
 }
 
+const SOUS_ONGLETS = [
+  { id: 'ateliers', label: 'Ateliers' },
+  { id: 'journal', label: 'Journal' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'outils', label: 'Outils & exports' },
+] as const;
+
+type SousOnglet = (typeof SOUS_ONGLETS)[number]['id'];
+
 export function FollowUpTab({ missionId, clientName, missionType, amount }: FollowUpTabProps) {
+  const queryClient = useQueryClient();
   const { sessions, isLoading: sessionsLoading, createSession, updateSession, deleteSession, isSaving: sessionsSaving } = useSessions(missionId);
   const { entries, isLoading: journalLoading, addEntry, isSaving: journalSaving } = useJournal(missionId);
   const { actions } = useActions(missionId);
+  const [sousOnglet, setSousOnglet] = useState<SousOnglet>('ateliers');
 
   // Fetch proposal summary
   const { data: proposal } = useQuery({
@@ -41,18 +54,27 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
     },
   });
 
-  // Fetch mission for created_at
+  // Fetch mission for created_at + objectif d'ateliers
   const { data: mission } = useQuery({
     queryKey: ['mission-followup', missionId],
     queryFn: async () => {
       const { data } = await supabase
         .from('missions')
-        .select('created_at, status')
+        .select('created_at, status, planned_sessions_total')
         .eq('id', missionId)
         .single();
-      return data;
+      return data as { created_at: string; status: string; planned_sessions_total: number | null } | null;
     },
   });
+
+  const handleUpdatePlannedTotal = async (total: number | null) => {
+    const { error } = await supabase
+      .from('missions')
+      .update({ planned_sessions_total: total } as never)
+      .eq('id', missionId);
+    if (error) console.error('[FollowUpTab] planned_sessions_total update failed', error);
+    queryClient.invalidateQueries({ queryKey: ['mission-followup', missionId] });
+  };
 
   if (sessionsLoading || journalLoading) {
     return <p className="font-body text-muted-foreground py-8">Chargement...</p>;
@@ -72,51 +94,87 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
   const doneActions = actions.filter((a) => doneStatuses.includes(a.status)).length;
   const actionsPercent = totalActions > 0 ? Math.round((doneActions / totalActions) * 100) : 0;
 
-  const lastSession = sessions[0] ?? null;
+  // Ateliers passés vs planifiés : la date fait foi (les planifiés sont dans le futur)
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const pastSessions = sessions.filter((s) => s.session_date <= today);
+  const futureSessions = sessions
+    .filter((s) => s.session_date > today)
+    .sort((a, b) => a.session_date.localeCompare(b.session_date));
+
+  const lastSession = pastSessions[0] ?? null;
 
   return (
-    <div className="space-y-6">
-      <MissionRecap
-        missionType={missionType}
-        amount={amount}
-        createdAt={mission?.created_at}
-        summary={proposalSummary}
-        totalActions={totalActions}
-        actionsPercent={actionsPercent}
-      />
+    <div>
+      <div className="flex gap-6 border-b border-border mb-6 overflow-x-auto">
+        {SOUS_ONGLETS.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => setSousOnglet(o.id)}
+            className={`pb-3 pt-1 font-body text-sm whitespace-nowrap transition-colors ${
+              sousOnglet === o.id
+                ? 'font-extrabold text-foreground [background:linear-gradient(transparent_62%,hsl(var(--jaune))_62%_92%,transparent_92%)]'
+                : 'font-semibold text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
 
-      <LaunchMessageCard clientName={clientName} />
+      {sousOnglet === 'ateliers' && (
+        <div className="space-y-6">
+          <MissionRecap
+            missionType={missionType}
+            amount={amount}
+            createdAt={mission?.created_at}
+            summary={proposalSummary}
+            totalActions={totalActions}
+            actionsPercent={actionsPercent}
+          />
+          <AteliersCard
+            pastSessions={pastSessions}
+            futureSessions={futureSessions}
+            plannedTotal={mission?.planned_sessions_total ?? null}
+            onUpdatePlannedTotal={handleUpdatePlannedTotal}
+            onCreate={createSession}
+            missionId={missionId}
+          />
+          <NextSessionCard
+            session={lastSession}
+            onUpdate={updateSession}
+            onCreate={createSession}
+            missionId={missionId}
+            missionType={missionType}
+            isSaving={sessionsSaving}
+          />
+          <SessionHistory
+            sessions={pastSessions}
+            missionId={missionId}
+            missionType={missionType}
+            actions={actions}
+            onCreate={createSession}
+            onUpdate={updateSession}
+            onDelete={deleteSession}
+            addJournalEntry={addEntry}
+            isSaving={sessionsSaving}
+          />
+        </div>
+      )}
 
-      <NextSessionCard
-        session={lastSession}
-        onUpdate={updateSession}
-        onCreate={createSession}
-        missionId={missionId}
-        missionType={missionType}
-        isSaving={sessionsSaving}
-      />
+      {sousOnglet === 'journal' && (
+        <JournalSection entries={entries} addEntry={addEntry} isSaving={journalSaving} />
+      )}
 
-      <NextSessionBookingMessage clientName={clientName} />
+      {sousOnglet === 'documents' && <DocumentsSection missionId={missionId} />}
 
-      <SessionHistory
-        sessions={sessions}
-        missionId={missionId}
-        missionType={missionType}
-        actions={actions}
-        onCreate={createSession}
-        onUpdate={updateSession}
-        onDelete={deleteSession}
-        addJournalEntry={addEntry}
-        isSaving={sessionsSaving}
-      />
-
-      <JournalSection entries={entries} addEntry={addEntry} isSaving={journalSaving} />
-
-      <DocumentsSection missionId={missionId} />
-
-      <ContextExport missionId={missionId} clientName={clientName} />
-
-      <ClaudeProjectExport missionId={missionId} clientName={clientName} />
+      {sousOnglet === 'outils' && (
+        <div className="space-y-6">
+          <LaunchMessageCard clientName={clientName} />
+          <NextSessionBookingMessage clientName={clientName} />
+          <ContextExport missionId={missionId} clientName={clientName} />
+          <ClaudeProjectExport missionId={missionId} clientName={clientName} />
+        </div>
+      )}
     </div>
   );
 }
