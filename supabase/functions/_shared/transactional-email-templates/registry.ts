@@ -10,9 +10,11 @@ export interface TemplateEntry<P = any> {
 }
 
 import { template as clientFileUploaded } from './client-file-uploaded.tsx'
+import { template as clientSummaryPublished } from './client-summary-published.tsx'
 import { template as questionnaireSubmitted } from './questionnaire-submitted.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'client-file-uploaded': clientFileUploaded,
+  'client-summary-published': clientSummaryPublished,
   'questionnaire-submitted': questionnaireSubmitted,
 }

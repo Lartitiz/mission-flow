@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
   let templateName: string
   let recipientEmail: string
   let idempotencyKey: string
+  let hasExplicitIdempotencyKey = false
   let messageId: string
   let templateData: Record<string, any> = {}
   try {
@@ -91,6 +92,7 @@ Deno.serve(async (req) => {
     templateName = body.templateName || body.template_name
     recipientEmail = body.recipientEmail || body.recipient_email
     messageId = crypto.randomUUID()
+    hasExplicitIdempotencyKey = Boolean(body.idempotencyKey || body.idempotency_key)
     idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
@@ -150,6 +152,42 @@ Deno.serve(async (req) => {
 
   // Create Supabase client with service role (bypasses RLS)
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+  // 1bis. Idempotency guard: when the caller provides a stable idempotency key,
+  // an email already enqueued under that key (same template) must never be
+  // enqueued a second time. The key is persisted in email_send_log.metadata at
+  // enqueue time (see the 'pending' insert below). Lookup errors fail open:
+  // the queue payload still carries the key so the send API can dedupe too.
+  if (hasExplicitIdempotencyKey) {
+    const { data: alreadyQueued, error: idempotencyError } = await supabase
+      .from('email_send_log')
+      .select('id')
+      .eq('template_name', templateName)
+      .eq('metadata->>idempotency_key', idempotencyKey)
+      .neq('status', 'failed')
+      .limit(1)
+      .maybeSingle()
+
+    if (idempotencyError) {
+      console.error('Idempotency lookup failed — proceeding with send', {
+        error: idempotencyError,
+        templateName,
+        idempotencyKey,
+      })
+    } else if (alreadyQueued) {
+      console.log('Email already enqueued for idempotency key — skipping', {
+        templateName,
+        idempotencyKey,
+      })
+      return new Response(
+        JSON.stringify({ success: true, queued: false, deduplicated: true }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  }
 
   // 2. Check suppression list (fail-closed: if we can't verify, don't send)
   const { data: suppressed, error: suppressionError } = await supabase
@@ -329,12 +367,14 @@ Deno.serve(async (req) => {
   // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
 
-  // Log pending BEFORE enqueue so we have a record even if enqueue crashes
+  // Log pending BEFORE enqueue so we have a record even if enqueue crashes.
+  // The idempotency key is stored in metadata: it feeds the dedupe guard above.
   const { error: pendingLogError } = await supabase.from('email_send_log').insert({
     message_id: messageId,
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
+    metadata: hasExplicitIdempotencyKey ? { idempotency_key: idempotencyKey } : null,
   })
   if (pendingLogError) {
     console.error('Failed to log pending email', { messageId, error: pendingLogError })
@@ -365,13 +405,13 @@ Deno.serve(async (req) => {
       effectiveRecipient,
     })
 
-    await supabase.from('email_send_log').insert({
-      message_id: messageId,
-      template_name: templateName,
-      recipient_email: effectiveRecipient,
-      status: 'failed',
-      error_message: 'Failed to enqueue email',
-    })
+    // Flip the pending row to failed (instead of adding a second row) so the
+    // idempotency guard above does not treat a failed enqueue as "already sent".
+    await supabase
+      .from('email_send_log')
+      .update({ status: 'failed', error_message: 'Failed to enqueue email' })
+      .eq('message_id', messageId)
+      .eq('status', 'pending')
 
     return new Response(JSON.stringify({ error: 'Failed to enqueue email' }), {
       status: 500,
