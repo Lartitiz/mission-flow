@@ -44,6 +44,20 @@ interface ClientData {
   files: ClientFile[];
 }
 
+/* ─── CHARTE NOWADAYS ───
+   Couleurs par rôle : blanc (base), rose pâle #FFF4F8 (fonds), framboise #FB3D80
+   (actions, coches, jauge), bordeaux #91014B (titres, texte fort), jaune #FFE561
+   (badges, chiffres-clés — texte toujours bordeaux), encre #1A1A1A (texte),
+   gris chaud #6B5A62 (légendes). */
+const SERIF = "'Instrument Serif', serif";
+const SANS = "'Hanken Grotesk', sans-serif";
+/* Seul usage autorisé de linear-gradient : le fin bandeau vichy en haut de page. */
+const VICHY: React.CSSProperties = {
+  height: 8,
+  background:
+    'repeating-linear-gradient(90deg, rgba(251,61,128,.28) 0 10px, transparent 10px 24px), repeating-linear-gradient(0deg, rgba(251,61,128,.18) 0 4px, transparent 4px 10px)',
+};
+
 /* ─── HELPERS ─── */
 function fmtSize(b: number | null) {
   if (!b) return '';
@@ -53,21 +67,21 @@ function fmtSize(b: number | null) {
 }
 
 const STATUS_MAP: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  not_started: { label: 'À venir', dot: '#D1D5DB', bg: '#F3F4F6', text: '#6B7280' },
-  in_progress: { label: 'En cours', dot: '#4A90D9', bg: '#EFF6FF', text: '#2563EB' },
-  to_validate: { label: 'À valider', dot: '#D97706', bg: '#FFFBEB', text: '#D97706' },
-  validated: { label: 'Livré', dot: '#10B981', bg: '#ECFDF5', text: '#059669' },
-  delivered: { label: 'Livré', dot: '#10B981', bg: '#ECFDF5', text: '#059669' },
-  done: { label: 'Fait', dot: '#10B981', bg: '#ECFDF5', text: '#059669' },
+  not_started: { label: 'À venir', dot: '#E8DEE3', bg: '#F4EFF1', text: '#6B5A62' },
+  in_progress: { label: 'En cours', dot: '#FB3D80', bg: '#FFE561', text: '#91014B' },
+  to_validate: { label: 'À valider', dot: '#FB3D80', bg: '#FFE561', text: '#91014B' },
+  validated: { label: 'Livré', dot: '#FB3D80', bg: '#FFF4F8', text: '#91014B' },
+  delivered: { label: 'Livré', dot: '#FB3D80', bg: '#FFF4F8', text: '#91014B' },
+  done: { label: 'Fait', dot: '#FB3D80', bg: '#FFF4F8', text: '#91014B' },
 };
 
 function fileIconBg(name: string) {
   const ext = name.split('.').pop()?.toLowerCase();
-  if (ext === 'pdf') return '#FEE2E2';
-  if (['doc', 'docx'].includes(ext || '')) return '#DBEAFE';
-  if (['xls', 'xlsx', 'csv'].includes(ext || '')) return '#D1FAE5';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) return '#E0E7FF';
-  return '#F3F4F6';
+  if (ext === 'pdf') return '#FFE0EC';
+  if (['doc', 'docx'].includes(ext || '')) return '#FFF4F8';
+  if (['xls', 'xlsx', 'csv'].includes(ext || '')) return '#FFF7CC';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) return '#FFD6E8';
+  return '#F4EFF1';
 }
 
 function fileIconEmoji(name: string) {
@@ -141,13 +155,13 @@ function catBadge(cat: string | null): { label: string; bg: string; text: string
   if (!cat || cat === 'client_upload' || cat.startsWith('action_')) return null;
   const map: Record<string, { label: string; bg: string; text: string }> = {
     proposition: { label: 'Proposition', bg: 'rgba(145,1,75,0.08)', text: '#91014b' },
-    livrable: { label: 'Livrable', bg: '#ECFDF5', text: '#059669' },
-    visuel: { label: 'Visuel', bg: '#EFF6FF', text: '#4A90D9' },
-    brief: { label: 'Brief', bg: '#FFFBEB', text: '#D97706' },
+    livrable: { label: 'Livrable', bg: '#FFE561', text: '#91014B' },
+    visuel: { label: 'Visuel', bg: '#FFD6E8', text: '#91014B' },
+    brief: { label: 'Brief', bg: '#FFF7CC', text: '#91014B' },
   };
   const m = map[cat.toLowerCase()];
   if (m) return m;
-  return { label: cat, bg: '#F3F4F6', text: '#6B7280' };
+  return { label: cat, bg: '#F4EFF1', text: '#6B5A62' };
 }
 
 /* ─── CSS KEYFRAMES ─── */
@@ -204,16 +218,16 @@ const ClientView = () => {
   // Dynamic meta tags
   useEffect(() => {
     if (data) {
-      document.title = `${data.mission.client_name} : Espace projet Nowadays`;
+      document.title = `${data.mission.client_name} · Espace projet Nowadays`;
       const updateMeta = (attr: string, key: string, content: string) => {
         const meta = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement;
         if (meta) meta.content = content;
       };
       const typeLabel = data.mission.mission_type === 'agency' ? 'Agency' : 'Binôme';
-      updateMeta('property', 'og:title', `${data.mission.client_name} : Espace projet Nowadays`);
-      updateMeta('property', 'og:description', `Mission ${typeLabel} : Suivez l'avancement avec Nowadays Agency.`);
-      updateMeta('name', 'twitter:title', `${data.mission.client_name} : Espace projet Nowadays`);
-      updateMeta('name', 'twitter:description', `Mission ${typeLabel} : Suivez l'avancement avec Nowadays Agency.`);
+      updateMeta('property', 'og:title', `${data.mission.client_name} · Espace projet Nowadays`);
+      updateMeta('property', 'og:description', `Mission ${typeLabel} : suivez l'avancement avec Nowadays Agency.`);
+      updateMeta('name', 'twitter:title', `${data.mission.client_name} · Espace projet Nowadays`);
+      updateMeta('name', 'twitter:description', `Mission ${typeLabel} : suivez l'avancement avec Nowadays Agency.`);
     }
     return () => { document.title = 'Nowadays Missions'; };
   }, [data]);
@@ -357,11 +371,14 @@ const ClientView = () => {
   /* ─── NOT FOUND ─── */
   if (notFound || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF4F8' }}>
-        <div className="text-center space-y-4 px-6">
-          <p style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.7 }}>NOWADAYS</p>
-          <h1 style={{ fontFamily: "'Libre Baskerville', serif", color: '#1A1A2E', fontSize: '1.5rem' }}>{errorMessage}</h1>
-          <p style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: '#9CA3AF', fontSize: '0.875rem' }}>Vérifie que tu as bien copié le lien envoyé par Laetitia.</p>
+      <div className="min-h-screen flex flex-col" style={{ background: '#FFF4F8' }}>
+        <div style={VICHY} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4 px-6">
+            <p style={{ fontFamily: SANS, fontWeight: 700, color: '#91014b', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2 }}>NOWADAYS</p>
+            <h1 style={{ fontFamily: SERIF, fontWeight: 'normal', color: '#91014b', fontSize: 26 }}>{errorMessage}</h1>
+            <p style={{ fontFamily: SANS, color: '#6B5A62', fontSize: '0.875rem' }}>Vérifie que tu as bien copié le lien envoyé par Laetitia.</p>
+          </div>
         </div>
       </div>
     );
@@ -473,15 +490,15 @@ const ClientView = () => {
   // (phase grouping moved above)
 
   const actionStatusColor = (status: string) => {
-    if (['validated', 'delivered', 'done'].includes(status)) return { color: '#D1D5DB', weight: 400, strike: true };
-    if (['in_progress', 'to_validate'].includes(status)) return { color: '#4A90D9', weight: 500, strike: false };
-    return { color: '#9CA3AF', weight: 400, strike: false };
+    if (['validated', 'delivered', 'done'].includes(status)) return { color: '#6B5A62', weight: 400, strike: true };
+    if (['in_progress', 'to_validate'].includes(status)) return { color: '#91014B', weight: 600, strike: false };
+    return { color: '#6B5A62', weight: 400, strike: false };
   };
 
   const actionBarColor = (status: string) => {
-    if (['validated', 'delivered', 'done'].includes(status)) return '#10B981';
-    if (['in_progress', 'to_validate'].includes(status)) return '#4A90D9';
-    return '#E5E7EB';
+    if (['validated', 'delivered', 'done'].includes(status)) return '#FB3D80';
+    if (['in_progress', 'to_validate'].includes(status)) return '#FFE561';
+    return '#F4EFF1';
   };
 
   let sectionIdx = 0;
@@ -490,30 +507,34 @@ const ClientView = () => {
   /* ─── RENDERABLE BLOCKS ─── */
 
   const nextSessionBlock = data.next_session?.date ? (
-    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 28, background: '#fff', borderRadius: 14, borderLeft: '4px solid #FFE561', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-      <div style={{ width: 42, height: 42, borderRadius: 10, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>📅</div>
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 28, background: '#fff', borderRadius: '14px 22px 12px 18px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      {/* Badge de date : fond jaune, chiffre du jour en serif bordeaux */}
+      <div style={{ width: 48, minHeight: 52, borderRadius: 10, background: '#FFE561', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: '4px 0' }}>
+        <span style={{ fontFamily: SERIF, fontSize: 24, lineHeight: 1, color: '#91014b' }}>{format(new Date(data.next_session.date), 'd')}</span>
+        <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#91014b', marginTop: 2 }}>{format(new Date(data.next_session.date), 'MMM', { locale: fr })}</span>
+      </div>
       <div>
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#91014b' }}>PROCHAINE SESSION</p>
-        <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E', marginTop: 4 }}>
-          {format(new Date(data.next_session.date), "EEEE d MMMM yyyy : HH'h'mm", { locale: fr })}
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A', marginTop: 4 }}>
+          {format(new Date(data.next_session.date), "EEEE d MMMM yyyy 'à' HH'h'mm", { locale: fr })}
         </p>
-        {data.next_session.agenda && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{data.next_session.agenda}</p>}
+        {data.next_session.agenda && <p style={{ fontSize: 12, color: '#6B5A62', marginTop: 2 }}>{data.next_session.agenda}</p>}
       </div>
     </div>
   ) : null;
 
   const progressBlock = showProgress && allActions.length > 0 ? (
-    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
+    <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: '18px 12px 22px 14px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E' }}>Avancement de la mission</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A1A' }}>Avancement de la mission</span>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b' }}>{progressPct}%</span>
       </div>
       <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: '#FFD6E8' }}>
         <div style={{ height: '100%', borderRadius: 3, background: '#FB3D80', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{inProgressAll} en cours</span>
-        <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+        <span style={{ fontSize: 11, color: '#6B5A62' }}>{inProgressAll} en cours</span>
+        <span style={{ fontSize: 11, color: '#6B5A62' }}>
           {hasClientActions
             ? `${doneClient}/${totalClient} de tes actions terminées`
             : `${doneAll} livrées sur ${allActions.length}`
@@ -525,18 +546,18 @@ const ClientView = () => {
 
   const laetitiaBlock = laetitiaActions.length > 0 ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-      <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
+      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
 
-      {/* Stats bar : unchanged */}
-      <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#F3F4F6', gap: 1, marginBottom: 16 }}>
+      {/* Stats bar */}
+      <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#FFD6E8', gap: 1, marginBottom: 16 }}>
         {[
-          { count: laetitiaDelivered.length, label: 'Livrées', color: '#10B981' },
-          { count: laetitiaInProgress.length, label: 'En cours', color: '#4A90D9' },
-          { count: laetitiaUpcoming.length, label: 'Prévues', color: '#9CA3AF' },
+          { count: laetitiaDelivered.length, label: 'Livrées', color: '#FB3D80' },
+          { count: laetitiaInProgress.length, label: 'En cours', color: '#91014b' },
+          { count: laetitiaUpcoming.length, label: 'Prévues', color: '#6B5A62' },
         ].map((s, i) => (
           <div key={i} style={{ flex: 1, background: '#fff', padding: '12px 0', textAlign: 'center' }}>
             <p style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
-            <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{s.label}</p>
+            <p style={{ fontSize: 11, color: '#6B5A62', marginTop: 4 }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -552,16 +573,16 @@ const ClientView = () => {
           const collapsed = collapsedPhases.has(group.key);
 
           // Pastille config
-          const pastilleColor = gStatus === 'done' ? '#10B981' : gStatus === 'active' ? '#4A90D9' : '#D1D5DB';
+          const pastilleColor = gStatus === 'done' ? '#FB3D80' : gStatus === 'active' ? '#FFE561' : '#FFD6E8';
           const pastilleContent = gStatus === 'done' ? '✓' : '';
-          const pastilleShadow = gStatus === 'active' ? '0 0 0 4px rgba(74,144,217,0.15)' : 'none';
+          const pastilleShadow = gStatus === 'active' ? '0 0 0 4px rgba(251,61,128,0.15)' : 'none';
 
           // Badge config
           const badgeCfg = gStatus === 'done'
-            ? { label: 'Terminé', bg: '#ECFDF5', color: '#059669' }
+            ? { label: 'Terminé', bg: '#fff', color: '#91014b' }
             : gStatus === 'active'
-            ? { label: 'En cours', bg: '#EFF6FF', color: '#2563EB' }
-            : { label: 'À venir', bg: '#F3F4F6', color: '#6B7280' };
+            ? { label: 'En cours', bg: '#FFE561', color: '#91014b' }
+            : { label: 'À venir', bg: '#F4EFF1', color: '#6B5A62' };
 
           // Condensation: done groups with >3 actions
           const shouldCondense = gStatus === 'done' && group.actions.length > 3;
@@ -577,22 +598,23 @@ const ClientView = () => {
                 position: 'absolute', left: -28 + (isOther ? 3 : 0), top: 0,
                 width: isOther ? 12 : 18, height: isOther ? 12 : 18,
                 borderRadius: isOther ? 99 : 6,
-                background: isOther ? '#D1D5DB' : pastilleColor,
+                background: isOther ? '#FFD6E8' : pastilleColor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: isOther ? 'none' : pastilleShadow,
                 marginTop: isOther ? 3 : 0,
               }}>
                 {!isOther && (
-                  <span style={{ color: '#fff', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>{pastilleContent}</span>
+                  <span style={{ color: gStatus === 'active' ? '#91014b' : '#fff', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>{pastilleContent}</span>
                 )}
               </div>
 
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <span style={{
-                  fontFamily: "'Libre Baskerville', serif",
-                  fontSize: 14,
-                  color: gStatus === 'done' ? '#9CA3AF' : '#1A1A2E',
+                  fontFamily: SANS,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: gStatus === 'done' ? '#6B5A62' : '#1A1A1A',
                 }}>
                   {group.label}
                 </span>
@@ -607,7 +629,7 @@ const ClientView = () => {
 
               {/* Description */}
               {group.description && gStatus !== 'done' && (
-                <p style={{ fontSize: 12, fontStyle: 'italic', color: '#9CA3AF', marginBottom: 8 }}>{group.description}</p>
+                <p style={{ fontSize: 12, fontStyle: 'italic', color: '#6B5A62', marginBottom: 8 }}>{group.description}</p>
               )}
 
               {/* Actions */}
@@ -615,8 +637,8 @@ const ClientView = () => {
                 {visibleActions.map(a => {
                   const isDone = DONE_STATUSES.includes(a.status);
                   const isWip = ACTIVE_STATUSES.includes(a.status);
-                  const dotColor = isDone ? '#10B981' : isWip ? '#4A90D9' : '#D1D5DB';
-                  const textColor = isDone ? '#D1D5DB' : isWip ? '#4A90D9' : '#9CA3AF';
+                  const dotColor = isDone ? '#FB3D80' : isWip ? '#91014b' : '#FFD6E8';
+                  const textColor = isDone ? '#6B5A62' : isWip ? '#91014b' : '#6B5A62';
                   const isCollab = isCollabKeyword(a.task);
 
                   return (
@@ -629,7 +651,7 @@ const ClientView = () => {
                       <span style={{
                         flex: 1, fontSize: 12,
                         color: textColor,
-                        fontWeight: isWip ? 700 : 400,
+                        fontWeight: isWip ? 600 : 400,
                         textDecoration: isDone ? 'line-through' : 'none',
                       }}>
                         {a.task}
@@ -639,10 +661,10 @@ const ClientView = () => {
                           <span style={{ fontSize: 10, borderRadius: 99, padding: '1px 6px', background: '#FFF4F8', color: '#91014b' }}>🤝 ensemble</span>
                         )}
                         {isDone && (
-                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#ECFDF5', color: '#059669' }}>Livré</span>
+                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#FFF4F8', color: '#91014b' }}>Livré</span>
                         )}
                         {isWip && (
-                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#EFF6FF', color: '#2563EB' }}>En cours</span>
+                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#FFE561', color: '#91014b' }}>En cours</span>
                         )}
                       </div>
                     </div>
@@ -685,12 +707,12 @@ const ClientView = () => {
   const softMessageBlock = !hasClientActions ? (
     <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: 12, padding: '20px 24px', textAlign: 'center', boxShadow: '0 1px 2px rgba(145,1,75,0.03)' }}>
       {hasLaetitiaDone ? (
-        <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13, color: '#6B5A62', lineHeight: 1.6 }}>
           <span style={{ fontWeight: 500, color: '#91014b' }}>Pas encore d'actions pour toi.</span>{' '}
           Je prépare la stratégie, tes premières actions arriveront bientôt ici.
         </p>
       ) : (
-        <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13, color: '#6B5A62', lineHeight: 1.6 }}>
           <span style={{ fontWeight: 500, color: '#91014b' }}>Je travaille sur ta stratégie.</span>{' '}
           Tu retrouveras ici tes actions et l'avancement au fur et à mesure.
         </p>
@@ -701,7 +723,7 @@ const ClientView = () => {
   const clientActionsBlock = hasClientActions ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal' }}>Ce que j'attends de toi</h2>
+        <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal' }}>Ce que j'attends de toi</h2>
         <span style={{ background: '#91014b', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 99, padding: '2px 10px', lineHeight: '18px' }}>{doneClient}/{totalClient}</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -729,28 +751,28 @@ const ClientView = () => {
                   onClick={() => handleToggleAction(action.id, !isDone)}
                   disabled={isUpdating}
                   style={{
-                    width: 20, height: 20, minWidth: 20, borderRadius: 5,
-                    border: `2px solid ${isDone ? '#91014b' : '#D1D5DB'}`,
-                    background: isDone ? '#91014b' : 'transparent',
+                    width: 20, height: 20, minWidth: 20, borderRadius: 6,
+                    border: '2px solid #FB3D80',
+                    background: isDone ? '#FB3D80' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
                   }}
-                  onMouseEnter={e => { if (!isDone) e.currentTarget.style.borderColor = '#91014b'; }}
-                  onMouseLeave={e => { if (!isDone) e.currentTarget.style.borderColor = '#D1D5DB'; }}
+                  onMouseEnter={e => { if (!isDone) e.currentTarget.style.background = '#FFF4F8'; }}
+                  onMouseLeave={e => { if (!isDone) e.currentTarget.style.background = 'transparent'; }}
                 >
                   {isDone && (
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
-                  {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#91014b' }} />}
+                  {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#FB3D80' }} />}
                 </button>
                 <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setExpandedAction(isExpanded ? null : action.id)}>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: isDone ? '#9CA3AF' : '#1A1A2E', textDecoration: isDone ? 'line-through' : 'none' }}>{action.task}</p>
-                  {isExpanded && action.description && <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>}
+                  <p style={{ fontSize: 13, fontWeight: 500, color: isDone ? '#6B5A62' : '#1A1A1A', textDecoration: isDone ? 'line-through' : 'none' }}>{action.task}</p>
+                  {isExpanded && action.description && <p style={{ fontSize: 12, color: '#6B5A62', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+                  <span style={{ fontSize: 11, color: '#6B5A62' }}>
                     {/* Pas de date de complétion en base : afficher new Date() mentait (toujours « aujourd'hui ») */}
                     {isDone ? '✓ Fait' : action.target_date ? format(new Date(action.target_date), 'd MMM', { locale: fr }) : ''}
                   </span>
@@ -760,7 +782,7 @@ const ClientView = () => {
                     onMouseEnter={e => { e.currentTarget.style.background = '#FFF4F8'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <Paperclip style={{ width: 14, height: 14, color: '#91014b' }} />
+                    <Paperclip style={{ width: 14, height: 14, color: '#FB3D80' }} />
                   </button>
                 </div>
               </div>
@@ -768,7 +790,7 @@ const ClientView = () => {
               {isExpanded && (
                 <div style={{ marginTop: 10, paddingLeft: 32 }}>
                   {action.client_comment && !(commentDrafts[action.id] !== undefined) && (
-                    <p style={{ fontSize: 12, color: '#6B7280', background: '#F9FAFB', borderRadius: 6, padding: '6px 10px', marginBottom: 6, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 12, color: '#6B5A62', background: '#FFF4F8', borderRadius: 6, padding: '6px 10px', marginBottom: 6, lineHeight: 1.5 }}>
                       💬 {action.client_comment}
                     </p>
                   )}
@@ -777,19 +799,19 @@ const ClientView = () => {
                     value={commentDrafts[action.id] ?? action.client_comment ?? ''}
                     onChange={e => setCommentDrafts(p => ({ ...p, [action.id]: e.target.value }))}
                     style={{
-                      width: '100%', fontSize: 12, border: '1px solid #E5E7EB', borderRadius: 6,
-                      padding: '6px 10px', minHeight: 50, resize: 'vertical', fontFamily: "'IBM Plex Sans', sans-serif",
+                      width: '100%', fontSize: 12, border: '1px solid #FFD6E8', borderRadius: 6,
+                      padding: '6px 10px', minHeight: 50, resize: 'vertical', fontFamily: SANS,
                       outline: 'none', transition: 'border-color 0.15s',
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = '#91014b'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#E5E7EB'; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#FB3D80'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#FFD6E8'; }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
                     <button
                       onClick={() => handleSaveComment(action.id)}
                       disabled={savingComment === action.id}
                       style={{
-                        fontSize: 12, fontWeight: 500, color: '#fff', background: '#91014b',
+                        fontSize: 12, fontWeight: 600, color: '#fff', background: '#FB3D80',
                         border: 'none', borderRadius: 6, padding: '5px 14px', cursor: 'pointer',
                         opacity: savingComment === action.id ? 0.6 : 1, transition: 'opacity 0.15s',
                       }}
@@ -820,7 +842,7 @@ const ClientView = () => {
 
   const documentsBlock = (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-      <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Documents & livrables</h2>
+      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 14 }}>Documents & livrables</h2>
       {data.files.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8, marginBottom: 12 }}>
           {data.files.map(file => {
@@ -831,10 +853,10 @@ const ClientView = () => {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 3px 8px rgba(145,1,75,0.08)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.04)'; }}
               >
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: file.url ? '#EEF2FF' : fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{file.url ? '🔗' : fileIconEmoji(file.file_name)}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: file.url ? '#FFF7CC' : fileIconBg(file.file_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{file.url ? '🔗' : fileIconEmoji(file.file_name)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, fontWeight: 500, color: '#1A1A2E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</p>
-                  <p style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>{fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{format(new Date(file.created_at), 'd MMM yyyy', { locale: fr })}</p>
+                  <p style={{ fontSize: 12, fontWeight: 500, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.file_name}</p>
+                  <p style={{ fontSize: 10, color: '#6B5A62', marginTop: 2 }}>{fmtSize(file.file_size)}{file.file_size ? ' · ' : ''}{format(new Date(file.created_at), 'd MMM yyyy', { locale: fr })}</p>
                 </div>
                 {cb && <span style={{ fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 0.4, background: cb.bg, color: cb.text, borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>{cb.label}</span>}
               </div>
@@ -847,11 +869,11 @@ const ClientView = () => {
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        style={{ border: `2px dashed ${isDragging ? '#FFA7C6' : '#FFD6E8'}`, borderRadius: 12, padding: 20, textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s', background: isDragging ? 'rgba(255,244,248,0.4)' : 'transparent' }}
+        style={{ border: `2px dashed ${isDragging ? '#FB3D80' : '#FFA7C6'}`, borderRadius: '14px 22px 12px 18px', padding: 20, textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s', background: isDragging ? '#FFE9F1' : '#FFF4F8' }}
       >
-        <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
-        <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
-        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos (y compris iPhone), PDF, Word, Excel, zip : jusqu\'à 50 Mo par fichier' : 'Photos (y compris iPhone), PDF, Word, Excel, zip : jusqu\'à 50 Mo par fichier'}</p>
+        <span style={{ fontSize: 18 }}>⬆️</span>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
+        <p style={{ fontSize: 11, color: '#6B5A62', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos (y compris iPhone), PDF, Word, Excel, zip : jusqu\'à 50 Mo par fichier' : 'Photos (y compris iPhone), PDF, Word, Excel, zip : jusqu\'à 50 Mo par fichier'}</p>
         <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
       </div>
     </section>
@@ -859,7 +881,7 @@ const ClientView = () => {
 
   const sessionsBlock = data.sessions.length > 0 ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-      <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Nos sessions</h2>
+      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 14 }}>Nos sessions</h2>
       <div style={{ borderLeft: '2px solid #FFD6E8', paddingLeft: 22, marginLeft: 5 }}>
         {data.sessions.map((session, idx) => {
           const isLatest = idx === 0;
@@ -890,19 +912,19 @@ const ClientView = () => {
                   border: 'none', padding: '4px 0', cursor: isLatest ? 'default' : 'pointer', textAlign: 'left',
                 }}
               >
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A2E' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#1A1A1A' }}>
                   {format(new Date(session.session_date), 'd MMMM yyyy', { locale: fr })}
                 </span>
-                <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', borderRadius: 99, padding: '2px 8px' }}>{typeLabel}</span>
+                <span style={{ fontSize: 10, color: '#6B5A62', background: '#F4EFF1', borderRadius: 99, padding: '2px 8px' }}>{typeLabel}</span>
                 {!isExpanded && summary?.headline && (
-                  <span style={{ fontSize: 12, color: '#6B7280', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 12, color: '#6B5A62', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     · {summary.headline}
                   </span>
                 )}
                 {!isLatest && (
                   isExpanded
-                    ? <ChevronUp size={14} style={{ color: '#9CA3AF', marginLeft: 'auto' }} />
-                    : <ChevronDown size={14} style={{ color: '#9CA3AF', marginLeft: 'auto' }} />
+                    ? <ChevronUp size={14} style={{ color: '#6B5A62', marginLeft: 'auto' }} />
+                    : <ChevronDown size={14} style={{ color: '#6B5A62', marginLeft: 'auto' }} />
                 )}
               </button>
 
@@ -910,19 +932,19 @@ const ClientView = () => {
                 <div style={{ background: '#fff', borderRadius: 10, padding: 13, boxShadow: '0 1px 2px rgba(145,1,75,0.03)', marginTop: 6 }}>
                   {summary ? (
                     <>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A2E', lineHeight: 1.5, marginBottom: summary.bullets?.length ? 8 : 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A', lineHeight: 1.5, marginBottom: summary.bullets?.length ? 8 : 0 }}>
                         {summary.headline}
                       </p>
                       {summary.bullets?.length ? (
                         <ul style={{ margin: 0, paddingLeft: 18 }}>
                           {summary.bullets.map((b, i) => (
-                            <li key={i} style={{ fontSize: 12, color: '#4B5563', lineHeight: 1.6, marginBottom: 2 }}>{b}</li>
+                            <li key={i} style={{ fontSize: 12, color: '#1A1A1A', lineHeight: 1.6, marginBottom: 2 }}>{b}</li>
                           ))}
                         </ul>
                       ) : null}
                     </>
                   ) : (
-                    <p style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>Synthèse en préparation.</p>
+                    <p style={{ fontSize: 12, color: '#6B5A62', fontStyle: 'italic' }}>Synthèse en préparation.</p>
                   )}
                 </div>
               )}
@@ -935,7 +957,7 @@ const ClientView = () => {
 
   const footerBlock = (
     <footer style={{ paddingTop: 48, textAlign: 'center' }}>
-      <p style={{ fontSize: 11, color: '#9CA3AF' }}>
+      <p style={{ fontSize: 11, color: '#6B5A62' }}>
         Propulsé par{' '}
         <a href="https://nowadaysagency.com" target="_blank" rel="noopener noreferrer" style={{ color: '#91014b', textDecoration: 'none' }}>Nowadays Agency</a>
       </p>
@@ -943,22 +965,27 @@ const ClientView = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: '#FFF4F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      
+    <div className="min-h-screen" style={{ background: '#FFF4F8', fontFamily: SANS, color: '#1A1A1A' }}>
+
+      {/* ═══ BANDEAU VICHY ═══ */}
+      <div style={VICHY} />
+
       {/* ═══ HEADER ═══ */}
-      <header style={{ background: '#FFF4F8' }}>
+      <header>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 24, borderBottom: '2px solid #91014b' }}>
             <div>
-              <p style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 13, color: '#91014b', textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.7 }}>NOWADAYS</p>
-              <h1 style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 26, color: '#1A1A2E', fontWeight: 'normal', marginTop: 8 }}>{data.mission.client_name}</h1>
+              <p style={{ fontFamily: SANS, fontWeight: 700, fontSize: 12, color: '#91014b', textTransform: 'uppercase', letterSpacing: 2 }}>NOWADAYS</p>
+              <h1 style={{ fontFamily: SERIF, fontSize: 27, color: '#91014b', fontWeight: 'normal', marginTop: 8 }}>
+                Bonjour <em>{data.mission.client_name.split(' ')[0]}</em>
+              </h1>
               {missionType !== 'non_determine' && (
                 <span style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fff', background: isBinome ? '#FB3D80' : '#91014b', borderRadius: 99, padding: '3px 12px' }}>{typeLabel}</span>
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 3, background: '#10B981' }} />
-              <span style={{ fontSize: 11, color: '#6B7280' }}>Mission en cours</span>
+              <span style={{ width: 8, height: 8, borderRadius: 3, background: '#FB3D80' }} />
+              <span style={{ fontSize: 11, color: '#6B5A62' }}>Mission en cours</span>
             </div>
           </div>
         </div>
