@@ -313,7 +313,11 @@ export function SessionHistory({
         return;
       }
       queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
-      toast({ title: 'Résumé client généré ✓' });
+      toast({
+        title: data?.notified
+          ? `Résumé client généré ✓ : ${data?.client_name || 'la cliente'} a été prévenue ✓`
+          : 'Résumé client généré ✓',
+      });
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de générer le résumé.', variant: 'destructive' });
     } finally {

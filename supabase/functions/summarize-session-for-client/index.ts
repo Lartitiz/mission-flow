@@ -61,7 +61,7 @@ serve(async (req) => {
 
     const { data: session, error: sessionError } = await supabase
       .from("sessions")
-      .select("id, structured_notes, raw_notes, session_date, session_type")
+      .select("id, mission_id, structured_notes, raw_notes, session_date, session_type, topic, client_summary")
       .eq("id", session_id)
       .single();
 
@@ -154,6 +154,10 @@ serve(async (req) => {
       });
     }
 
+    // Une régénération écrase un résumé déjà publié : la cliente ne doit être
+    // prévenue par e-mail qu'à la PREMIÈRE publication.
+    const isFirstPublication = session.client_summary == null;
+
     // Save to session
     const { error: updateError } = await supabase
       .from("sessions")
@@ -168,9 +172,71 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ client_summary: parsed }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Première publication : prévenir la cliente par e-mail (best effort, ne
+    // fait jamais échouer la génération du résumé).
+    let notified = false;
+    let notifiedClientName = "";
+    if (isFirstPublication) {
+      try {
+        const { data: mission, error: missionError } = await supabase
+          .from("missions")
+          .select("client_email, client_name, client_token, client_link_active")
+          .eq("id", session.mission_id)
+          .maybeSingle();
+
+        if (missionError) {
+          console.error("mission lookup for notify failed:", missionError);
+        }
+
+        const clientEmail = (mission?.client_email ?? "").trim();
+        if (mission && clientEmail && mission.client_link_active !== false) {
+          const sessionDate = session.session_date
+            ? new Date(`${session.session_date}T00:00:00Z`).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                timeZone: "UTC",
+              })
+            : "";
+
+          const { data: sendData, error: sendError } = await supabase.functions.invoke(
+            "send-transactional-email",
+            {
+              body: {
+                templateName: "client-summary-published",
+                recipientEmail: clientEmail,
+                // Clé stable pour toujours : même si le résumé est régénéré un
+                // jour où client_summary est redevenu null, l'infra e-mail
+                // dédupliquera et la cliente ne recevra qu'UN seul e-mail.
+                idempotencyKey: `summary-published-${session_id}`,
+                templateData: {
+                  clientName: mission.client_name ?? "",
+                  sessionDate,
+                  sessionLabel: session.topic ?? "",
+                  clientSpaceUrl: `https://nowadays-mission-flow.lovable.app/client/${mission.client_token}`,
+                },
+              },
+            }
+          );
+
+          if (sendError) {
+            console.error("client summary email failed:", sendError);
+          } else if (sendData?.success === true && sendData?.queued === true) {
+            notified = true;
+            notifiedClientName = mission.client_name ?? "";
+          }
+        }
+      } catch (notifyErr) {
+        console.error("client summary notify error:", notifyErr);
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ client_summary: parsed, notified, client_name: notifiedClientName }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (e) {
     console.error("summarize-session-for-client error:", e);
     const message = e instanceof Error && e.name === "AbortError" ? "Timeout" : "Erreur interne";

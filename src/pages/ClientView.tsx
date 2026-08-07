@@ -79,6 +79,64 @@ function fileIconEmoji(name: string) {
   return '📁';
 }
 
+/* MIME par extension : quand le navigateur ne fournit pas de type (fréquent
+   sous Windows ou depuis WhatsApp), on le déduit du nom du fichier : sinon le
+   bucket refuse 'application/octet-stream' et la cliente voit une erreur brute. */
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  csv: 'text/csv',
+  txt: 'text/plain',
+  zip: 'application/zip',
+};
+
+function contentTypeFor(fileName: string, browserType: string): string {
+  if (browserType) return browserType;
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return EXT_MIME[ext] || 'application/octet-stream';
+}
+
+const VIDEO_EXTS = ['mp4', 'mov', 'avi', 'webm', 'mkv'];
+const ACCEPTED_FORMATS_MSG = "Ce type de fichier n'est pas accepté. Formats ok : photos (y compris iPhone), PDF, Word, Excel, CSV, zip.";
+const TOO_BIG_MSG = 'coupe-le en deux ou envoie un lien.';
+
+/* Vérifications AVANT l'upload : on bloque tout de suite avec un message clair
+   plutôt que de laisser le serveur répondre une erreur anglaise. */
+function preUploadError(file: globalThis.File): string | null {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  if (VIDEO_EXTS.includes(ext) || file.type.startsWith('video/')) {
+    return "Les vidéos ne sont pas acceptées ici : envoie un lien (WeTransfer, Drive…) dans un commentaire.";
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    return `Fichier trop lourd (${Math.round(file.size / 1048576)} Mo, max 50) : ${TOO_BIG_MSG}`;
+  }
+  if (contentTypeFor(file.name, file.type) === 'application/octet-stream') {
+    return ACCEPTED_FORMATS_MSG;
+  }
+  return null;
+}
+
+/* Traduit les erreurs storage de Supabase (anglaises) en français. */
+function storageErrorMessage(rawMessage: string | undefined): string {
+  const m = (rawMessage || '').toLowerCase();
+  if (m.includes('mime type')) return ACCEPTED_FORMATS_MSG;
+  if (m.includes('payload too large') || m.includes('exceeded')) return `Fichier trop lourd (max 50 Mo) : ${TOO_BIG_MSG}`;
+  if (m.includes('row-level security') || m.includes('security policy')) return "Ce lien n'est plus actif : contacte Laetitia.";
+  return "L'envoi a échoué. Réessaie, ou contacte Laetitia si ça continue.";
+}
+
 function catBadge(cat: string | null): { label: string; bg: string; text: string } | null {
   if (!cat || cat === 'client_upload' || cat.startsWith('action_')) return null;
   const map: Record<string, { label: string; bg: string; text: string }> = {
@@ -199,8 +257,9 @@ const ClientView = () => {
   };
 
   const handleActionFileUpload = async (actionId: string, file: globalThis.File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
+    const blocked = preUploadError(file);
+    if (blocked) {
+      toast({ title: 'Fichier refusé', description: blocked, variant: 'destructive' });
       return;
     }
 
@@ -208,43 +267,40 @@ const ClientView = () => {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${data!.mission.id}/actions/${actionId}/${Date.now()}_${safeName}`;
 
-
       const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file, {
-        contentType: file.type || 'application/octet-stream',
+        contentType: contentTypeFor(file.name, file.type),
       });
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        toast({ title: 'Erreur upload', description: uploadError.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
+        toast({ title: "Erreur d'envoi", description: storageErrorMessage(uploadError.message), variant: 'destructive' });
         return;
       }
 
-      // Insert direct dans la table files (policy anon)
-      const { error: insertError } = await supabase.from('files').insert({
-        mission_id: data!.mission.id,
-        file_name: file.name,
-        file_size: file.size,
-        storage_path: path,
-        category: `action_${actionId}`,
-        uploaded_by: 'client',
+      // Enregistrement côté serveur : la fonction vérifie le lien, enregistre
+      // le fichier ET prévient Laetitia par e-mail (l'insert direct ne notifiait pas).
+      const { data: result, error: fnError } = await supabase.functions.invoke('update-client-action', {
+        body: { token, action_id: actionId, file_name: file.name, file_size: file.size, storage_path: path },
       });
 
-      if (insertError) {
-        console.error('File record insert error:', insertError);
-        toast({ title: 'Erreur', description: "Le fichier a été uploadé mais l'enregistrement a échoué. Contacte Laetitia.", variant: 'destructive' });
+      if (fnError || result?.error) {
+        console.error('File record error:', fnError || result?.error);
+        toast({ title: 'Erreur', description: 'Le fichier est envoyé mais pas enregistré : contacte Laetitia.', variant: 'destructive' });
         return;
       }
 
       toast({ title: 'Fichier ajouté ✓' });
       fetchData();
-    } catch (err: any) {
-      toast({ title: 'Erreur upload', description: err?.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast({ title: "Erreur d'envoi", description: "L'envoi a échoué. Réessaie, ou contacte Laetitia si ça continue.", variant: 'destructive' });
     }
   };
 
   const handleGlobalFileUpload = async (file: globalThis.File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: 'Fichier trop volumineux', description: 'Maximum 50 Mo.', variant: 'destructive' });
+    const blocked = preUploadError(file);
+    if (blocked) {
+      toast({ title: 'Fichier refusé', description: blocked, variant: 'destructive' });
       return;
     }
 
@@ -252,37 +308,33 @@ const ClientView = () => {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${data!.mission.id}/uploads/${Date.now()}_${safeName}`;
 
-
       const { error: uploadError } = await supabase.storage.from('mission-files').upload(path, file, {
-        contentType: file.type || 'application/octet-stream',
+        contentType: contentTypeFor(file.name, file.type),
       });
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        toast({ title: 'Erreur upload', description: uploadError.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
+        toast({ title: "Erreur d'envoi", description: storageErrorMessage(uploadError.message), variant: 'destructive' });
         return;
       }
 
-      // Insert direct dans la table files (policy anon)
-      const { error: insertError } = await supabase.from('files').insert({
-        mission_id: data!.mission.id,
-        file_name: file.name,
-        file_size: file.size,
-        storage_path: path,
-        category: 'client_upload',
-        uploaded_by: 'client',
+      // Enregistrement côté serveur : la fonction vérifie le lien, enregistre
+      // le fichier ET prévient Laetitia par e-mail (l'insert direct ne notifiait pas).
+      const { data: result, error: fnError } = await supabase.functions.invoke('upload-client-file', {
+        body: { token, file_name: file.name, file_size: file.size, storage_path: path },
       });
 
-      if (insertError) {
-        console.error('File record insert error:', insertError);
-        toast({ title: 'Erreur', description: "Le fichier a été uploadé mais l'enregistrement a échoué.", variant: 'destructive' });
+      if (fnError || result?.error) {
+        console.error('File record error:', fnError || result?.error);
+        toast({ title: 'Erreur', description: 'Le fichier est envoyé mais pas enregistré : contacte Laetitia.', variant: 'destructive' });
         return;
       }
 
       toast({ title: 'Fichier envoyé ✓' });
       fetchData();
-    } catch (err: any) {
-      toast({ title: 'Erreur upload', description: err?.message || "Impossible d'envoyer le fichier.", variant: 'destructive' });
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast({ title: "Erreur d'envoi", description: "L'envoi a échoué. Réessaie, ou contacte Laetitia si ça continue.", variant: 'destructive' });
     }
   };
 
@@ -755,7 +807,7 @@ const ClientView = () => {
         ref={actionFileInputRef}
         type="file"
         className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip"
+        accept="image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip"
         onChange={e => {
           const f = e.target.files?.[0];
           if (f && pendingActionId) handleActionFileUpload(pendingActionId, f);
@@ -799,8 +851,8 @@ const ClientView = () => {
       >
         <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
         <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
-        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel : max 50 Mo'}</p>
-        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
+        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos (y compris iPhone), PDF, Word, Excel, zip : jusqu\'à 50 Mo par fichier' : 'Photos (y compris iPhone), PDF, Word, Excel, zip : jusqu\'à 50 Mo par fichier'}</p>
+        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
       </div>
     </section>
   );
