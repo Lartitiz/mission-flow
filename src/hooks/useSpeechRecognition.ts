@@ -49,7 +49,9 @@ export function useSpeechRecognition({ onResult }: UseSpeechRecognitionOptions) 
       recognition.interimResults = false;
       recognition.continuous = true;
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      // SpeechRecognitionEvent n'existe pas dans lib.dom (l'API Web Speech
+      // n'est pas typée par TypeScript) : on décrit la forme utilisée.
+      recognition.onresult = (event: { resultIndex: number; results: SpeechRecognitionResultList }) => {
         let transcript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {

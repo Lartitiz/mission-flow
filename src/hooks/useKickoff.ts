@@ -7,6 +7,15 @@ import type { Json } from '@/integrations/supabase/types';
 
 export type Kickoff = Tables<'kickoffs'>;
 
+// Jeton de session accessible de façon SYNCHRONE : le flush à la fermeture
+// d'onglet ne peut pas attendre un await. La clé anon ne suffit pas — la RLS
+// de kickoffs n'autorise que les utilisateurs connectés, et PostgREST répond
+// alors 204 avec 0 ligne modifiée (échec totalement silencieux).
+let sessionAccessToken: string | null = null;
+supabase.auth.onAuthStateChange((_event, session) => {
+  sessionAccessToken = session?.access_token ?? null;
+});
+
 export function useKickoff(missionId: string) {
   const queryClient = useQueryClient();
   const debounceNotes = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,8 +49,24 @@ export function useKickoff(missionId: string) {
       if (error) throw error;
       return data as Kickoff;
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
       creatingRef.current = false;
+      // Frappes arrivées pendant l'insert : les écrire tout de suite,
+      // sinon elles n'attendraient que le flush de fermeture.
+      const updates: Record<string, unknown> = {};
+      if (pendingNotesRef.current !== null) updates.raw_notes = pendingNotesRef.current;
+      if (pendingFieldsRef.current !== null) Object.assign(updates, pendingFieldsRef.current);
+      pendingNotesRef.current = null;
+      pendingFieldsRef.current = null;
+      if (Object.keys(updates).length > 0) {
+        supabase
+          .from('kickoffs')
+          .update(updates as never)
+          .eq('id', created.id)
+          .then(({ error }) => {
+            if (error) console.error('[useKickoff] post-create flush failed', error);
+          });
+      }
       queryClient.invalidateQueries({ queryKey: ['kickoff', missionId] });
     },
     onError: () => {
@@ -127,13 +152,19 @@ export function useKickoff(missionId: string) {
         clearTimeout(debounceNotes.current);
         debounceNotes.current = null;
       }
-      pendingNotesRef.current = null;
       if (kickoff) {
+        pendingNotesRef.current = null;
         supabase
           .from('kickoffs')
           .update({ raw_notes: notes })
           .eq('id', kickoff.id)
-          .then(() => {});
+          .then(({ error }) => {
+            if (error) console.error('[useKickoff] flush failed', error);
+          });
+      } else {
+        // Kickoff pas encore créé : garder le pending, il sera écrit au
+        // onSuccess de la création automatique.
+        pendingNotesRef.current = notes;
       }
     },
     [kickoff]
@@ -157,7 +188,7 @@ export function useKickoff(missionId: string) {
         const headers = {
           'Content-Type': 'application/json',
           apikey,
-          Authorization: `Bearer ${apikey}`,
+          Authorization: `Bearer ${sessionAccessToken ?? apikey}`,
           Prefer: 'return=minimal',
         };
         // sendBeacon doesn't support PATCH → use fetch with keepalive
@@ -175,13 +206,15 @@ export function useKickoff(missionId: string) {
     };
 
     const handleBeforeUnload = () => flushPending();
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', () => {
+    const handleVisibility = () => {
       if (document.visibilityState === 'hidden') flushPending();
-    });
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (debounceNotes.current) clearTimeout(debounceNotes.current);
       if (debounceFields.current) clearTimeout(debounceFields.current);
       flushPending();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useKickoff } from '@/hooks/useKickoff';
 import { useDiscoveryCall } from '@/hooks/useDiscoveryCall';
 import { KickoffQuestions, FIXED_QUESTIONS, DECLIC_QUESTIONS } from './KickoffQuestions';
@@ -71,27 +71,34 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
   const [isStructuring, setIsStructuring] = useState(false);
   const [structuredNotes, setStructuredNotes] = useState<KickoffStructuredSection[] | null>(null);
 
-  // Sync from DB
+  // Sync from DB au premier chargement UNIQUEMENT. Chaque sauvegarde
+  // debouncée déclenche un refetch : re-synchroniser à chaque fois remettait
+  // la valeur serveur (plus vieille de ~500 ms) par-dessus la frappe en cours.
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (kickoff) {
-      setMode((kickoff.mode as 'visio' | 'questionnaire') || 'visio');
-      setNotes(kickoff.raw_notes ?? '');
-      setDeclicEnabled(kickoff.declic_questions_enabled ?? false);
+    initializedRef.current = false;
+  }, [missionId]);
+  useEffect(() => {
+    if (!kickoff || initializedRef.current) return;
+    initializedRef.current = true;
 
-      const fixed = kickoff.fixed_questions as Record<string, boolean> | null;
-      if (fixed) setCheckedQuestions(fixed);
+    setMode((kickoff.mode as 'visio' | 'questionnaire') || 'visio');
+    setNotes((prev) => prev || (kickoff.raw_notes ?? ''));
+    setDeclicEnabled(kickoff.declic_questions_enabled ?? false);
 
-      const ai = kickoff.ai_questions as string[] | null;
-      if (ai) setAiQuestions(ai);
+    const fixed = kickoff.fixed_questions as Record<string, boolean> | null;
+    if (fixed) setCheckedQuestions((prev) => (Object.keys(prev).length > 0 ? prev : fixed));
 
-      const structured = kickoff.structured_notes as unknown;
-      if (structured && Array.isArray(structured)) {
-        setStructuredNotes(structured as KickoffStructuredSection[]);
-      } else if (structured && typeof structured === 'object' && 'sections' in (structured as Record<string, unknown>)) {
-        setStructuredNotes((structured as { sections: KickoffStructuredSection[] }).sections);
-      }
+    const ai = kickoff.ai_questions as string[] | null;
+    if (ai) setAiQuestions((prev) => (prev.length > 0 ? prev : ai));
+
+    const structured = kickoff.structured_notes as unknown;
+    if (structured && Array.isArray(structured)) {
+      setStructuredNotes(structured as KickoffStructuredSection[]);
+    } else if (structured && typeof structured === 'object' && 'sections' in (structured as Record<string, unknown>)) {
+      setStructuredNotes((structured as { sections: KickoffStructuredSection[] }).sections);
     }
-  }, [kickoff]);
+  }, [kickoff, missionId]);
 
   const handleModeChange = (isQuestionnaire: boolean) => {
     const newMode = isQuestionnaire ? 'questionnaire' : 'visio';
