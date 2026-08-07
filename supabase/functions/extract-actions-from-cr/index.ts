@@ -33,7 +33,7 @@ Si le CR mentionne un livrable de Laetitia, il y a presque toujours une action c
 
 Pour chaque nouvelle action, détermine :
 - assignee : "laetitia" ou "client"
-- category : la catégorie la plus adaptée parmi : Cadrage, Messages, Site web, Social media, Emailing, Branding, Cross-posting, Influence/Presse, Formation, Commercial, Support, Préparation session, Finalisation, Autre
+- category : la catégorie la plus adaptée parmi : Cadrage, Messages, Site web, Social media, Emailing, Branding, Cross-posting, Influence/Presse, Formation, Commercial, Support, Finalisation, Autre
 - task : intitulé court (verbe d'action)
 - description : détail (1-2 phrases)
 - channel : si applicable, parmi : Instagram, LinkedIn, Pinterest, Site web, Brevo, Facebook, Telegram/WhatsApp, Identité, Orga, Autre
