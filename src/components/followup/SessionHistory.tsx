@@ -396,12 +396,20 @@ export function SessionHistory({
         return phaseA - phaseB;
       });
 
+      // Math.max(...[]) vaut -Infinity : si aucune action n'existe encore pour
+      // cet assignee, l'insert serait rejeté par la base. On borne à 0 et on
+      // incrémente localement pour ne pas donner le même ordre à toute la fournée.
+      const sortCounters: Record<string, number> = {};
+      const nextSort = (assignee: string) => {
+        if (!(assignee in sortCounters)) {
+          const same = actions.filter((a) => a.assignee === assignee);
+          sortCounters[assignee] = same.length > 0 ? Math.max(...same.map((a) => a.sort_order)) + 1 : 0;
+        }
+        return sortCounters[assignee]++;
+      };
+      let failed = 0;
       for (const action of sortedNew) {
-        const maxSort =
-          actions.length > 0
-            ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
-            : 0;
-        await supabase.from('actions').insert({
+        const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
           task: action.task,
@@ -410,18 +418,28 @@ export function SessionHistory({
           channel: action.channel || null,
           phase: (action as any).phase || null,
           target_date: action.target_date || null,
-          sort_order: maxSort,
+          sort_order: nextSort(action.assignee),
           status: 'not_started',
         });
+        if (error) {
+          failed++;
+          console.error('Insert action error:', error);
+        }
       }
       for (const update of selectedUpdates) {
         const updateData: Record<string, string> = {};
         updateData[update.field] = update.new_value;
-        await supabase
+        const { error } = await supabase
           .from('actions')
           .update(updateData as any)
           .eq('id', update.action_id);
+        if (error) {
+          failed++;
+          console.error('Update action error:', error);
+        }
       }
+      // En cas d'échec, garder les suggestions affichées pour réessayer.
+      if (failed > 0) throw new Error(`${failed} écriture(s) refusée(s)`);
       // Clear persisted pending suggestions on the source session
       if (extractionResults?.sessionId) {
         const session = sessions.find((s) => s.id === extractionResults.sessionId);

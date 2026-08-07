@@ -117,11 +117,20 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
   ) => {
     setIsApplying(true);
     try {
+      // Math.max(...[]) vaut -Infinity : si aucune action n'existe encore pour
+      // cet assignee, l'insert serait rejeté par la base. On borne à 0 et on
+      // incrémente localement pour ne pas donner le même ordre à toute la fournée.
+      const sortCounters: Record<string, number> = {};
+      const nextSort = (assignee: string) => {
+        if (!(assignee in sortCounters)) {
+          const same = actions.filter((a) => a.assignee === assignee);
+          sortCounters[assignee] = same.length > 0 ? Math.max(...same.map((a) => a.sort_order)) + 1 : 0;
+        }
+        return sortCounters[assignee]++;
+      };
+      let failed = 0;
       for (const action of selectedNew) {
-        const maxSort = actions.length > 0
-          ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
-          : 0;
-        await supabase.from('actions').insert({
+        const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
           task: action.task,
@@ -130,15 +139,25 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           channel: action.channel || null,
           phase: (action as unknown as { phase?: string }).phase || null,
           target_date: action.target_date || null,
-          sort_order: maxSort,
+          sort_order: nextSort(action.assignee),
           status: 'not_started',
         });
+        if (error) {
+          failed++;
+          console.error('Insert action error:', error);
+        }
       }
       for (const update of selectedUpdates) {
         const updateData: Record<string, string> = {};
         updateData[update.field] = update.new_value;
-        await supabase.from('actions').update(updateData as any).eq('id', update.action_id);
+        const { error } = await supabase.from('actions').update(updateData as any).eq('id', update.action_id);
+        if (error) {
+          failed++;
+          console.error('Update action error:', error);
+        }
       }
+      // En cas d'échec, ne pas effacer les suggestions : on pourra réessayer.
+      if (failed > 0) throw new Error(`${failed} écriture(s) refusée(s)`);
       // Clear pending on the source session
       const session = pendingSessions?.find((s) => s.id === sessionId);
       const sn = (session?.structured_notes as Record<string, unknown>) || {};
@@ -246,11 +265,17 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
     setIsApplying(true);
     try {
       // Insert new actions
+      // Même garde que handleApplyPending : Math.max(...[]) vaut -Infinity.
+      const sortCounters: Record<string, number> = {};
+      const nextSort = (assignee: string) => {
+        if (!(assignee in sortCounters)) {
+          const same = actions.filter((a) => a.assignee === assignee);
+          sortCounters[assignee] = same.length > 0 ? Math.max(...same.map((a) => a.sort_order)) + 1 : 0;
+        }
+        return sortCounters[assignee]++;
+      };
+      let failed = 0;
       for (const action of selectedNew) {
-        const maxSort = actions.length > 0
-          ? Math.max(...actions.filter((a) => a.assignee === action.assignee).map((a) => a.sort_order)) + 1
-          : 0;
-
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
@@ -259,10 +284,13 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           category: action.category || null,
           channel: action.channel || null,
           target_date: action.target_date || null,
-          sort_order: maxSort,
+          sort_order: nextSort(action.assignee),
           status: 'not_started',
         });
-        if (error) console.error('Insert action error:', error);
+        if (error) {
+          failed++;
+          console.error('Insert action error:', error);
+        }
       }
 
       // Apply updates
@@ -273,8 +301,15 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           .from('actions')
           .update(updateData as any)
           .eq('id', update.action_id);
-        if (error) console.error('Update action error:', error);
+        if (error) {
+          failed++;
+          console.error('Update action error:', error);
+        }
       }
+
+      // Ne pas afficher « Changements appliqués » si la base a refusé :
+      // les suggestions restent affichées pour réessayer.
+      if (failed > 0) throw new Error(`${failed} écriture(s) refusée(s)`);
 
       toast({
         title: 'Changements appliqués',

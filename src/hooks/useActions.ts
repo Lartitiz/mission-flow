@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export type Action = Tables<'actions'>;
@@ -101,12 +102,23 @@ export function useActions(missionId: string) {
 
   const reorderMutation = useMutation({
     mutationFn: async (orderedIds: string[]) => {
-      const updates = orderedIds.map((id, index) =>
-        supabase.from('actions').update({ sort_order: index }).eq('id', id)
+      // Les requêtes supabase ne rejettent jamais : sans lire .error,
+      // un drag & drop refusé passait pour un succès puis l'ordre
+      // revenait tout seul au refetch, sans explication.
+      const results = await Promise.all(
+        orderedIds.map((id, index) =>
+          supabase.from('actions').update({ sort_order: index }).eq('id', id)
+        )
       );
-      await Promise.all(updates);
+      const firstError = results.find((r) => r.error)?.error;
+      if (firstError) throw firstError;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+    },
+    onError: (err) => {
+      console.error('[useActions] reorder failed', err);
+      toast.error('Réordonnancement non enregistré — réessaie.');
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
     },
   });

@@ -88,6 +88,7 @@ export function ActionsFromProposalCard({
     setIsCreating(true);
     try {
       let sortOrder = maxSortOrder + 1;
+      let failed = 0;
       for (const action of sortedActions) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
@@ -100,8 +101,14 @@ export function ActionsFromProposalCard({
           sort_order: sortOrder++,
           status: 'not_started',
         });
-        if (error) console.error('Insert action error:', error);
+        if (error) {
+          failed++;
+          console.error('Insert action error:', error);
+        }
       }
+      // Ne pas annoncer un succès si la base a refusé des inserts :
+      // la liste générée reste affichée pour réessayer.
+      if (failed > 0) throw new Error(`${failed} action(s) refusée(s) par la base`);
 
       // Journal entry
       await supabase.from('journal_entries').insert({
