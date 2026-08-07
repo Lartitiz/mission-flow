@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+// Outil interne : pas d'inscription en libre-service. Les comptes se créent
+// dans Supabase (Auth > Users) et doivent être listés dans app_admins.
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const [isForgot, setIsForgot] = useState(false);
   const [success, setSuccess] = useState('');
   const { signIn } = useAuth();
@@ -23,29 +24,12 @@ const Login = () => {
     setSuccess('');
     setLoading(true);
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else {
-        setSuccess('Compte créé !');
-        // Auto sign-in after signup
-        const { error: signInError } = await signIn(email, password);
-        if (!signInError) {
-          navigate('/dashboard');
-        } else {
-          setLoading(false);
-        }
-      }
+    const { error } = await signIn(email, password);
+    if (error) {
+      setError('Email ou mot de passe incorrect');
+      setLoading(false);
     } else {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError('Email ou mot de passe incorrect');
-        setLoading(false);
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     }
   };
 
@@ -73,7 +57,7 @@ const Login = () => {
             Nowadays Missions
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isForgot ? 'Réinitialisez votre mot de passe' : isSignUp ? 'Créez votre compte' : 'Connectez-vous à votre espace'}
+            {isForgot ? 'Réinitialisez votre mot de passe' : 'Connectez-vous à votre espace'}
           </p>
         </div>
 
@@ -131,26 +115,22 @@ const Login = () => {
             {success && <p className="text-sm text-primary font-body">{success}</p>}
 
             <Button type="submit" className="w-full font-body" disabled={loading}>
-              {loading
-                ? (isSignUp ? 'Création...' : 'Connexion...')
-                : (isSignUp ? 'Créer mon compte' : 'Se connecter')}
+              {loading ? 'Connexion...' : 'Se connecter'}
             </Button>
 
-            {!isSignUp && (
-              <p className="text-center">
-                <button
-                  type="button"
-                  onClick={() => { setIsForgot(true); setError(''); setSuccess(''); }}
-                  className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                >
-                  Mot de passe oublié ?
-                </button>
-              </p>
-            )}
+            <p className="text-center">
+              <button
+                type="button"
+                onClick={() => { setIsForgot(true); setError(''); setSuccess(''); }}
+                className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                Mot de passe oublié ?
+              </button>
+            </p>
           </form>
         )}
 
-        {isForgot ? (
+        {isForgot && (
           <p className="text-center">
             <button
               type="button"
@@ -158,26 +138,6 @@ const Login = () => {
               className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
             >
               Retour à la connexion
-            </button>
-          </p>
-        ) : !isSignUp ? (
-          <p className="text-center">
-            <button
-              type="button"
-              onClick={() => { setIsSignUp(true); setError(''); setSuccess(''); }}
-              className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-            >
-              Première connexion ? Créer mon compte
-            </button>
-          </p>
-        ) : (
-          <p className="text-center">
-            <button
-              type="button"
-              onClick={() => { setIsSignUp(false); setError(''); setSuccess(''); }}
-              className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-            >
-              Déjà un compte ? Se connecter
             </button>
           </p>
         )}
