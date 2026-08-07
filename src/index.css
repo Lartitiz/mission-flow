@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+/* Polices de la charte Nowadays (DESIGN_SYSTEM_NOWADAYS.md) :
+   Instrument Serif pour les titres (jamais en gras), Hanken Grotesk pour le corps. */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +8,8 @@
 
 @layer base {
   :root {
-    --background: 340 100% 98%;
+    /* Charte : base BLANCHE, le rose pâle sert d'alternance (secondary), pas de fond global */
+    --background: 0 0% 100%;
     --foreground: 340 20% 15%;
 
     --card: 0 0% 100%;
@@ -18,7 +21,7 @@
     --primary: 340 97% 61%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 340 100% 96%;
+    --secondary: 340 100% 98%;
     --secondary-foreground: 340 20% 15%;
 
     --muted: 340 30% 94%;
@@ -46,9 +49,12 @@
     --sidebar-ring: 340 97% 61%;
 
     --brand-logo: 330 100% 28%;
+    /* Jaune « lumière » de la charte : chiffres, surligneur, badges d'étapes */
+    --jaune: 50 100% 69%;
+    --jaune-foreground: 330 100% 28%;
 
-    --font-heading: 'Libre Baskerville', serif;
-    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-heading: 'Instrument Serif', serif;
+    --font-body: 'Hanken Grotesk', sans-serif;
 
     --badge-gray: 0 0% 88%;
     --badge-gray-foreground: 0 0% 30%;
@@ -72,7 +78,9 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: 400;
+    /* Charte : le serif de titrage ne se met JAMAIS en gras */
+    font-weight: 400 !important;
+    line-height: 1.1;
   }
 }
 

@@ -370,7 +370,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
             const total = (pending.new_actions?.length ?? 0) + (pending.updates?.length ?? 0);
             const isOpen = openPendingSessionId === s.id;
             return (
-              <div key={s.id} className="bg-card rounded-xl shadow-[var(--card-shadow)] border-l-4 border-l-primary">
+              <div key={s.id} className="bg-secondary rounded-xl shadow-[var(--card-shadow)]">
                 <button
                   type="button"
                   onClick={() => setOpenPendingSessionId(isOpen ? null : s.id)}
@@ -383,7 +383,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
                         {total} suggestion{total > 1 ? 's' : ''} IA en attente
                       </p>
                       <p className="font-body text-xs text-muted-foreground">
-                        Issue de la session du {dateStr} — {pending.new_actions.length} nouvelle{pending.new_actions.length > 1 ? 's' : ''} action{pending.new_actions.length > 1 ? 's' : ''}, {pending.updates.length} mise{pending.updates.length > 1 ? 's' : ''} à jour
+                        Issue de la session du {dateStr} : {pending.new_actions.length} nouvelle{pending.new_actions.length > 1 ? 's' : ''} action{pending.new_actions.length > 1 ? 's' : ''}, {pending.updates.length} mise{pending.updates.length > 1 ? 's' : ''} à jour
                       </p>
                     </div>
                   </div>
@@ -572,7 +572,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
 
       {/* AI extraction */}
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-3">
-        <h3 className="font-heading text-sm font-medium text-foreground">
+        <h3 className="font-body font-bold text-sm text-foreground">
           Mise à jour IA
         </h3>
         <Textarea

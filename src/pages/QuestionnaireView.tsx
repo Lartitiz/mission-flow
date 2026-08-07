@@ -31,7 +31,7 @@ export default function QuestionnaireView() {
   // Dynamic title
   useEffect(() => {
     if (clientName) {
-      document.title = `Questionnaire — ${clientName} — Nowadays`;
+      document.title = `Questionnaire : ${clientName} : Nowadays`;
     }
     return () => { document.title = 'Nowadays Missions'; };
   }, [clientName]);
@@ -280,7 +280,7 @@ function Footer() {
         >
           Nowadays Agency
         </a>{' '}
-        — nowadaysagency.com
+        : nowadaysagency.com
       </p>
     </footer>
   );

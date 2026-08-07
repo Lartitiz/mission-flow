@@ -246,7 +246,7 @@ export function AlumniFollowUpDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle className="font-heading text-lg">Prendre des nouvelles de {firstName}</DialogTitle>
+          <DialogTitle className="font-heading text-2xl">Prendre des nouvelles de {firstName}</DialogTitle>
           <DialogDescription className="font-body text-sm text-muted-foreground">
             Message doux, pas de vente. Juste du care.
           </DialogDescription>

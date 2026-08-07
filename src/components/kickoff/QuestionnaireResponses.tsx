@@ -62,7 +62,7 @@ export function QuestionnaireResponses({
     const dateLine = completedAt
       ? `Complété le ${format(new Date(completedAt), 'dd MMMM yyyy', { locale: fr })}`
       : '';
-    let md = `# Questionnaire — ${clientName}\n`;
+    let md = `# Questionnaire : ${clientName}\n`;
     if (dateLine) md += `${dateLine}\n`;
     md += '\n';
     for (const t of themes) {
@@ -85,7 +85,7 @@ export function QuestionnaireResponses({
 
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
-      <h3 className="font-heading text-sm font-medium text-foreground">Réponses reçues</h3>
+      <h3 className="font-body font-bold text-sm text-foreground">Réponses reçues</h3>
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
         {Object.entries(responses).map(([questionId, answer]) => {
           if (!answer || !answer.trim()) return null;

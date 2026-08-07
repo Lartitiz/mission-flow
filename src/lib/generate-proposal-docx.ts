@@ -38,7 +38,7 @@ interface ProposalSection {
 
 // On parse d'abord en jetons bruts : une fois un TextRun construit, ses
 // options (.text, .bold, .italics) ne sont plus relisibles (elles sont
-// enfouies dans son arbre interne) — relire r.text donne undefined et
+// enfouies dans son arbre interne) : relire r.text donne undefined et
 // produisait des encarts et des listes numérotées VIDES dans le .docx.
 interface InlineToken {
   text: string;
@@ -232,7 +232,7 @@ export function parseMarkdownToBlocks(text: string): (Paragraph | Table)[] {
       continue;
     }
 
-    // Numbered list — keep numbering visible
+    // Numbered list : keep numbering visible
     const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
     if (numberedMatch) {
       blocks.push(

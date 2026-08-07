@@ -146,16 +146,16 @@ const ClientView = () => {
   // Dynamic meta tags
   useEffect(() => {
     if (data) {
-      document.title = `${data.mission.client_name} — Espace projet Nowadays`;
+      document.title = `${data.mission.client_name} : Espace projet Nowadays`;
       const updateMeta = (attr: string, key: string, content: string) => {
         const meta = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement;
         if (meta) meta.content = content;
       };
       const typeLabel = data.mission.mission_type === 'agency' ? 'Agency' : 'Binôme';
-      updateMeta('property', 'og:title', `${data.mission.client_name} — Espace projet Nowadays`);
-      updateMeta('property', 'og:description', `Mission ${typeLabel} — Suivez l'avancement avec Nowadays Agency.`);
-      updateMeta('name', 'twitter:title', `${data.mission.client_name} — Espace projet Nowadays`);
-      updateMeta('name', 'twitter:description', `Mission ${typeLabel} — Suivez l'avancement avec Nowadays Agency.`);
+      updateMeta('property', 'og:title', `${data.mission.client_name} : Espace projet Nowadays`);
+      updateMeta('property', 'og:description', `Mission ${typeLabel} : Suivez l'avancement avec Nowadays Agency.`);
+      updateMeta('name', 'twitter:title', `${data.mission.client_name} : Espace projet Nowadays`);
+      updateMeta('name', 'twitter:description', `Mission ${typeLabel} : Suivez l'avancement avec Nowadays Agency.`);
     }
     return () => { document.title = 'Nowadays Missions'; };
   }, [data]);
@@ -443,7 +443,7 @@ const ClientView = () => {
       <div>
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#91014b' }}>PROCHAINE SESSION</p>
         <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E', marginTop: 4 }}>
-          {format(new Date(data.next_session.date), "EEEE d MMMM yyyy — HH'h'mm", { locale: fr })}
+          {format(new Date(data.next_session.date), "EEEE d MMMM yyyy : HH'h'mm", { locale: fr })}
         </p>
         {data.next_session.agenda && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{data.next_session.agenda}</p>}
       </div>
@@ -457,7 +457,7 @@ const ClientView = () => {
         <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b' }}>{progressPct}%</span>
       </div>
       <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: '#FFD6E8' }}>
-        <div style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #91014b, #FB3D80)', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
+        <div style={{ height: '100%', borderRadius: 3, background: '#FB3D80', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
         <span style={{ fontSize: 11, color: '#9CA3AF' }}>{inProgressAll} en cours</span>
@@ -475,7 +475,7 @@ const ClientView = () => {
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
       <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: 16, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
 
-      {/* Stats bar — unchanged */}
+      {/* Stats bar : unchanged */}
       <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#F3F4F6', gap: 1, marginBottom: 16 }}>
         {[
           { count: laetitiaDelivered.length, label: 'Livrées', color: '#10B981' },
@@ -799,7 +799,7 @@ const ClientView = () => {
       >
         <span style={{ fontSize: 18, color: '#FFA7C6' }}>⬆️</span>
         <p style={{ fontSize: 13, fontWeight: 500, color: '#91014b', marginTop: 8 }}>{data.files.length === 0 ? 'Tu as des fichiers à me transmettre ?' : 'Dépose tes fichiers ici'}</p>
-        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel — max 50 Mo'}</p>
+        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.files.length === 0 ? 'Logo, photos, charte graphique... Dépose-les ici' : 'Images, PDF, Word, Excel : max 50 Mo'}</p>
         <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.pptx,.txt,.zip" onChange={e => { const f = e.target.files?.[0]; if (f) handleGlobalFileUpload(f); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
       </div>
     </section>
@@ -828,7 +828,7 @@ const ClientView = () => {
             <div key={session.id} style={{ position: 'relative', paddingBottom: idx < data.sessions.length - 1 ? 14 : 0 }}>
               <span style={{ position: 'absolute', left: -27, top: 6, width: 10, height: 10, borderRadius: 3, background: '#91014b', border: '2px solid #fff', boxShadow: '0 0 0 2px #FFD6E8' }} />
 
-              {/* Header — always shown, clickable for non-latest */}
+              {/* Header : always shown, clickable for non-latest */}
               <button
                 type="button"
                 onClick={toggle}
@@ -894,7 +894,7 @@ const ClientView = () => {
     <div className="min-h-screen" style={{ background: '#FFF4F8', fontFamily: "'IBM Plex Sans', sans-serif" }}>
       
       {/* ═══ HEADER ═══ */}
-      <header style={{ background: 'linear-gradient(180deg, white 0%, #FFF4F8 100%)' }}>
+      <header style={{ background: '#FFF4F8' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 24, borderBottom: '2px solid #91014b' }}>
             <div>
@@ -912,7 +912,7 @@ const ClientView = () => {
         </div>
       </header>
 
-      {/* ═══ CONTENT — Dynamic order ═══ */}
+      {/* ═══ CONTENT : Dynamic order ═══ */}
       <main style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 80px' }} className="sm:px-6">
         {isPhase1 && (
           <>

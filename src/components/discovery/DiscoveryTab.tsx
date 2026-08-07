@@ -30,7 +30,7 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
   // Sync from DB au premier chargement UNIQUEMENT. Chaque sauvegarde
   // debouncée déclenche un refetch : re-synchroniser à chaque fois remettait
   // la valeur serveur (plus vieille de ~500 ms) par-dessus la frappe en cours
-  // — en dictée vocale, les derniers mots disparaissaient régulièrement.
+  // : en dictée vocale, les derniers mots disparaissaient régulièrement.
   const initializedRef = useRef(false);
   useEffect(() => {
     initializedRef.current = false;
@@ -120,7 +120,7 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
-      {/* LEFT — Call Guide (40%) */}
+      {/* LEFT : Call Guide (40%) */}
       <div className="w-full lg:w-[40%] space-y-4">
         {/* Sub-tabs */}
         <div className="flex gap-1 border-b border-border">
@@ -159,7 +159,7 @@ export function DiscoveryTab({ missionId, clientName, currentMissionType }: Disc
         </div>
       </div>
 
-      {/* RIGHT — Notes (60%) */}
+      {/* RIGHT : Notes (60%) */}
       <div className="w-full lg:w-[60%] space-y-4">
         <NotesEditor
           notes={notes}

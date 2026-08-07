@@ -120,7 +120,7 @@ export function DefaultActionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-heading text-lg">
+          <DialogTitle className="font-heading text-2xl">
             Actions de base pour ta client·e
           </DialogTitle>
           <DialogDescription className="font-body text-sm">
@@ -131,7 +131,7 @@ export function DefaultActionsDialog({
         <div className="space-y-5 py-2">
           {groups.map((group) => (
             <div key={group.category} className="space-y-2">
-              <h4 className="font-heading text-sm font-medium text-foreground">
+              <h4 className="font-body font-bold text-sm text-foreground">
                 {group.label}
               </h4>
               <div className="space-y-1">

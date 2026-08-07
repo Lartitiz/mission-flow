@@ -75,14 +75,14 @@ function buildEmail(
     body += `On va travailler ensemble pendant 6 mois. Les 2 premiers mois, je construis toute ta stratégie de com'. Les 4 mois suivants, on applique ensemble avec une visio de 2h par mois.\n`;
     if (proposal.keyPoints.length > 0) {
       body += `\nPour rappel, voici ce qu'on va travailler ensemble :\n`;
-      proposal.keyPoints.forEach(p => { body += `— ${p}\n`; });
+      proposal.keyPoints.forEach(p => { body += `- ${p}\n`; });
     }
     body += `\nConcrètement, notre première étape c'est l'atelier de lancement : un appel où je te pose plein de questions pour comprendre ton univers en profondeur. C'est la base de tout ce qu'on va construire.\n\n`;
   } else if (accomp === 'agency') {
     body += `Comme on en a discuté, je prends en main ${proposal.perimeter}. Tu valides les grandes lignes, je m'occupe du reste.\n`;
     if (proposal.keyPoints.length > 0) {
       body += `\nPour rappel, voici les grandes étapes :\n`;
-      proposal.keyPoints.forEach(p => { body += `— ${p}\n`; });
+      proposal.keyPoints.forEach(p => { body += `- ${p}\n`; });
     }
     body += `\nNotre première étape : un atelier de lancement pour que je me branche sur ton projet en profondeur. C'est ce qui me permet de livrer du travail vraiment sur mesure.\n\n`;
   } else {
@@ -136,7 +136,7 @@ export function LaunchEmailDialog({
   const [manuallyEdited, setManuallyEdited] = useState(false);
   const [proposal, setProposal] = useState<{ perimeter: string; keyPoints: string[] }>({ perimeter: '[PÉRIMÈTRE]', keyPoints: [] });
   // '' et pas '[MONTANT]' : dans un <input type="number">, une valeur non
-  // numérique s'affiche VIDE alors que le mail contenait « [MONTANT] » —
+  // numérique s'affiche VIDE alors que le mail contenait « [MONTANT] » ;
   // risque d'envoyer le placeholder sans le voir.
   const [acompte, setAcompte] = useState(amount ? String(Math.round(amount * 0.5)) : '');
 
@@ -224,7 +224,7 @@ export function LaunchEmailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-heading text-lg">Email de lancement</DialogTitle>
+          <DialogTitle className="font-heading text-2xl">Email de lancement</DialogTitle>
         </DialogHeader>
 
         {/* Toggles */}

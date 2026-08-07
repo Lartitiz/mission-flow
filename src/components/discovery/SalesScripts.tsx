@@ -15,7 +15,7 @@ export function SalesScripts() {
           value={`script-${idx}`}
           className="border-none"
         >
-          <AccordionTrigger className="bg-secondary rounded-lg px-4 py-3 border-l-4 border-l-primary hover:no-underline hover:bg-secondary/80 font-body text-sm font-medium text-foreground [&[data-state=open]]:rounded-b-none">
+          <AccordionTrigger className="bg-secondary rounded-lg px-4 py-3 hover:no-underline hover:bg-secondary/80 font-body text-sm font-medium text-foreground [&[data-state=open]]:rounded-b-none">
             {script.title}
           </AccordionTrigger>
           <AccordionContent className="bg-card border border-t-0 border-border rounded-b-lg px-4 pt-3 pb-4">

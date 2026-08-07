@@ -159,7 +159,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     const linkedAction = actions.find((a) => (a as any).claude_prompt_order === order);
     if (linkedAction) {
       const newStatus = wasChecked ? 'not_started' : 'in_progress';
-      // Don't override 'to_validate' / 'validated' / 'delivered' on uncheck — only reset 'in_progress'
+      // Don't override 'to_validate' / 'validated' / 'delivered' on uncheck : only reset 'in_progress'
       const skip = wasChecked && !['in_progress', 'not_started'].includes(linkedAction.status);
       if (!skip && linkedAction.status !== newStatus) {
         await supabase
@@ -189,7 +189,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
       let orderOffset = 0;
       setLastGenContext({ context_summary: step1.context_summary, prompt_system: step1.prompt_system });
 
-      // Step 2: Phase K (Kick-off) — préparation de l'atelier
+      // Step 2: Phase K (Kick-off) : préparation de l'atelier
       setStep('phase_k');
       const { data: phaseK, error: errK } = await supabase.functions.invoke('generate-claude-project-chain', {
         body: { context_summary: step1.context_summary, prompt_system: step1.prompt_system, phase: 'K', previous_prompts: [] },
@@ -225,7 +225,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
         if (phaseB.warnings) allWarnings.push(...phaseB.warnings);
       }
 
-      // Step 4: Phase C (Production) — avec retry automatique
+      // Step 4: Phase C (Production) : avec retry automatique
       setStep('phase_c');
       let phaseC = null;
       let phaseCError = null;
@@ -379,7 +379,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
 
   const exportFullMd = () => {
     if (!data) return;
-    let md = `# Kit projet Claude — ${clientName}\n\n`;
+    let md = `# Kit projet Claude : ${clientName}\n\n`;
     md += `---\n\n`;
     md += `## Prompt système\n\n${data.prompt_system}\n\n`;
     md += `---\n\n`;
@@ -405,10 +405,10 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-heading text-base font-medium text-foreground">Kit projet Claude</h3>
+          <h3 className="font-body font-bold text-base text-foreground">Kit projet Claude</h3>
           {savedProject && (
             <p className="font-body text-xs text-muted-foreground">
-              Version {(savedProject as any).version} — généré le {new Date((savedProject as any).updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              Version {(savedProject as any).version} : généré le {new Date((savedProject as any).updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </p>
           )}
         </div>
@@ -473,7 +473,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
           {/* Prompt système */}
           <Collapsible open={openSections.system} onOpenChange={() => toggleSection('system')}>
             <div className="flex items-center justify-between">
-              <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <CollapsibleTrigger className="flex items-center gap-2 font-body font-bold text-sm text-foreground hover:text-primary transition-colors">
                 {openSections.system ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 Prompt système
               </CollapsibleTrigger>
@@ -492,12 +492,12 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
           {/* Prompt chain */}
           <Collapsible open={openSections.chain} onOpenChange={() => toggleSection('chain')}>
             <div className="flex items-center justify-between">
-              <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <CollapsibleTrigger className="flex items-center gap-2 font-body font-bold text-sm text-foreground hover:text-primary transition-colors">
                 {openSections.chain ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 Prompt chain ({data.prompt_chain.length} étapes)
                 {completedPrompts.length > 0 && (
                   <span className="font-body text-xs text-muted-foreground ml-2">
-                    — {completedPrompts.length}/{data.prompt_chain.length} terminés
+                    : {completedPrompts.length}/{data.prompt_chain.length} terminés
                   </span>
                 )}
               </CollapsibleTrigger>
@@ -584,7 +584,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
           {/* Warnings */}
           {data.warnings.length > 0 && (
             <Collapsible open={openSections.warnings} onOpenChange={() => toggleSection('warnings')}>
-              <CollapsibleTrigger className="flex items-center gap-2 font-heading text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <CollapsibleTrigger className="flex items-center gap-2 font-body font-bold text-sm text-foreground hover:text-primary transition-colors">
                 {openSections.warnings ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 Alertes ({data.warnings.length})
               </CollapsibleTrigger>

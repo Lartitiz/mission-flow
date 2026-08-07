@@ -47,7 +47,7 @@ export function QuestionnaireLinkCard({
   const handleMarkAsSent = async () => {
     await copyLink();
     onMarkAsSent();
-    toast.success(`Lien copié — prêt à coller dans ton mail à ${clientName}`);
+    toast.success(`Lien copié : prêt à coller dans ton mail à ${clientName}`);
   };
 
   const statusBadge = () => {
@@ -67,7 +67,7 @@ export function QuestionnaireLinkCard({
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-heading text-sm font-medium text-foreground">
+          <h3 className="font-body font-bold text-sm text-foreground">
             Lien du questionnaire
           </h3>
           <p className="font-body text-xs text-muted-foreground mt-0.5">

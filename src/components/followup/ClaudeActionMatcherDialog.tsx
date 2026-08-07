@@ -214,7 +214,7 @@ export function ClaudeActionMatcherDialog({
                   </SelectItem>
                   {eligibleActions.map((a) => (
                     <SelectItem key={a.id} value={a.id} className="font-body text-xs">
-                      {a.task || '(sans titre)'} {a.category ? `— ${a.category}` : ''}
+                      {a.task || '(sans titre)'} {a.category ? `: ${a.category}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

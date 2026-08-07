@@ -72,12 +72,12 @@ function buildActionsMd(actions: any[]): string {
   const client = actions.filter((a) => a.assignee === 'client');
   if (laetitia.length) {
     md += '## Mes actions\n\n';
-    laetitia.forEach((a) => { md += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.target_date ? ' (cible: ' + a.target_date + ')' : ''}\n`; });
+    laetitia.forEach((a) => { md += `- [${a.status}] ${a.task}${a.description ? ' : ' + a.description : ''}${a.target_date ? ' (cible: ' + a.target_date + ')' : ''}\n`; });
     md += '\n';
   }
   if (client.length) {
     md += '## Actions client·e\n\n';
-    client.forEach((a) => { md += `- [${a.status}] ${a.task}${a.description ? ' — ' + a.description : ''}${a.target_date ? ' (cible: ' + a.target_date + ')' : ''}\n`; });
+    client.forEach((a) => { md += `- [${a.status}] ${a.task}${a.description ? ' : ' + a.description : ''}${a.target_date ? ' (cible: ' + a.target_date + ')' : ''}\n`; });
     md += '\n';
   }
   return md;
@@ -118,7 +118,7 @@ export function ContextExport({ missionId, clientName }: ContextExportProps) {
     setIsExporting(true);
     try {
       const ctx = await fetchAllContext(missionId);
-      let md = `# Contexte complet — ${clientName}\n\n---\n\n`;
+      let md = `# Contexte complet : ${clientName}\n\n---\n\n`;
       md += buildDiscoveryMd(ctx.discovery);
       md += buildProposalMd(ctx.proposal);
       md += buildKickoffMd(ctx.kickoff);
@@ -162,7 +162,7 @@ export function ContextExport({ missionId, clientName }: ContextExportProps) {
 
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-3">
-      <h3 className="font-heading text-base font-medium text-foreground">Export contexte</h3>
+      <h3 className="font-body font-bold text-base text-foreground">Export contexte</h3>
       <div className="flex flex-wrap gap-3">
         <Button onClick={exportFull} disabled={isExporting} className="font-body gap-2">
           {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

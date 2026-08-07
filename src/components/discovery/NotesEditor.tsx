@@ -51,7 +51,7 @@ export function NotesEditor({ notes, onChange, isSaving, draftKey, onFlush }: No
     try {
       localStorage.setItem(draftKey, JSON.stringify({ content: value, updatedAt: Date.now() }));
     } catch {
-      /* quota / private mode — ignore */
+      /* quota / private mode : ignore */
     }
   };
 

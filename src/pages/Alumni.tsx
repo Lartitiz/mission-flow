@@ -89,7 +89,7 @@ const Alumni = () => {
             </div>
             <div>
               <p className="font-body text-sm text-muted-foreground">Total ancien·nes</p>
-              <p className="font-heading text-xl">{totalAlumni}</p>
+              <p className="font-heading text-2xl">{totalAlumni}</p>
             </div>
           </CardContent>
         </Card>
@@ -100,7 +100,7 @@ const Alumni = () => {
             </div>
             <div>
               <p className="font-body text-sm text-muted-foreground">Sans nouvelles &gt; 90j</p>
-              <p className="font-heading text-xl text-badge-rose">{coldCount}</p>
+              <p className="font-heading text-2xl text-badge-rose">{coldCount}</p>
             </div>
           </CardContent>
         </Card>
@@ -111,7 +111,7 @@ const Alumni = () => {
             </div>
             <div>
               <p className="font-body text-sm text-muted-foreground">Contact récent</p>
-              <p className="font-heading text-xl text-emerald-700">{recentCount}</p>
+              <p className="font-heading text-2xl text-emerald-700">{recentCount}</p>
             </div>
           </CardContent>
         </Card>

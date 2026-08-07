@@ -382,7 +382,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
             </p>
           )}
 
-          <p className="font-body text-xs text-muted-foreground my-4">— ou —</p>
+          <p className="font-body text-xs text-muted-foreground my-4">ou</p>
 
           <Button
             variant="outline"
@@ -404,7 +404,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
 
       {flowStep === 'clarification_questions' && (
         <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
-          <h3 className="font-heading text-lg text-foreground mb-2">Quelques précisions avant de rédiger</h3>
+          <h3 className="font-heading text-2xl text-foreground mb-2">Quelques précisions avant de rédiger</h3>
           <p className="font-body text-sm text-muted-foreground mb-6">
             Il manque quelques infos pour rédiger une proposition complète. Réponds à ces questions :
           </p>
@@ -443,7 +443,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
       {/* === STEP 2: Ready to Generate === */}
       {(flowStep === 'ready_to_generate') && (
         <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
-          <h3 className="font-heading text-lg text-foreground mb-4">Générer la proposition</h3>
+          <h3 className="font-heading text-2xl text-foreground mb-4">Générer la proposition</h3>
           <div className="flex items-center gap-3 mb-6">
             <Switch
               id="tutoiement-toggle"
@@ -467,7 +467,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
       {flowStep === 'generating' && (
         <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="font-heading text-base text-foreground mb-2">Rédaction en cours...</p>
+          <p className="font-body font-bold text-base text-foreground mb-2">Rédaction en cours...</p>
           <p className="font-body text-sm text-muted-foreground">
             La proposition est générée avec soin, ça peut prendre jusqu'à 2 minutes.
           </p>
@@ -478,7 +478,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
       {hasContent && (
         <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-heading text-lg text-foreground">Proposition</h2>
+            <h2 className="font-heading text-2xl text-foreground">Proposition</h2>
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
@@ -527,7 +527,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
               <Button
                 variant="outline"
                 onClick={() => {
-                  const md = `# Proposition — ${clientName}\n\n` +
+                  const md = `# Proposition : ${clientName}\n\n` +
                     sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n');
                   const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
                   const date = new Date().toISOString().slice(0, 10);
@@ -548,10 +548,10 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
             {sections.map((section, idx) => (
               <div
                 key={idx}
-                className="border-l-4 border-primary bg-card rounded-r-lg p-4 group/section relative"
+                className="bg-secondary rounded-lg p-4 group/section relative"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-heading text-sm font-semibold text-foreground">
+                  <h3 className="font-body font-bold text-sm text-foreground">
                     {section.title}
                   </h3>
                   <Button
@@ -598,7 +598,7 @@ export function ProposalTab({ missionId, clientName, clientEmail, missionType, a
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary" />
-              <h3 className="font-heading text-base text-foreground">Email d'envoi</h3>
+              <h3 className="font-body font-bold text-base text-foreground">Email d'envoi</h3>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleCopyEmail} className="gap-1.5">

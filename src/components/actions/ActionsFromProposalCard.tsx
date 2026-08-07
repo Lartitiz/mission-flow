@@ -158,13 +158,13 @@ export function ActionsFromProposalCard({
 
     return (
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-6 space-y-5">
-        <h3 className="font-heading text-base text-foreground">
+        <h3 className="font-body font-bold text-base text-foreground">
           Actions proposées ({generatedActions.length})
         </h3>
 
         {laetitiaActions.length > 0 && (
           <div>
-            <h4 className="font-heading text-sm text-foreground mb-2">
+            <h4 className="font-body font-bold text-sm text-foreground mb-2">
               Actions Laetitia ({laetitiaActions.length})
             </h4>
             <div className="space-y-2">
@@ -204,7 +204,7 @@ export function ActionsFromProposalCard({
 
         {clientActions.length > 0 && (
           <div>
-            <h4 className="font-heading text-sm text-foreground mb-2">
+            <h4 className="font-body font-bold text-sm text-foreground mb-2">
               Actions client·e ({clientActions.length})
             </h4>
             <div className="space-y-2">

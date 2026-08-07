@@ -155,7 +155,7 @@ export function FollowUpEmailDialog({
     try {
       await supabase.from('journal_entries').insert({
         mission_id: missionId,
-        content: `Relance envoyée — ${getTypeLabel(selectedType)}`,
+        content: `Relance envoyée : ${getTypeLabel(selectedType)}`,
         source: 'auto',
       });
     } catch {
@@ -180,7 +180,7 @@ export function FollowUpEmailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle className="font-heading text-lg">Relancer {clientName}</DialogTitle>
+          <DialogTitle className="font-heading text-2xl">Relancer {clientName}</DialogTitle>
           <DialogDescription className="font-body text-sm text-muted-foreground">
             Choisis le type de relance, personnalise le message puis copie ou envoie.
           </DialogDescription>

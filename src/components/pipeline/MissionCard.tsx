@@ -35,13 +35,15 @@ export function MissionCard({ mission }: MissionCardProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Charte : plus de barre de couleur sur le côté des cartes (tic banni).
+  // Le retard devient un badge lisible au lieu d'un filet à décoder.
   const daysSinceUpdate = getDaysSince(mission.updated_at);
-  const borderColor =
+  const staleBadge =
     daysSinceUpdate > 14
-      ? 'border-l-warning-red'
+      ? { label: `Sans nouvelle depuis ${daysSinceUpdate} j`, cls: 'bg-warning-red text-primary-foreground' }
       : daysSinceUpdate > 7
-        ? 'border-l-warning-orange'
-        : 'border-l-transparent';
+        ? { label: 'À relancer', cls: 'bg-jaune text-jaune-foreground' }
+        : null;
 
   const typeBadge = () => {
     const label = formatMissionType(mission.mission_type);
@@ -77,7 +79,7 @@ export function MissionCard({ mission }: MissionCardProps) {
         {...listeners}
         {...attributes}
         onClick={() => navigate(`/dashboard/mission/${mission.id}`)}
-        className={`bg-card rounded-xl border-l-4 ${borderColor} shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-shadow hover:shadow-md relative group`}
+        className="bg-card rounded-xl shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-shadow hover:shadow-md relative group"
       >
         {/* Menu three dots */}
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -116,7 +118,7 @@ export function MissionCard({ mission }: MissionCardProps) {
           </DropdownMenu>
         </div>
 
-        <p className="font-heading text-sm text-card-foreground leading-snug mb-2 break-words pr-6">
+        <p className="font-body font-bold text-sm text-card-foreground leading-snug mb-2 break-words pr-6">
           {mission.client_name}
         </p>
 
@@ -125,6 +127,11 @@ export function MissionCard({ mission }: MissionCardProps) {
           {amount && (
             <span className="font-body text-xs text-muted-foreground font-medium">
               {amount}
+            </span>
+          )}
+          {staleBadge && (
+            <span className={`inline-block rounded-lg px-2 py-0.5 text-[11px] font-semibold ${staleBadge.cls}`}>
+              {staleBadge.label}
             </span>
           )}
         </div>

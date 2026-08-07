@@ -95,7 +95,7 @@ export function NextSessionCard({ session, onUpdate, onCreate, missionId, missio
 
   return (
     <div className="bg-[hsl(var(--badge-rose)/0.08)] border border-[hsl(var(--badge-rose)/0.3)] rounded-xl p-5 space-y-3">
-      <h3 className="font-heading text-base font-medium text-foreground">Prochaine session</h3>
+      <h3 className="font-body font-bold text-base text-foreground">Prochaine session</h3>
 
       {!session ? (
         <Button onClick={handlePlan} disabled={creating} className="font-body gap-2">

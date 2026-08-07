@@ -400,7 +400,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
 
       {/* Two-column layout */}
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* LEFT — Questions (40%) */}
+        {/* LEFT : Questions (40%) */}
         <div className="w-full lg:w-[40%]">
           <div className="flex items-center justify-end mb-2 h-5">
             <span className="font-body text-xs text-muted-foreground">
@@ -422,7 +422,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
           </div>
         </div>
 
-        {/* RIGHT — Notes or Questionnaire Preview (60%) */}
+        {/* RIGHT : Notes or Questionnaire Preview (60%) */}
         <div className="w-full lg:w-[60%] space-y-4">
           {mode === 'visio' ? (
             <>
