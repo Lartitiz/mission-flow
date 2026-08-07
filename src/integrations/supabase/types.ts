@@ -82,6 +82,21 @@ export type Database = {
           },
         ]
       }
+      app_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       claude_projects: {
         Row: {
           completed_prompts: Json
@@ -161,7 +176,7 @@ export type Database = {
           {
             foreignKeyName: "discovery_calls_mission_id_fkey"
             columns: ["mission_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "missions"
             referencedColumns: ["id"]
           },
@@ -606,6 +621,7 @@ export type Database = {
         Returns: number
       }
       generate_client_slug: { Args: { p_client_name: string }; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
