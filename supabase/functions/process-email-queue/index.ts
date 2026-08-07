@@ -271,12 +271,15 @@ Deno.serve(async (req) => {
         )
 
         // Log success
-        await supabase.from('email_send_log').insert({
+        const { error: sentLogError } = await supabase.from('email_send_log').insert({
           message_id: payload.message_id,
           template_name: payload.label || queue,
           recipient_email: payload.to,
           status: 'sent',
         })
+        if (sentLogError) {
+          console.error('Failed to log sent email', { message_id: payload.message_id, error: sentLogError })
+        }
 
         // Delete from queue
         const { error: delError } = await supabase.rpc('delete_email', {
@@ -298,13 +301,19 @@ Deno.serve(async (req) => {
         })
 
         if (isRateLimited(error)) {
-          await supabase.from('email_send_log').insert({
+          // 'rate_limited' n'existe pas dans la contrainte de statut de
+          // email_send_log : l'insert échouait systématiquement (et l'erreur
+          // n'était pas lue) → un blocage Mailgun ne laissait AUCUNE trace.
+          const { error: rlLogError } = await supabase.from('email_send_log').insert({
             message_id: payload.message_id,
             template_name: payload.label || queue,
             recipient_email: payload.to,
-            status: 'rate_limited',
-            error_message: errorMsg.slice(0, 1000),
+            status: 'failed',
+            error_message: `rate limited (429): ${errorMsg}`.slice(0, 1000),
           })
+          if (rlLogError) {
+            console.error('Failed to log rate-limited email', { message_id: payload.message_id, error: rlLogError })
+          }
 
           const retryAfterSecs = getRetryAfterSeconds(error)
           await supabase

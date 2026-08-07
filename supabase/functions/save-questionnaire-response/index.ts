@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
         });
         const missionUrl = `https://nowadays-mission-flow.lovable.app/missions/${mission.id}`;
 
-        supabase.functions.invoke("send-transactional-email", {
+        const notifyPromise = supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "questionnaire-submitted",
             recipientEmail: "laetitia@nowadaysagency.com",
@@ -154,7 +154,21 @@ Deno.serve(async (req) => {
               responses: qa,
             },
           },
+        }).then(({ error }) => {
+          if (error) console.error("notify email failed:", error);
         }).catch((err) => console.error("notify email failed:", err));
+
+        // Sans waitUntil, l'isolate peut être arrêté dès la réponse HTTP
+        // renvoyée (juste en dessous) : la notification ne partait jamais,
+        // sans aucune trace.
+        const runtime = (globalThis as {
+          EdgeRuntime?: { waitUntil(p: Promise<unknown>): void };
+        }).EdgeRuntime;
+        if (runtime?.waitUntil) {
+          runtime.waitUntil(notifyPromise);
+        } else {
+          await notifyPromise;
+        }
       } catch (notifyErr) {
         console.error("questionnaire notify build error:", notifyErr);
       }
