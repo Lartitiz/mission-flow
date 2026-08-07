@@ -78,6 +78,11 @@ export default {
           orange: "hsl(var(--warning-orange))",
           red: "hsl(var(--warning-red))",
         },
+        column: {
+          DEFAULT: "hsl(var(--column-surface))",
+          border: "hsl(var(--column-border))",
+        },
+
       },
       borderRadius: {
         lg: "var(--radius)",
