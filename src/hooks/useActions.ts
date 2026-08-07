@@ -65,18 +65,21 @@ export function useActions(missionId: string) {
               : [];
             const shouldBeChecked = ['in_progress', 'to_validate', 'validated', 'delivered'].includes(updates.status as string);
             const isChecked = completed.includes(promptOrder);
-            if (shouldBeChecked && !isChecked) {
-              await supabase
+            if (shouldBeChecked !== isChecked) {
+              const newCompleted = shouldBeChecked
+                ? [...completed, promptOrder]
+                : completed.filter((o) => o !== promptOrder);
+              // Erreur jamais lue jusqu'ici : la checklist du projet Claude se
+              // désynchronisait en silence de l'état des actions.
+              const { error: syncError } = await supabase
                 .from('claude_projects' as any)
-                .update({ completed_prompts: [...completed, promptOrder] } as any)
+                .update({ completed_prompts: newCompleted } as any)
                 .eq('id', project.id);
-              queryClient.invalidateQueries({ queryKey: ['claude-project', missionId] });
-            } else if (!shouldBeChecked && isChecked) {
-              await supabase
-                .from('claude_projects' as any)
-                .update({ completed_prompts: completed.filter((o) => o !== promptOrder) } as any)
-                .eq('id', project.id);
-              queryClient.invalidateQueries({ queryKey: ['claude-project', missionId] });
+              if (syncError) {
+                console.error('[useActions] claude_projects sync failed', syncError);
+              } else {
+                queryClient.invalidateQueries({ queryKey: ['claude-project', missionId] });
+              }
             }
           }
         }
