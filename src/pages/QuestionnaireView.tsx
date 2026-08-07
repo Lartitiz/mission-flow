@@ -150,7 +150,7 @@ export default function QuestionnaireView() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFF4F8' }}>
         <div className="bg-white rounded-xl shadow-md p-8 max-w-md text-center">
-          <p style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.25rem' }}>
+          <p style={{ fontFamily: "'Instrument Serif', serif", color: '#91014b', fontSize: '1.25rem' }}>
             {errorMsg}
           </p>
         </div>
@@ -162,14 +162,14 @@ export default function QuestionnaireView() {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FFF4F8' }}>
         <header className="py-6 px-4 text-center">
-          <p style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.5rem' }}>
+          <p style={{ fontFamily: "'Instrument Serif', serif", color: '#91014b', fontSize: '1.5rem' }}>
             Nowadays
           </p>
         </header>
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="bg-white rounded-xl shadow-md p-8 max-w-lg text-center space-y-4">
             <CheckCircle2 className="h-12 w-12 mx-auto" style={{ color: '#FB3D80' }} />
-            <h1 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.5rem' }}>
+            <h1 style={{ fontFamily: "'Instrument Serif', serif", color: '#91014b', fontSize: '1.5rem' }}>
               Merci {clientName} !
             </h1>
             <p style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: '#555', fontSize: '1rem' }}>
@@ -186,10 +186,10 @@ export default function QuestionnaireView() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FFF4F8' }}>
       {/* Header */}
       <header className="py-6 px-4 text-center space-y-1">
-        <p style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.5rem' }}>
+        <p style={{ fontFamily: "'Instrument Serif', serif", color: '#91014b', fontSize: '1.5rem' }}>
           Nowadays
         </p>
-        <h1 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.25rem' }}>
+        <h1 style={{ fontFamily: "'Instrument Serif', serif", color: '#91014b', fontSize: '1.25rem' }}>
           Questionnaire de lancement
         </h1>
         <p style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: '#555', fontSize: '0.9rem' }}>
@@ -214,7 +214,7 @@ export default function QuestionnaireView() {
       <div className="max-w-2xl mx-auto w-full px-4 space-y-6 pb-8">
         {themes.map((theme) => (
           <div key={theme.name} className="bg-white rounded-xl shadow-sm p-5 md:p-6 space-y-5">
-            <h2 style={{ fontFamily: "'Libre Baskerville', serif", color: '#91014b', fontSize: '1.1rem' }}>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif", color: '#91014b', fontSize: '1.1rem' }}>
               {theme.name}
             </h2>
             {theme.questions.map((q) => (
