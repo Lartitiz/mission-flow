@@ -7,7 +7,6 @@ import { useActions } from '@/hooks/useActions';
 import { format } from 'date-fns';
 import { MissionRecap } from './MissionRecap';
 import { LaunchMessageCard } from './LaunchMessageCard';
-import { NextSessionCard } from './NextSessionCard';
 import { NextSessionBookingMessage } from './NextSessionBookingMessage';
 import { SessionHistory } from './SessionHistory';
 import { JournalSection } from './JournalSection';
@@ -101,7 +100,6 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
     .filter((s) => s.session_date > today)
     .sort((a, b) => a.session_date.localeCompare(b.session_date));
 
-  const lastSession = pastSessions[0] ?? null;
 
   return (
     <div>
