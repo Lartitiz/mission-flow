@@ -11,6 +11,7 @@ const ResetPassword = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [linkInvalid, setLinkInvalid] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +26,13 @@ const ResetPassword = () => {
     if (hash.includes('type=recovery')) {
       setReady(true);
     }
-    return () => subscription.unsubscribe();
+    // Lien expiré, URL tapée à la main : sans ce délai, « Vérification du
+    // lien... » restait affiché pour toujours.
+    const timeout = setTimeout(() => setLinkInvalid(true), 5000);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +57,21 @@ const ResetPassword = () => {
   };
 
   if (!ready) {
+    if (linkInvalid) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="text-center space-y-4 px-6">
+            <p className="font-body text-foreground">Ce lien est invalide ou a expiré.</p>
+            <p className="font-body text-sm text-muted-foreground">
+              Redemande un e-mail de réinitialisation depuis la page de connexion.
+            </p>
+            <Button onClick={() => navigate('/login')} className="font-body">
+              Retour à la connexion
+            </Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="font-body text-muted-foreground">Vérification du lien...</p>
