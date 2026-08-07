@@ -1,30 +1,32 @@
-## Objectif
+# Rendre les cartes du pipeline bien lisibles
 
-Quand une cliente dépose un fichier dans son espace client, envoyer un email automatique à `laetitia@nowadaysagency.com` pour la prévenir.
+## Le problème
 
-## Ce qui sera fait
+Les cartes de mission sont blanches sur un fond blanc, avec une ombre très légère et aucun contour. Résultat : on ne distingue pas où commence et où finit une carte, et les colonnes du kanban se confondent entre elles.
 
-1. **Configurer l'envoi d'emails** (prérequis)
-   - Configurer un domaine d'envoi (ex. `notify.nowadaysagency.com`) via le dialogue de setup. Tu devras ajouter quelques enregistrements DNS chez ton registrar — ça prend ~5 min.
-   - Mettre en place l'infrastructure email (file d'attente, logs, etc.) — automatique.
-   - Scaffolder le système d'emails applicatifs — automatique.
+## Ce qu'on change
 
-2. **Créer le template d'email** `client-file-uploaded`
-   - Sujet : `📎 [Nom cliente] a déposé un nouveau document`
-   - Contenu : nom de la cliente, nom du fichier, taille, date, + lien direct vers la mission dans l'app.
-   - Style cohérent avec la charte (Libre Baskerville, IBM Plex Sans, #91014b).
+**1. Un fond de colonne, des cartes qui ressortent**
+Chaque colonne du kanban reçoit un fond légèrement teinté (gris rosé très clair, dans la palette existante) avec un titre de colonne mieux marqué et un compteur en pastille. Les cartes blanches se détachent alors nettement dessus.
 
-3. **Brancher le trigger** dans `supabase/functions/upload-client-file/index.ts`
-   - Après l'insertion réussie du fichier dans `files`, appeler `send-transactional-email` avec `recipientEmail: "laetitia@nowadaysagency.com"`.
-   - Idempotency key basée sur l'ID du fichier pour éviter les doublons.
-   - L'envoi ne bloque pas l'upload : si l'email échoue, le fichier reste bien enregistré (try/catch silencieux + log).
+**2. Des cartes avec un contour net**
+- Fin liseré sur chaque carte + ombre un peu plus présente.
+- Au survol : l'ombre se renforce et la carte se soulève légèrement (petit décalage vers le haut).
+- Pendant le glisser-déposer : rotation légère et ombre marquée pour bien voir ce qu'on déplace.
 
-## À noter
+**3. Une hiérarchie plus claire dans la carte**
+- Nom de la cliente plus grand et plus contrasté (police titre).
+- Montant affiché comme une donnée forte, aligné à droite sur sa propre ligne, séparé du badge de type par un fin filet.
+- Badge de retard ("Sans nouvelle depuis X j") plus compact et posé sur la ligne du bas avec la date, pour arrêter d'encombrer la ligne des badges.
+- Bouton "..." toujours visible sur mobile (aujourd'hui il n'apparaît qu'au survol, donc inaccessible au doigt).
 
-- L'email part dès que le DNS est vérifié (sinon il est mis en file d'attente).
-- Tu pourras suivre les envois dans Cloud → Emails.
-- Aucune modification du portail client (UX cliente inchangée).
+**4. Zone de dépôt plus lisible**
+Quand on survole une colonne en glissant une carte, la colonne affiche un contour en pointillé dans la couleur d'accent plutôt qu'un simple aplat.
 
-## Question
+## Détails techniques
 
-L'adresse de destination est-elle bien `laetitia@nowadaysagency.com` (fixée en dur), ou veux-tu pouvoir la modifier plus tard depuis l'app ?
+- `src/components/pipeline/KanbanColumn.tsx` : fond de colonne via un token, en-tête retravaillé, état `isOver` en bordure pointillée.
+- `src/components/pipeline/MissionCard.tsx` : structure interne réorganisée (nom / badge+montant / bas de carte), bordure, transitions hover et drag.
+- `src/index.css` : ajout d'un token de surface pour le fond de colonne et d'un token d'ombre survol, en HSL, déclinés en clair et sombre. Aucune couleur codée en dur dans les composants.
+
+Aucune logique métier, aucune requête et aucune donnée n'est modifiée.
