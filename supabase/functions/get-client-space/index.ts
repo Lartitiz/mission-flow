@@ -69,14 +69,27 @@ serve(async (req) => {
         .from("sessions")
         .select("id, session_date, session_type, client_summary, next_session_date, next_session_agenda")
         .eq("mission_id", missionId)
+        // Les ateliers PLANIFIÉS (date future) restent côté back-office :
+        // la cliente ne doit pas voir des sessions vides « en préparation ».
+        .lte("session_date", new Date().toISOString().slice(0, 10))
         .order("session_date", { ascending: false }),
       supabase
         .from("files")
         .select("id, file_name, file_size, storage_path, category, created_at, url")
         .eq("mission_id", missionId)
         .order("created_at", { ascending: false }),
-      // nothing extra needed
     ]);
+
+    // Prochain atelier PLANIFIÉ (nouvelle mécanique) : prioritaire sur
+    // l'ancien champ next_session_date porté par la dernière session passée.
+    const { data: plannedNext } = await supabase
+      .from("sessions")
+      .select("session_date, topic, next_session_agenda")
+      .eq("mission_id", missionId)
+      .gt("session_date", new Date().toISOString().slice(0, 10))
+      .order("session_date", { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
     const actions = (actionsRes.data ?? []).map((a: any) => {
       // Strip hours_estimated and budget_ht for laetitia actions
@@ -91,9 +104,11 @@ serve(async (req) => {
 
     // Find next session
     const lastSession = sessions[0] ?? null;
-    const nextSession = lastSession?.next_session_date
-      ? { date: lastSession.next_session_date, agenda: lastSession.next_session_agenda }
-      : null;
+    const nextSession = plannedNext
+      ? { date: plannedNext.session_date, agenda: plannedNext.topic ?? plannedNext.next_session_agenda }
+      : lastSession?.next_session_date
+        ? { date: lastSession.next_session_date, agenda: lastSession.next_session_agenda }
+        : null;
 
     // Generate signed URLs for files
     // Ne signe jamais un chemin hors du dossier de la mission : la ligne
