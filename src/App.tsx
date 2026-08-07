@@ -1,7 +1,8 @@
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthGuard } from '@/components/AuthGuard';
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -17,7 +18,20 @@ import ResetPassword from './pages/ResetPassword';
 import Unsubscribe from './pages/Unsubscribe';
 
 
-const queryClient = new QueryClient();
+// Filet global : la plupart des mutations (journal, sessions, actions,
+// missions…) n'ont pas de onError propre — en cas d'échec (RLS, session
+// expirée, réseau), l'UI revenait en arrière au refetch sans un mot.
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      console.error('[mutation] failed', error);
+      // Les mutations qui gèrent déjà leur erreur (toast dédié) ne doublent pas
+      if (!mutation.options.onError) {
+        toast.error('Sauvegarde échouée — réessaie ou recharge la page.');
+      }
+    },
+  }),
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
