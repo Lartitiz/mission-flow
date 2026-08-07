@@ -416,7 +416,6 @@ export type Database = {
           client_email: string | null
           client_link_active: boolean
           client_name: string
-          client_note: string | null
           client_slug: string
           client_token: string
           created_at: string
@@ -433,7 +432,6 @@ export type Database = {
           client_email?: string | null
           client_link_active?: boolean
           client_name: string
-          client_note?: string | null
           client_slug: string
           client_token?: string
           created_at?: string
@@ -450,7 +448,6 @@ export type Database = {
           client_email?: string | null
           client_link_active?: boolean
           client_name?: string
-          client_note?: string | null
           client_slug?: string
           client_token?: string
           created_at?: string
