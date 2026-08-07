@@ -36,28 +36,45 @@ interface ProposalSection {
 
 // ============ INLINE FORMATTING (bold + italic) ============
 
-function parseInlineFormatting(text: string): TextRun[] {
+// On parse d'abord en jetons bruts : une fois un TextRun construit, ses
+// options (.text, .bold, .italics) ne sont plus relisibles (elles sont
+// enfouies dans son arbre interne) — relire r.text donne undefined et
+// produisait des encarts et des listes numérotées VIDES dans le .docx.
+interface InlineToken {
+  text: string;
+  bold?: boolean;
+  italics?: boolean;
+}
+
+function parseInlineTokens(text: string): InlineToken[] {
   // Tokenize **bold** and *italic*
-  const runs: TextRun[] = [];
+  const tokens: InlineToken[] = [];
   const regex = /(\*\*([^*]+)\*\*|\*([^*\n]+)\*)/g;
   let lastIndex = 0;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      runs.push(new TextRun({ text: text.slice(lastIndex, match.index), size: 22, font: 'Arial', color: BLACK }));
+      tokens.push({ text: text.slice(lastIndex, match.index) });
     }
     if (match[2] !== undefined) {
-      runs.push(new TextRun({ text: match[2], bold: true, size: 22, font: 'Arial', color: BLACK }));
+      tokens.push({ text: match[2], bold: true });
     } else if (match[3] !== undefined) {
-      runs.push(new TextRun({ text: match[3], italics: true, size: 22, font: 'Arial', color: BLACK }));
+      tokens.push({ text: match[3], italics: true });
     }
     lastIndex = regex.lastIndex;
   }
   if (lastIndex < text.length) {
-    runs.push(new TextRun({ text: text.slice(lastIndex), size: 22, font: 'Arial', color: BLACK }));
+    tokens.push({ text: text.slice(lastIndex) });
   }
-  return runs.length > 0 ? runs : [new TextRun({ text, size: 22, font: 'Arial', color: BLACK })];
+  return tokens.length > 0 ? tokens : [{ text }];
+}
+
+// overrides : styles imposés par le contexte (encart = italique, numéroté = gras)
+function parseInlineFormatting(text: string, overrides?: Partial<InlineToken>): TextRun[] {
+  return parseInlineTokens(text).map(
+    (t) => new TextRun({ ...t, ...overrides, size: 22, font: 'Arial', color: BLACK })
+  );
 }
 
 // ============ ENCART (bordure gauche pourpre + fond gris + italique) ============
@@ -81,24 +98,14 @@ function createEncartParagraphs(content: string, opts?: { signature?: boolean })
       },
       shading: { type: ShadingType.CLEAR, color: 'auto', fill: fillColor },
       indent: { left: convertInchesToTwip(0.25), right: convertInchesToTwip(0.25) },
-      children: parseInlineFormatting(line).map(
-        (r) =>
-          new TextRun({
-            text: (r as unknown as { text: string }).text ?? '',
-            italics: true,
-            bold: (r as unknown as { bold?: boolean }).bold,
-            size: 22,
-            font: 'Arial',
-            color: BLACK,
-          })
-      ),
+      children: parseInlineFormatting(line, { italics: true }),
     });
   });
 }
 
 // ============ MARKDOWN PARSING ============
 
-function parseMarkdownToBlocks(text: string): (Paragraph | Table)[] {
+export function parseMarkdownToBlocks(text: string): (Paragraph | Table)[] {
   const lines = text.split('\n');
   const blocks: (Paragraph | Table)[] = [];
   let tableRows: string[][] = [];
@@ -233,17 +240,7 @@ function parseMarkdownToBlocks(text: string): (Paragraph | Table)[] {
           spacing: { before: 160, after: 80 },
           children: [
             new TextRun({ text: `${numberedMatch[1]}. `, bold: true, size: 22, font: 'Arial', color: BRAND_DARK }),
-            ...parseInlineFormatting(numberedMatch[2]).map(
-              (r) =>
-                new TextRun({
-                  text: (r as unknown as { text: string }).text ?? '',
-                  bold: true,
-                  italics: (r as unknown as { italics?: boolean }).italics,
-                  size: 22,
-                  font: 'Arial',
-                  color: BLACK,
-                })
-            ),
+            ...parseInlineFormatting(numberedMatch[2], { bold: true }),
           ],
         })
       );
