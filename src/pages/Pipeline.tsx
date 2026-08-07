@@ -8,7 +8,7 @@ import { NewMissionDialog } from '@/components/pipeline/NewMissionDialog';
 import { MissionCard } from '@/components/pipeline/MissionCard';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { ProchainsAteliers } from '@/components/pipeline/ProchainsAteliers';
+
 
 const Pipeline = () => {
   const { data: missions = [], isLoading } = useMissions();
@@ -66,7 +66,7 @@ const Pipeline = () => {
 
       <PipelineStats missions={missions} />
 
-      <ProchainsAteliers />
+
 
       <DndContext
         sensors={sensors}
