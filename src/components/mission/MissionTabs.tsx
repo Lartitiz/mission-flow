@@ -13,6 +13,8 @@ interface MissionTabsProps {
   statusIndex: number;
   hasStructuredNotes: boolean;
   currentMissionType: string;
+  // Onglet demandé dans l'URL (/mission/:id/:tab) ; prime sur le défaut par statut
+  initialTab?: string;
   showDefaultActions?: boolean;
   onDefaultActionsDismissed?: () => void;
 }
@@ -49,8 +51,12 @@ function EmptyState() {
   );
 }
 
-export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType, showDefaultActions, onDefaultActionsDismissed }: MissionTabsProps) {
-  const [activeTab, setActiveTab] = useState(() => defaultTabForStatus(statusIndex));
+export function MissionTabs({ missionId, clientName, clientEmail, amount, statusIndex, hasStructuredNotes, currentMissionType, initialTab, showDefaultActions, onDefaultActionsDismissed }: MissionTabsProps) {
+  const [activeTab, setActiveTab] = useState(() =>
+    initialTab && ALL_TABS.some((t) => t.id === initialTab)
+      ? initialTab
+      : defaultTabForStatus(statusIndex)
+  );
 
   const renderContent = () => {
     switch (activeTab) {

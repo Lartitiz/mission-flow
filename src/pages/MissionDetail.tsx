@@ -20,9 +20,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
 const MissionDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, tab } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
-  const { data: mission, isLoading } = useMission(id!);
+  const { data: mission, isLoading, isError } = useMission(id!);
   const { data: discoveryCalls } = useMissionDiscoveryCalls(id!);
   const updateMission = useUpdateMission();
   const deleteMission = useDeleteMission();
@@ -83,6 +83,28 @@ const MissionDetail = () => {
         });
     }
   }, [mission?.status, mission?.id]);
+
+  // Sans ce cas, un lien vers une mission supprimée (ou une erreur réseau)
+  // laissait « Chargement... » à l'écran pour toujours : isLoading repasse à
+  // false mais mission reste undefined.
+  if (isError || (!isLoading && !mission)) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-muted-foreground font-body">
+          Mission introuvable — elle a peut-être été supprimée.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          className="font-body"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour au pipeline
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading || !mission) {
     return (
@@ -267,6 +289,7 @@ const MissionDetail = () => {
         clientEmail={mission.client_email}
         amount={mission.amount}
         statusIndex={si}
+        initialTab={tab}
         hasStructuredNotes={!!hasStructuredNotes}
         currentMissionType={mission.mission_type}
         showDefaultActions={showDefaultActions}
