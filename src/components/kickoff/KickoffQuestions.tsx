@@ -36,6 +36,9 @@ interface KickoffQuestionsProps {
   onToggle: (id: string, checked: boolean) => void;
   aiQuestions: string[];
   onAiQuestionsChange: (questions: string[]) => void;
+  // La suppression passe par le parent : il doit re-décaler les coches ai_N
+  // (indexées par position) en même temps qu'il retire la question.
+  onRemoveAiQuestion: (idx: number) => void;
   onGenerateAiQuestions: () => void;
   isGeneratingAi: boolean;
   declicEnabled: boolean;
@@ -47,6 +50,7 @@ export function KickoffQuestions({
   onToggle,
   aiQuestions,
   onAiQuestionsChange,
+  onRemoveAiQuestion,
   onGenerateAiQuestions,
   isGeneratingAi,
   declicEnabled,
@@ -61,9 +65,6 @@ export function KickoffQuestions({
     setNewQuestion('');
   };
 
-  const handleRemoveAiQuestion = (idx: number) => {
-    onAiQuestionsChange(aiQuestions.filter((_, i) => i !== idx));
-  };
 
   return (
     <div className="space-y-6">
@@ -140,7 +141,7 @@ export function KickoffQuestions({
                   {q}
                 </span>
                 <button
-                  onClick={() => handleRemoveAiQuestion(idx)}
+                  onClick={() => onRemoveAiQuestion(idx)}
                   className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
                 >
                   <X className="h-3.5 w-3.5" />

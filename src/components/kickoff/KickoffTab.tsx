@@ -122,6 +122,28 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
     saveField({ ai_questions: questions });
   };
 
+  const handleRemoveAiQuestion = (idx: number) => {
+    // Les coches des questions IA sont indexées par position (ai_0, ai_1…) :
+    // supprimer sans décaler appliquerait les coches aux MAUVAISES questions,
+    // jusque dans le questionnaire envoyé à la cliente (get-questionnaire
+    // reconstruit la liste avec les mêmes clés).
+    const newQuestions = aiQuestions.filter((_, i) => i !== idx);
+    const rekeyed: Record<string, boolean> = {};
+    for (const [key, value] of Object.entries(checkedQuestions)) {
+      const m = key.match(/^ai_(\d+)$/);
+      if (!m) {
+        rekeyed[key] = value;
+        continue;
+      }
+      const i = Number(m[1]);
+      if (i === idx) continue;
+      rekeyed[i > idx ? `ai_${i - 1}` : key] = value;
+    }
+    setAiQuestions(newQuestions);
+    setCheckedQuestions(rekeyed);
+    saveField({ ai_questions: newQuestions, fixed_questions: rekeyed });
+  };
+
   const handleDeclicToggle = (enabled: boolean) => {
     setDeclicEnabled(enabled);
     saveImmediate({ declic_questions_enabled: enabled });
@@ -391,6 +413,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
               onToggle={handleQuestionToggle}
               aiQuestions={aiQuestions}
               onAiQuestionsChange={handleAiQuestionsChange}
+              onRemoveAiQuestion={handleRemoveAiQuestion}
               onGenerateAiQuestions={handleGenerateAiQuestions}
               isGeneratingAi={isGeneratingAi}
               declicEnabled={declicEnabled}
