@@ -46,7 +46,7 @@ export function StructuredNotesView({
       day: 'numeric',
     });
 
-    let markdown = `# Appel découverte — ${clientName}\n\n`;
+    let markdown = `# Appel découverte : ${clientName}\n\n`;
     markdown += `**Date :** ${date}\n`;
     markdown += `**Type de mission suggéré :** ${formatMissionType(structuredNotes.suggested_type)}\n\n`;
     markdown += `---\n\n`;
@@ -67,7 +67,7 @@ export function StructuredNotesView({
   return (
     <div className="space-y-4 mt-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-heading text-lg text-foreground">Fiche structurée</h3>
+        <h3 className="font-heading text-2xl text-foreground">Fiche structurée</h3>
         <Button
           size="sm"
           variant="outline"
@@ -88,7 +88,7 @@ export function StructuredNotesView({
       ))}
 
       {/* Suggestion de type */}
-      <div className="bg-card rounded-xl border-l-4 border-l-primary shadow-[var(--card-shadow)] p-5">
+      <div className="bg-secondary rounded-xl shadow-[var(--card-shadow)] p-5">
         <h4 className="font-body text-sm font-semibold text-foreground mb-2">
           Suggestion de type de mission
         </h4>
@@ -137,7 +137,7 @@ function SectionCard({
   };
 
   return (
-    <div className="bg-card rounded-xl border-l-4 border-l-primary shadow-[var(--card-shadow)] p-5">
+    <div className="bg-secondary rounded-xl shadow-[var(--card-shadow)] p-5">
       <h4 className="font-body text-sm font-semibold text-foreground mb-2">
         {section.title}
       </h4>

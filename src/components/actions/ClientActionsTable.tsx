@@ -90,7 +90,7 @@ function EditableCell({ value, onSave, className }: {
         className
       )}
     >
-      {value || '—'}
+      {value || '·'}
     </span>
   );
 }
@@ -228,7 +228,7 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
             <button className="font-body text-xs text-foreground hover:bg-secondary/30 rounded px-2 py-1 transition-colors min-h-[28px] w-full text-left">
               {action.target_date
                 ? format(new Date(action.target_date), 'dd/MM/yy', { locale: fr })
-                : <span className="text-muted-foreground italic">—</span>}
+                : <span className="text-muted-foreground italic">·</span>}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -247,7 +247,7 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
           onValueChange={(v) => onUpdate(action.id, { phase: v || null })}
         >
           <SelectTrigger className="border-0 p-0 h-auto shadow-none focus:ring-0 font-body text-xs">
-            <SelectValue placeholder="—" />
+            <SelectValue placeholder="·" />
           </SelectTrigger>
           <SelectContent>
             {PHASE_OPTIONS.map((p) => (

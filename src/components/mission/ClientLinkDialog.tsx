@@ -69,7 +69,7 @@ export function ClientLinkDialog({
         <div className="space-y-5">
           {/* Client link */}
           <div className="space-y-3">
-            <h4 className="font-heading text-sm font-medium text-foreground">🔗 Lien à envoyer au client</h4>
+            <h4 className="font-body font-bold text-sm text-foreground">🔗 Lien à envoyer au client</h4>
             <div className="flex items-center gap-2">
               <code className="flex-1 bg-primary/5 rounded-lg px-3 py-2.5 font-body text-sm font-medium text-primary break-all border border-primary/10">
                 {clientLink}
@@ -119,7 +119,7 @@ export function ClientLinkDialog({
           {/* Questionnaire link */}
           {showQuestionnaire && (
             <div className="space-y-3 pt-3 border-t border-border">
-              <h4 className="font-heading text-sm font-medium text-foreground">Lien du questionnaire</h4>
+              <h4 className="font-body font-bold text-sm text-foreground">Lien du questionnaire</h4>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-muted rounded-lg px-3 py-2 font-body text-xs text-foreground break-all">
                   {questionnaireLink}

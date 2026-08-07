@@ -167,7 +167,7 @@ export function SessionHistory({
     };
   }, [onUpdate]);
 
-  // Flush on unmount — uses refs to avoid stale closures
+  // Flush on unmount : uses refs to avoid stale closures
   useEffect(() => {
     return () => {
       Object.values(debounceTimers.current).forEach((timer) => clearTimeout(timer));
@@ -233,7 +233,7 @@ export function SessionHistory({
         const summary = firstContent.length > 120 ? firstContent.slice(0, 120) + '…' : firstContent;
         const dateStr = format(new Date(session.session_date), 'dd/MM/yyyy', { locale: fr });
         addJournalEntry(
-          `Session ${sessionTypeLabel(session.session_type)} du ${dateStr} — ${summary}`,
+          `Session ${sessionTypeLabel(session.session_type)} du ${dateStr} : ${summary}`,
           'auto'
         );
       }
@@ -478,7 +478,7 @@ export function SessionHistory({
         topic: newTopic.trim() || null,
       } as TablesInsert<'sessions'>);
       addJournalEntry(
-        `Session ${sessionTypeLabel(newType)}${newTopic.trim() ? ` — ${newTopic.trim()}` : ''} ajoutée le ${format(newDate, 'dd/MM/yyyy', { locale: fr })}`,
+        `Session ${sessionTypeLabel(newType)}${newTopic.trim() ? ` : ${newTopic.trim()}` : ''} ajoutée le ${format(newDate, 'dd/MM/yyyy', { locale: fr })}`,
         'auto'
       );
       setShowNewForm(false);
@@ -529,7 +529,7 @@ export function SessionHistory({
   // --- Download ---
   const handleDownload = (session: Session) => {
     const date = format(new Date(session.session_date), 'dd_MM_yyyy');
-    let md = `# Session ${sessionTypeLabel(session.session_type)} — ${format(new Date(session.session_date), 'dd MMMM yyyy', { locale: fr })}\n\n`;
+    let md = `# Session ${sessionTypeLabel(session.session_type)} : ${format(new Date(session.session_date), 'dd MMMM yyyy', { locale: fr })}\n\n`;
     const structured = session.structured_notes as { sections?: { title: string; content: string }[] } | null;
     if (structured?.sections) {
       structured.sections.forEach((s) => {
@@ -564,7 +564,7 @@ export function SessionHistory({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-heading text-base font-medium text-foreground">Sessions</h3>
+        <h3 className="font-body font-bold text-base text-foreground">Sessions</h3>
         <Button
           variant="outline"
           size="sm"
@@ -581,9 +581,9 @@ export function SessionHistory({
 
       {/* New session form */}
       {showNewForm && (
-        <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4 border-l-4 border-l-primary">
+        <div className="bg-secondary rounded-xl shadow-[var(--card-shadow)] p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-heading text-sm font-medium text-foreground">Nouvelle session</h4>
+            <h4 className="font-body font-bold text-sm text-foreground">Nouvelle session</h4>
             <Button variant="ghost" size="sm" onClick={() => setShowNewForm(false)} className="font-body text-xs">
               Annuler
             </Button>
@@ -848,9 +848,9 @@ export function SessionHistory({
                     {/* Structured notes display */}
                     {hasStructured && (
                       <div className="space-y-3">
-                        <h5 className="font-heading text-sm font-medium text-foreground">Notes structurées</h5>
+                        <h5 className="font-body font-bold text-sm text-foreground">Notes structurées</h5>
                         {structured!.sections!.map((s, i) => (
-                          <div key={i} className="border-l-4 border-l-primary pl-4">
+                          <div key={i} className="bg-secondary rounded-lg p-3">
                             <h6 className="font-body text-xs font-semibold text-foreground mb-1">{s.title}</h6>
                             <p className="font-body text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
                               {s.content}

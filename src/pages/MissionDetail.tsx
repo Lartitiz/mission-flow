@@ -91,7 +91,7 @@ const MissionDetail = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-muted-foreground font-body">
-          Mission introuvable — elle a peut-être été supprimée.
+          Mission introuvable : elle a peut-être été supprimée.
         </p>
         <Button
           variant="outline"
@@ -197,11 +197,11 @@ const MissionDetail = () => {
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                 if (e.key === 'Escape') setEditingName(false);
               }}
-              className="font-heading text-xl text-foreground mr-2 border border-input rounded-lg px-2 py-0.5 bg-background outline-none focus:ring-1 focus:ring-ring"
+              className="font-heading text-2xl text-foreground mr-2 border border-input rounded-lg px-2 py-0.5 bg-background outline-none focus:ring-1 focus:ring-ring"
             />
           ) : (
             <h1
-              className="font-heading text-xl text-foreground mr-2 cursor-pointer hover:opacity-70 transition-opacity"
+              className="font-heading text-2xl text-foreground mr-2 cursor-pointer hover:opacity-70 transition-opacity"
               onClick={() => {
                 setNameValue(mission.client_name);
                 setEditingName(true);

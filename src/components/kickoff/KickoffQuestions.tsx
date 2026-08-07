@@ -70,7 +70,7 @@ export function KickoffQuestions({
     <div className="space-y-6">
       {/* Section 1: Questions de base */}
       <div>
-        <h3 className="font-heading text-sm font-medium text-foreground mb-3">
+        <h3 className="font-body font-bold text-sm text-foreground mb-3">
           Questions de base
         </h3>
         <div className="space-y-2">
@@ -96,7 +96,7 @@ export function KickoffQuestions({
       <div className="bg-[hsl(var(--badge-rose)/0.08)] rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="font-heading text-sm font-medium text-foreground">
+            <h3 className="font-body font-bold text-sm text-foreground">
               Questions contextuelles
             </h3>
             <Badge variant="secondary" className="bg-[hsl(var(--badge-rose)/0.2)] text-[hsl(var(--badge-rose))] text-[10px] px-1.5 py-0">
@@ -181,7 +181,7 @@ export function KickoffQuestions({
               ) : (
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               )}
-              <h3 className="font-heading text-sm font-medium text-foreground">
+              <h3 className="font-body font-bold text-sm text-foreground">
                 Questions déclic
               </h3>
             </CollapsibleTrigger>

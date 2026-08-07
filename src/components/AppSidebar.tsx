@@ -28,12 +28,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border md:flex">
       <div className="px-5 py-6">
         {!collapsed && (
-          <h2 className="font-heading text-lg text-brand-logo leading-tight">
-            Nowadays<br />Missions
+          <h2 className="font-heading text-2xl text-brand-logo leading-tight">
+            {/* Le « a » framboise : détail signature du logo Nowadays */}
+            Nowad<span className="text-primary">a</span>ys<br />Missions
           </h2>
         )}
         {collapsed && (
-          <span className="font-heading text-lg text-brand-logo">N</span>
+          <span className="font-heading text-2xl text-brand-logo">N</span>
         )}
       </div>
 

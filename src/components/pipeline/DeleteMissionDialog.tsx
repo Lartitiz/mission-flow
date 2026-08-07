@@ -29,7 +29,7 @@ export function DeleteMissionDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="font-heading text-lg">
+          <AlertDialogTitle className="font-heading text-2xl">
             Supprimer cette mission ?
           </AlertDialogTitle>
           <AlertDialogDescription className="font-body text-sm">

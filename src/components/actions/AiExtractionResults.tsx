@@ -50,7 +50,7 @@ export function AiExtractionResults({
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] border border-primary/20 p-5 space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-heading text-sm font-medium text-foreground">
+        <h3 className="font-body font-bold text-sm text-foreground">
           Résultats de l'extraction IA
         </h3>
         <Badge className="bg-primary/10 text-primary font-body text-xs">

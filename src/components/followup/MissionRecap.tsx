@@ -17,7 +17,7 @@ export function MissionRecap({ missionType, amount, createdAt, summary, totalAct
 
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-5 space-y-3">
-      <h3 className="font-heading text-base font-medium text-foreground">Récap mission</h3>
+      <h3 className="font-body font-bold text-base text-foreground">Récap mission</h3>
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary" className="font-body text-xs">{formatMissionType(missionType)}</Badge>
         {amount != null && (

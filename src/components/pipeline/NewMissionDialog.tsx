@@ -83,7 +83,7 @@ export function NewMissionDialog({ open, onOpenChange }: NewMissionDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-heading text-lg">Nouvelle mission</DialogTitle>
+          <DialogTitle className="font-heading text-2xl">Nouvelle mission</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">

@@ -26,7 +26,7 @@ export function LaunchMessageCard({ clientName }: LaunchMessageCardProps) {
   return (
     <Card className="bg-card shadow-[var(--card-shadow)]">
       <CardHeader className="pb-2">
-        <CardTitle className="font-heading text-base flex items-center gap-2">
+        <CardTitle className="font-body font-bold text-base flex items-center gap-2">
           <MessageCircle className="h-4 w-4 text-primary" />
           Message de lancement
         </CardTitle>

@@ -130,7 +130,7 @@ export function ImportProposalDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-heading text-lg">Importer une proposition existante</DialogTitle>
+          <DialogTitle className="font-heading text-2xl">Importer une proposition existante</DialogTitle>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-2">

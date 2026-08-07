@@ -27,9 +27,9 @@ export function NextSessionBookingMessage({ clientName }: NextSessionBookingMess
   return (
     <Card className="bg-card shadow-[var(--card-shadow)]">
       <CardHeader className="pb-2">
-        <CardTitle className="font-heading text-base flex items-center gap-2">
+        <CardTitle className="font-body font-bold text-base flex items-center gap-2">
           <Calendar className="h-4 w-4 text-primary" />
-          Message de réservation — prochaine séance
+          Message de réservation : prochaine séance
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

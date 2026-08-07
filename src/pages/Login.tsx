@@ -54,7 +54,7 @@ const Login = () => {
       <div className="w-full max-w-sm space-y-8 px-6">
         <div className="text-center">
           <h1 className="font-heading text-2xl text-brand-logo">
-            Nowadays Missions
+            Nowad<span className="text-primary">a</span>ys Missions
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isForgot ? 'Réinitialisez votre mot de passe' : 'Connectez-vous à votre espace'}

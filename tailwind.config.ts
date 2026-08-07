@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Libre Baskerville", "serif"],
-        body: ["IBM Plex Sans", "sans-serif"],
+        heading: ["Instrument Serif", "serif"],
+        body: ["Hanken Grotesk", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -63,6 +63,10 @@ export default {
         },
         brand: {
           logo: "hsl(var(--brand-logo))",
+        },
+        jaune: {
+          DEFAULT: "hsl(var(--jaune))",
+          foreground: "hsl(var(--jaune-foreground))",
         },
         badge: {
           gray: "hsl(var(--badge-gray))",

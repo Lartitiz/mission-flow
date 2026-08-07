@@ -35,7 +35,7 @@ export function QuestionnairePreview({
 
   return (
     <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-6">
-      <h3 className="font-heading text-base font-medium text-foreground mb-4">
+      <h3 className="font-body font-bold text-base text-foreground mb-4">
         Aperçu ({allQuestions.length} question{allQuestions.length > 1 ? 's' : ''})
       </h3>
       <div className="space-y-4">

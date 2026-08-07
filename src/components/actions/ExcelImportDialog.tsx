@@ -331,7 +331,7 @@ export function ExcelImportDialog({
           <div className="space-y-5">
             {/* Column mapping */}
             <div className="space-y-3">
-              <h4 className="font-heading text-sm font-medium">Mapping des colonnes</h4>
+              <h4 className="font-body font-bold text-sm">Mapping des colonnes</h4>
               <div className="grid gap-2">
                 {headers.map((h) => (
                   <div key={h} className="flex items-center gap-3">
@@ -382,7 +382,7 @@ export function ExcelImportDialog({
             {/* Preview table */}
             {mappedFields.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-heading text-sm font-medium">
+                <h4 className="font-body font-bold text-sm">
                   Prévisualisation ({Math.min(5, rows.length)} sur {rows.length} lignes)
                 </h4>
                 <div className="rounded-lg border overflow-x-auto">

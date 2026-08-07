@@ -219,7 +219,7 @@ const Missions = () => {
                       </span>
                     </TableCell>
                     <TableCell className="hidden md:table-cell font-body text-muted-foreground">
-                      {formatAmount(m.amount) ?? '—'}
+                      {formatAmount(m.amount) ?? '·'}
                     </TableCell>
                     <TableCell className="font-body text-muted-foreground text-sm">
                       {timeAgo(m.updated_at)}

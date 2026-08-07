@@ -24,7 +24,7 @@ export function JournalSection({ entries, addEntry, isSaving }: JournalSectionPr
 
   return (
     <div className="space-y-4">
-      <h3 className="font-heading text-base font-medium text-foreground">Journal de bord</h3>
+      <h3 className="font-body font-bold text-base text-foreground">Journal de bord</h3>
 
       <div className="flex gap-2">
         <Input

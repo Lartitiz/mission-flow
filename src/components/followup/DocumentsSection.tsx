@@ -176,7 +176,7 @@ export function DocumentsSection({ missionId }: { missionId: string }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-heading text-lg" style={{ color: '#91014b' }}>
+        <h3 className="font-heading text-2xl" style={{ color: '#91014b' }}>
           Documents & livrables
         </h3>
         <div className="flex items-center gap-2">
