@@ -137,15 +137,10 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
             plannedTotal={mission?.planned_sessions_total ?? null}
             onUpdatePlannedTotal={handleUpdatePlannedTotal}
             onCreate={createSession}
-            missionId={missionId}
-          />
-          <NextSessionCard
-            session={lastSession}
             onUpdate={updateSession}
-            onCreate={createSession}
+            onDelete={deleteSession}
             missionId={missionId}
-            missionType={missionType}
-            isSaving={sessionsSaving}
+            clientName={clientName}
           />
           <SessionHistory
             sessions={pastSessions}
