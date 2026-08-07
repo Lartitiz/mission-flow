@@ -81,7 +81,13 @@ export function MissionCard({ mission }: MissionCardProps) {
         style={style}
         {...listeners}
         {...attributes}
-        onClick={() => navigate(`/dashboard/mission/${mission.id}`)}
+        onClick={() =>
+          navigate(
+            mission.status === 'active'
+              ? `/dashboard/mission/${mission.id}/follow-up`
+              : `/dashboard/mission/${mission.id}`
+          )
+        }
         className="bg-card border border-border rounded-xl shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-all duration-200 hover:shadow-[var(--card-shadow-hover)] hover:-translate-y-0.5 hover:border-primary/40 relative group"
       >
         {/* Menu three dots */}
