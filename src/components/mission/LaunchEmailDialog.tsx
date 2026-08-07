@@ -135,7 +135,10 @@ export function LaunchEmailDialog({
   const [body, setBody] = useState('');
   const [manuallyEdited, setManuallyEdited] = useState(false);
   const [proposal, setProposal] = useState<{ perimeter: string; keyPoints: string[] }>({ perimeter: '[PÉRIMÈTRE]', keyPoints: [] });
-  const [acompte, setAcompte] = useState(amount ? String(Math.round(amount * 0.5)) : '[MONTANT]');
+  // '' et pas '[MONTANT]' : dans un <input type="number">, une valeur non
+  // numérique s'affiche VIDE alors que le mail contenait « [MONTANT] » —
+  // risque d'envoyer le placeholder sans le voir.
+  const [acompte, setAcompte] = useState(amount ? String(Math.round(amount * 0.5)) : '');
 
   // Fetch proposal on mount
   useEffect(() => {
@@ -148,7 +151,7 @@ export function LaunchEmailDialog({
     setKickoff('visio');
     setSubject(`C'est parti ${prenom} : on lance ta mission`);
     setManuallyEdited(false);
-    setAcompte(amount ? String(Math.round(amount * 0.5)) : '[MONTANT]');
+    setAcompte(amount ? String(Math.round(amount * 0.5)) : '');
 
     (async () => {
       const { data } = await supabase
@@ -177,7 +180,8 @@ export function LaunchEmailDialog({
   useEffect(() => {
     if (!open) return;
     if (!manuallyEdited) {
-      regenerate(accomp, payment, kickoff, proposal, acompte);
+      // Champ vide → le mail garde le placeholder visible [MONTANT]
+      regenerate(accomp, payment, kickoff, proposal, acompte || '[MONTANT]');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, accomp, payment, kickoff, proposal, acompte]);

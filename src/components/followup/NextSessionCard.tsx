@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Session } from '@/hooks/useSessions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,6 +29,15 @@ export function NextSessionCard({ session, onUpdate, onCreate, missionId, missio
   );
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Quand une nouvelle session devient la plus récente, repartir de SES
+  // valeurs : sinon le blur pouvait écrire l'agenda de l'ancienne session
+  // sur la nouvelle.
+  useEffect(() => {
+    setAgenda(session?.next_session_agenda ?? '');
+    setDate(session?.next_session_date ? new Date(session.next_session_date) : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
 
   const hasNextSession = !!date;
 

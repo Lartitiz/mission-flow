@@ -1,6 +1,7 @@
 import type { Action } from '@/hooks/useActions';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface ActionsStatsProps {
   actions: Action[];
@@ -13,7 +14,9 @@ export function ActionsStats({ actions }: ActionsStatsProps) {
   const done = actions.filter((a) => DONE_STATUSES.includes(a.status)).length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  const today = new Date().toISOString().slice(0, 10);
+  // toISOString() donne la date UTC : entre minuit et 2 h (heure de Paris),
+  // le compteur « En retard » se trompait d'un jour.
+  const today = format(new Date(), 'yyyy-MM-dd');
   const overdue = actions.filter(
     (a) => a.target_date && a.target_date < today && !DONE_STATUSES.includes(a.status)
   ).length;

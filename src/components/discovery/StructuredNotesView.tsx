@@ -151,7 +151,13 @@ function SectionCard({
         />
       ) : (
         <p
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            // Repartir du contenu ACTUEL : le useState initial date du premier
+            // rendu, et après une re-structuration IA le blur pouvait
+            // réécrire l'ancien texte par-dessus le nouveau.
+            setValue(section.content);
+            setEditing(true);
+          }}
           className="font-body text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap cursor-text hover:bg-secondary/30 rounded-lg p-1 -m-1 transition-colors"
         >
           {section.content}
