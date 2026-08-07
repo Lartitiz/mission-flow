@@ -62,7 +62,13 @@
     --badge-bordeaux: 330 100% 28%;
     --warning-orange: 30 100% 50%;
     --warning-red: 0 80% 50%;
-    --card-shadow: 0 2px 8px 0 hsla(0, 0%, 0%, 0.06);
+    --card-shadow: 0 1px 2px 0 hsla(340, 20%, 15%, 0.06), 0 2px 8px 0 hsla(340, 20%, 15%, 0.05);
+    --card-shadow-hover: 0 2px 4px 0 hsla(340, 20%, 15%, 0.08), 0 10px 20px -4px hsla(340, 20%, 15%, 0.12);
+    --card-shadow-drag: 0 12px 28px -6px hsla(340, 20%, 15%, 0.24);
+    /* Surface des colonnes du kanban : les cartes blanches s'y détachent */
+    --column-surface: 340 40% 97.5%;
+    --column-border: 340 25% 92%;
+
   }
 }
 

@@ -32,8 +32,11 @@ export function MissionCard({ mission }: MissionCardProps) {
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.85 : 1,
+    boxShadow: isDragging ? 'var(--card-shadow-drag)' : undefined,
+    rotate: isDragging ? '1.5deg' : undefined,
   };
+
 
   // Charte : plus de barre de couleur sur le côté des cartes (tic banni).
   // Le retard devient un badge lisible au lieu d'un filet à décoder.
@@ -79,10 +82,10 @@ export function MissionCard({ mission }: MissionCardProps) {
         {...listeners}
         {...attributes}
         onClick={() => navigate(`/dashboard/mission/${mission.id}`)}
-        className="bg-card rounded-xl shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-shadow hover:shadow-md relative group"
+        className="bg-card border border-border rounded-xl shadow-[var(--card-shadow)] p-4 cursor-grab active:cursor-grabbing select-none transition-all duration-200 hover:shadow-[var(--card-shadow-hover)] hover:-translate-y-0.5 hover:border-primary/40 relative group"
       >
         {/* Menu three dots */}
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger
               onClick={(e) => e.stopPropagation()}
@@ -118,28 +121,32 @@ export function MissionCard({ mission }: MissionCardProps) {
           </DropdownMenu>
         </div>
 
-        <p className="font-body font-bold text-sm text-card-foreground leading-snug mb-2 break-words pr-6">
+        <p className="font-body font-bold text-[15px] text-card-foreground leading-snug mb-3 break-words pr-7">
           {mission.client_name}
         </p>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2">
           {typeBadge()}
           {amount && (
-            <span className="font-body text-xs text-muted-foreground font-medium">
+            <span className="font-body text-sm text-foreground font-semibold tabular-nums">
               {amount}
-            </span>
-          )}
-          {staleBadge && (
-            <span className={`inline-block rounded-lg px-2 py-0.5 text-[11px] font-semibold ${staleBadge.cls}`}>
-              {staleBadge.label}
             </span>
           )}
         </div>
 
-        <p className="font-body text-[11px] text-muted-foreground mt-2">
-          {timeAgo(mission.updated_at)}
-        </p>
+        <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between gap-2 flex-wrap">
+          <p className="font-body text-[11px] text-muted-foreground">
+            {timeAgo(mission.updated_at)}
+          </p>
+          {staleBadge && (
+            <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${staleBadge.cls}`}>
+              {staleBadge.label}
+            </span>
+          )}
+        </div>
       </div>
+
+
 
       <DeleteMissionDialog
         open={deleteOpen}
