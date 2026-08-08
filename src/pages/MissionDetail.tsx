@@ -70,6 +70,14 @@ const MissionDetail = () => {
     }
   }, [editingName]);
 
+  useEffect(() => {
+    if (editingEmail && emailInputRef.current) {
+      emailInputRef.current.focus();
+      emailInputRef.current.select();
+    }
+  }, [editingEmail]);
+
+
   // Auto-trigger default actions dialog when mission is signed and no client actions exist
   useEffect(() => {
     if (mission?.status === 'signed' && mission?.id) {
