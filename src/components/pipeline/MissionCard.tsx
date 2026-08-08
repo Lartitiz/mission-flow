@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from './DeleteMissionDialog';
-import { useDeleteMission, useMissionsActivity } from '@/hooks/useMissions';
+import { useDeleteMission, useMissionsActivity, useMissionsNextSession } from '@/hooks/useMissions';
 import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
