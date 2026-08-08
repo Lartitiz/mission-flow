@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal, Trash2, Mail } from 'lucide-react';
+import { MoreHorizontal, Trash2, Mail, CalendarX, CalendarCheck } from 'lucide-react';
 import type { Mission } from '@/lib/missions';
 import { formatMissionType, formatAmount, timeAgo, getDaysSince } from '@/lib/missions';
 import {
@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from './DeleteMissionDialog';
-import { useDeleteMission, useMissionsActivity } from '@/hooks/useMissions';
+import { useDeleteMission, useMissionsActivity, useMissionsNextSession } from '@/hooks/useMissions';
 import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
@@ -25,6 +25,9 @@ export function MissionCard({ mission }: MissionCardProps) {
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const deleteMission = useDeleteMission();
   const { data: activity = {} } = useMissionsActivity();
+  const { data: nextSessions = {} } = useMissionsNextSession();
+  const nextSession = nextSessions[mission.id];
+  const noUpcoming = !nextSession && (mission.status === 'active' || mission.status === 'signed');
   const canFollowUp = mission.status === 'proposal_sent' || mission.status === 'signed';
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: mission.id,
@@ -151,12 +154,32 @@ export function MissionCard({ mission }: MissionCardProps) {
           <p className="font-body text-[11px] text-muted-foreground">
             {timeAgo(lastActivity)}
           </p>
-          {staleBadge && (
-            <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${staleBadge.cls}`}>
-              {staleBadge.label}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {noUpcoming ? (
+              <span
+                title="Aucun atelier planifié"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-jaune/25 text-foreground"
+              >
+                <CalendarX className="h-3 w-3" />
+                Pas d'atelier planifié
+              </span>
+            ) : nextSession ? (
+              <span
+                title="Prochain atelier"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                <CalendarCheck className="h-3 w-3" />
+                {new Date(nextSession).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+              </span>
+            ) : null}
+            {staleBadge && (
+              <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${staleBadge.cls}`}>
+                {staleBadge.label}
+              </span>
+            )}
+          </div>
         </div>
+
       </div>
 
 
