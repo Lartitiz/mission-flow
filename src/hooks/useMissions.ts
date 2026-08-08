@@ -131,3 +131,31 @@ export function useDeleteMission() {
     },
   });
 }
+
+/**
+ * Dernière activité réelle par mission : la date de mise à jour de la fiche
+ * `missions` ne bouge pas quand on modifie un atelier, une action ou le journal.
+ * On agrège donc toutes ces sources pour dater correctement « sans nouvelle ».
+ */
+export function useMissionsActivity() {
+  return useQuery({
+    queryKey: ['missions-activity'],
+    queryFn: async () => {
+      const [sessions, journal, actions] = await Promise.all([
+        supabase.from('sessions').select('mission_id, updated_at'),
+        supabase.from('journal_entries').select('mission_id, created_at'),
+        supabase.from('actions').select('mission_id, updated_at'),
+      ]);
+      const map: Record<string, string> = {};
+      const push = (missionId: string, date: string | null) => {
+        if (!date) return;
+        if (!map[missionId] || date > map[missionId]) map[missionId] = date;
+      };
+      (sessions.data ?? []).forEach((r: any) => push(r.mission_id, r.updated_at));
+      (journal.data ?? []).forEach((r: any) => push(r.mission_id, r.created_at));
+      (actions.data ?? []).forEach((r: any) => push(r.mission_id, r.updated_at));
+      return map;
+    },
+    staleTime: 60_000,
+  });
+}
