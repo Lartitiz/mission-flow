@@ -31,6 +31,9 @@ const MissionDetail = () => {
   const [amountValue, setAmountValue] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clientLinkOpen, setClientLinkOpen] = useState(false);
@@ -255,6 +258,41 @@ const MissionDetail = () => {
               <Mail className="h-3.5 w-3.5" />
               Email de lancement
             </Button>
+          )}
+
+          {/* Editable client email */}
+          {editingEmail ? (
+            <input
+              ref={emailInputRef}
+              type="email"
+              value={emailValue}
+              onChange={(e) => setEmailValue(e.target.value)}
+              onBlur={() => {
+                setEditingEmail(false);
+                const v = emailValue.trim();
+                if ((v || null) !== (mission.client_email || null)) {
+                  updateMission.mutate({ id: mission.id, client_email: v || null });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setEditingEmail(false);
+              }}
+              className="font-body text-sm border border-input rounded-lg px-3 py-1 w-56 bg-background outline-none focus:ring-1 focus:ring-ring"
+              placeholder="email@client.com"
+            />
+          ) : (
+            <button
+              onClick={() => {
+                setEmailValue(mission.client_email ?? '');
+                setEditingEmail(true);
+              }}
+              title="Cliquer pour modifier l'email"
+              className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-lg px-2.5 py-1 hover:bg-secondary inline-flex items-center gap-1.5"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              {mission.client_email || '+ Email'}
+            </button>
           )}
 
           {/* Editable amount */}
