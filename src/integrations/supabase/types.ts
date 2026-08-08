@@ -422,6 +422,7 @@ export type Database = {
           created_at: string
           id: string
           last_contact_at: string | null
+          last_recap_sent_at: string | null
           mission_type: string
           notes: string | null
           planned_sessions_total: number | null
@@ -439,6 +440,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_contact_at?: string | null
+          last_recap_sent_at?: string | null
           mission_type?: string
           notes?: string | null
           planned_sessions_total?: number | null
@@ -456,6 +458,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_contact_at?: string | null
+          last_recap_sent_at?: string | null
           mission_type?: string
           notes?: string | null
           planned_sessions_total?: number | null
