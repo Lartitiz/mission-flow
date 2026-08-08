@@ -179,6 +179,7 @@ export function useMissionsNextSession() {
     },
     staleTime: 0,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
