@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from './DeleteMissionDialog';
-import { useDeleteMission } from '@/hooks/useMissions';
+import { useDeleteMission, useMissionsActivity } from '@/hooks/useMissions';
 import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
@@ -24,6 +24,7 @@ export function MissionCard({ mission }: MissionCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const deleteMission = useDeleteMission();
+  const { data: activity = {} } = useMissionsActivity();
   const canFollowUp = mission.status === 'proposal_sent' || mission.status === 'signed';
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: mission.id,
@@ -40,7 +41,13 @@ export function MissionCard({ mission }: MissionCardProps) {
 
   // Charte : plus de barre de couleur sur le côté des cartes (tic banni).
   // Le retard devient un badge lisible au lieu d'un filet à décoder.
-  const daysSinceUpdate = getDaysSince(mission.updated_at);
+  // La date de référence = dernière activité réelle (atelier, action, journal),
+  // pas seulement la modification de la fiche mission.
+  const lastActivity =
+    activity[mission.id] && activity[mission.id] > mission.updated_at
+      ? activity[mission.id]
+      : mission.updated_at;
+  const daysSinceUpdate = getDaysSince(lastActivity);
   const staleBadge =
     daysSinceUpdate > 14
       ? { label: `Sans nouvelle depuis ${daysSinceUpdate} j`, cls: 'bg-warning-red text-primary-foreground' }
