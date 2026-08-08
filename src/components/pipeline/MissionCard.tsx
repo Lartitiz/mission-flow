@@ -149,7 +149,7 @@ export function MissionCard({ mission }: MissionCardProps) {
 
         <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between gap-2 flex-wrap">
           <p className="font-body text-[11px] text-muted-foreground">
-            {timeAgo(mission.updated_at)}
+            {timeAgo(lastActivity)}
           </p>
           {staleBadge && (
             <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${staleBadge.cls}`}>
