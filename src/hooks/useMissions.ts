@@ -177,7 +177,8 @@ export function useMissionsNextSession() {
       });
       return map;
     },
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 

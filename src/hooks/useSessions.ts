@@ -34,6 +34,8 @@ export function useSessions(missionId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['missions-next-session'] });
+      queryClient.invalidateQueries({ queryKey: ['missions-activity'] });
     },
   });
 
@@ -47,6 +49,8 @@ export function useSessions(missionId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['missions-next-session'] });
+      queryClient.invalidateQueries({ queryKey: ['missions-activity'] });
     },
   });
 
@@ -57,6 +61,8 @@ export function useSessions(missionId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['missions-next-session'] });
+      queryClient.invalidateQueries({ queryKey: ['missions-activity'] });
     },
   });
 
