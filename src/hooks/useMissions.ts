@@ -159,3 +159,25 @@ export function useMissionsActivity() {
     staleTime: 60_000,
   });
 }
+
+/** mission_id -> date du prochain atelier planifié (aujourd'hui ou plus tard) */
+export function useMissionsNextSession() {
+  return useQuery({
+    queryKey: ['missions-next-session'],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from('sessions')
+        .select('mission_id, session_date')
+        .gte('session_date', today)
+        .order('session_date');
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((r: any) => {
+        if (!map[r.mission_id]) map[r.mission_id] = r.session_date;
+      });
+      return map;
+    },
+    staleTime: 60_000,
+  });
+}
+
