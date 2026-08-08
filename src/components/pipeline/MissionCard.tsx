@@ -27,7 +27,7 @@ export function MissionCard({ mission }: MissionCardProps) {
   const { data: activity = {} } = useMissionsActivity();
   const { data: nextSessions = {} } = useMissionsNextSession();
   const nextSession = nextSessions[mission.id];
-  const noUpcoming = !nextSession;
+  const noUpcoming = !nextSession && (mission.status === 'active' || mission.status === 'signed');
   const canFollowUp = mission.status === 'proposal_sent' || mission.status === 'signed';
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: mission.id,
