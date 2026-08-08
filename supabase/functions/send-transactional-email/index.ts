@@ -58,13 +58,20 @@ Deno.serve(async (req) => {
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
-  const claims = parseJwtClaims(authHeader.slice('Bearer '.length).trim())
-  if (claims?.role !== 'service_role') {
+  const bearer = authHeader.slice('Bearer '.length).trim()
+  const claims = parseJwtClaims(bearer)
+  // Les nouvelles clés service_role ne sont plus des JWT (`sb_secret_...`) :
+  // on accepte aussi la comparaison directe avec la clé du projet.
+  const isServiceRole =
+    claims?.role === 'service_role' ||
+    bearer === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!isServiceRole) {
     return new Response(
       JSON.stringify({ error: 'Forbidden' }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
+
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
