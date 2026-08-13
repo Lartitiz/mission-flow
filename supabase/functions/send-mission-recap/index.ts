@@ -231,6 +231,19 @@ serve(async (req) => {
     const missionLabel =
       mission.mission_type === "binome" ? "Binôme" : mission.mission_type === "agency" ? "Agency" : "";
 
+    const templateData = {
+      clientName: mission.client_name.split(" ")[0],
+      missionLabel,
+      recapDate: MONTH_FMT.format(new Date()),
+      introText: typeof intro_text === "string" ? intro_text.trim() : "",
+      doneItems: inc.done ? blocks.doneItems : [],
+      progressPercent: inc.progress ? blocks.progress.percent : 0,
+      progressLabel: inc.progress ? blocks.progress.label : "",
+      progressCount: inc.progress ? blocks.progress.count : "",
+      upcomingItems: inc.upcoming ? blocks.upcomingItems : [],
+      clientSpaceUrl: `https://nowadays-mission-flow.lovable.app/client/${mission.client_token}`,
+    };
+
     const { data: sendResult, error: sendError } = await supabase.functions.invoke(
       "send-transactional-email",
       {
@@ -240,18 +253,7 @@ serve(async (req) => {
           // Clé par minute : un double-clic ne part qu'une fois, un récap
           // ultérieur passe (l'infra déduplique par clé depuis peu).
           idempotencyKey: `mission-recap-${mission.id}-${new Date().toISOString().slice(0, 16)}`,
-          templateData: {
-            clientName: mission.client_name.split(" ")[0],
-            missionLabel,
-            recapDate: MONTH_FMT.format(new Date()),
-            introText: typeof intro_text === "string" ? intro_text.trim() : "",
-            doneItems: inc.done ? blocks.doneItems : [],
-            progressPercent: inc.progress ? blocks.progress.percent : 0,
-            progressLabel: inc.progress ? blocks.progress.label : "",
-            progressCount: inc.progress ? blocks.progress.count : "",
-            upcomingItems: inc.upcoming ? blocks.upcomingItems : [],
-            clientSpaceUrl: `https://nowadays-mission-flow.lovable.app/client/${mission.client_token}`,
-          },
+          templateData,
         },
       }
     );
@@ -262,6 +264,19 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Copie du récap à Laetitia (demande du 13/08) : même contenu, pour garder
+    // la trace de ce que la cliente a reçu. Best effort : un échec de la copie
+    // ne fait pas échouer l'envoi principal.
+    const { error: copyError } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "mission-recap",
+        recipientEmail: "laetitia@nowadaysagency.com",
+        idempotencyKey: `mission-recap-copie-${mission.id}-${new Date().toISOString().slice(0, 16)}`,
+        templateData,
+      },
+    });
+    if (copyError) console.error("send-mission-recap: copie à Laetitia non envoyée", copyError);
 
     const { error: stampError } = await supabase
       .from("missions")
