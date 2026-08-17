@@ -299,7 +299,19 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
           }}
         />
       </td>
+      <td className="px-1 py-1 w-8">
+        {onArchive && (
+          <button
+            onClick={() => onArchive([action.id], true)}
+            title="Archiver — l'action disparaît de l'espace cliente"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1"
+          >
+            <Archive className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </td>
       <td className="px-2 py-1">
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button className="text-muted-foreground hover:text-destructive transition-colors p-1">
