@@ -9,7 +9,7 @@ export type Action = Tables<'actions'>;
 export function useActions(missionId: string) {
   const queryClient = useQueryClient();
 
-  const { data: actions = [], isLoading } = useQuery({
+  const { data: allActions = [], isLoading } = useQuery({
     queryKey: ['actions', missionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -22,6 +22,12 @@ export function useActions(missionId: string) {
     },
     enabled: !!missionId,
   });
+
+  // Les actions archivées restent en base (récupérables) mais disparaissent
+  // partout ailleurs : plan d'action, stats et espace client.
+  const actions = allActions.filter((a) => !(a as any).archived_at);
+  const archivedActions = allActions.filter((a) => !!(a as any).archived_at);
+
 
   const createMutation = useMutation({
     mutationFn: async (action: TablesInsert<'actions'>) => {
