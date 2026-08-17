@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       actions: {
         Row: {
+          archived_at: string | null
           assignee: string
           budget_ht: number | null
           category: string | null
@@ -35,6 +36,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           assignee: string
           budget_ht?: number | null
           category?: string | null
@@ -54,6 +56,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           assignee?: string
           budget_ht?: number | null
           category?: string | null
