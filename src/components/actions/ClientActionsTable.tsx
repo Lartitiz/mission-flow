@@ -46,11 +46,14 @@ const PHASE_OPTIONS = [
 
 interface ClientActionsTableProps {
   actions: Action[];
+  archivedActions?: Action[];
   missionId: string;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
+  onArchive?: (ids: string[], archived?: boolean) => void;
   onReorder: (orderedIds: string[]) => void;
 }
+
 
 function EditableCell({ value, onSave, className }: {
   value: string | null;
