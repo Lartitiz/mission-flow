@@ -251,6 +251,8 @@ const ClientView = () => {
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  const [showDoneActions, setShowDoneActions] = useState(false);
+
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -473,13 +475,16 @@ const ClientView = () => {
   const laetitiaDone = laetitiaActions.filter(a => ['done', 'delivered', 'validated'].includes(a.status)).length;
   const laetitiaTodo = laetitiaActions.filter(a => a.status === 'not_started').length;
 
-  // Sort client actions: done first, then by sort_order
+  // Sort client actions: to-do first (by sort_order), then done ones (collapsed by default)
   const sortedClientActions = [...clientActions].sort((a, b) => {
-    const aDone = a.status === 'done' ? 0 : 1;
-    const bDone = b.status === 'done' ? 0 : 1;
+    const aDone = a.status === 'done' ? 1 : 0;
+    const bDone = b.status === 'done' ? 1 : 0;
     if (aDone !== bDone) return aDone - bDone;
     return a.sort_order - b.sort_order;
   });
+  const todoClientActions = sortedClientActions.filter(a => a.status !== 'done');
+  const doneClientActions = sortedClientActions.filter(a => a.status === 'done');
+
 
   // Phase timeline config
   const PHASE_CONFIG: Record<string, { label: string; description: string }> = {
@@ -868,111 +873,177 @@ const ClientView = () => {
     </div>
   ) : null;
 
+  const renderActionRow = (action: ClientAction, compact: boolean) => {
+    const isDone = action.status === 'done';
+    const isExpanded = expandedAction === action.id;
+    const isUpdating = updatingAction === action.id;
+
+    return (
+      <div
+        key={action.id}
+        style={{
+          background: isDone ? '#F4EFF1' : '#fff',
+          borderRadius: 10,
+          padding: compact ? '8px 12px' : '12px 16px',
+          boxShadow: isDone ? 'none' : '0 1px 3px rgba(145,1,75,0.06)',
+          border: '1px solid transparent',
+          borderLeft: '3px solid #FB3D80',
+          transition: 'all 0.15s',
+          opacity: isDone ? 0.65 : 1,
+        }}
+        onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 2px 8px rgba(145,1,75,0.1)'; }}
+        onMouseLeave={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 1px 3px rgba(145,1,75,0.06)'; }}
+      >
+        <div style={{ display: 'flex', alignItems: compact ? 'flex-start' : 'center', gap: 12 }}>
+          {!compact ? (
+            <button
+              onClick={(e) => handleToggleAction(action.id, !isDone, e.currentTarget.getBoundingClientRect())}
+              disabled={isUpdating}
+              style={{
+                width: 22, height: 22, minWidth: 22, borderRadius: 6,
+                border: '2px solid #FB3D80',
+                background: isDone ? '#FB3D80' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0, marginTop: 1,
+              }}
+              onMouseEnter={e => { if (!isDone) e.currentTarget.style.background = '#FFF4F8'; }}
+              onMouseLeave={e => { if (!isDone) e.currentTarget.style.background = 'transparent'; }}
+            >
+              {isDone && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#FB3D80' }} />}
+            </button>
+          ) : (
+            <span
+              style={{
+                width: 18, height: 18, minWidth: 18, borderRadius: 6,
+                background: '#FB3D80', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, marginTop: 1,
+              }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          )}
+          <div style={{ flex: 1, minWidth: 0, cursor: compact ? 'default' : 'pointer' }} onClick={() => { if (!compact) setExpandedAction(isExpanded ? null : action.id); }}>
+            <p style={{
+              fontSize: compact ? 12 : 14,
+              fontWeight: isDone ? 400 : 600,
+              color: isDone ? '#6B5A62' : '#1A1A1A',
+              textDecoration: isDone ? 'line-through' : 'none',
+              lineHeight: 1.4,
+            }}>
+              {action.task}
+            </p>
+            {!compact && isExpanded && action.description && (
+              <p style={{ fontSize: 12, color: '#6B5A62', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>
+            )}
+            {compact && action.description && (
+              <p style={{ fontSize: 11, color: '#6B5A62', marginTop: 2, lineHeight: 1.4 }}>{action.description}</p>
+            )}
+          </div>
+          {!compact && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <span style={{ fontSize: 11, color: '#6B5A62' }}>
+                {isDone ? '✓ Fait' : action.target_date ? format(new Date(action.target_date), 'd MMM', { locale: fr }) : ''}
+              </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPendingActionId(action.id); actionFileInputRef.current?.click(); }}
+                style={{ width: 28, height: 28, borderRadius: 6, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#FFF4F8'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <Paperclip style={{ width: 15, height: 15, color: '#FB3D80' }} />
+              </button>
+            </div>
+          )}
+        </div>
+        {!compact && isExpanded && (
+          <div style={{ marginTop: 12, paddingLeft: 34 }}>
+            {action.client_comment && !(commentDrafts[action.id] !== undefined) && (
+              <p style={{ fontSize: 12, color: '#6B5A62', background: '#FFF4F8', borderRadius: 6, padding: '6px 10px', marginBottom: 6, lineHeight: 1.5 }}>
+                💬 {action.client_comment}
+              </p>
+            )}
+            <textarea
+              placeholder="Ajoute un commentaire…"
+              value={commentDrafts[action.id] ?? action.client_comment ?? ''}
+              onChange={e => setCommentDrafts(p => ({ ...p, [action.id]: e.target.value }))}
+              style={{
+                width: '100%', fontSize: 12, border: '1px solid #FFD6E8', borderRadius: 6,
+                padding: '6px 10px', minHeight: 50, resize: 'vertical', fontFamily: SANS,
+                outline: 'none', transition: 'border-color 0.15s',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = '#FB3D80'; }}
+              onBlur={e => { e.currentTarget.style.borderColor = '#FFD6E8'; }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+              <button
+                onClick={() => handleSaveComment(action.id)}
+                disabled={savingComment === action.id}
+                style={{
+                  fontSize: 12, fontWeight: 600, color: '#fff', background: '#FB3D80',
+                  border: 'none', borderRadius: 6, padding: '5px 14px', cursor: 'pointer',
+                  opacity: savingComment === action.id ? 0.6 : 1, transition: 'opacity 0.15s',
+                }}
+              >
+                {savingComment === action.id ? 'Envoi…' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const clientActionsBlock = hasClientActions ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal' }}>Ce que j'attends de toi</h2>
-        <span style={{ background: '#91014b', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 99, padding: '2px 10px', lineHeight: '18px' }}>{doneClient}/{totalClient}</span>
+        <span style={{
+          background: todoClientActions.length > 0 ? '#FB3D80' : '#91014b',
+          color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 99,
+          padding: '2px 10px', lineHeight: '18px',
+        }}>
+          {todoClientActions.length > 0
+            ? `${todoClientActions.length} restante${todoClientActions.length > 1 ? 's' : ''}`
+            : 'Tout est bon ✓'}
+        </span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        {sortedClientActions.map(action => {
-          const isDone = action.status === 'done';
-          const isExpanded = expandedAction === action.id;
-          const isUpdating = updatingAction === action.id;
 
-          return (
-            <div
-              key={action.id}
-              style={{
-                background: '#fff',
-                borderRadius: 10,
-                padding: '11px 16px',
-                boxShadow: '0 1px 2px rgba(145,1,75,0.03)',
-                transition: 'all 0.15s',
-                opacity: isDone ? 0.4 : 1
-              }}
-              onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 2px 6px rgba(145,1,75,0.07)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(145,1,75,0.03)'; }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button
-                  onClick={(e) => handleToggleAction(action.id, !isDone, e.currentTarget.getBoundingClientRect())}
-                  disabled={isUpdating}
-                  style={{
-                    width: 20, height: 20, minWidth: 20, borderRadius: 6,
-                    border: '2px solid #FB3D80',
-                    background: isDone ? '#FB3D80' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
-                  }}
-                  onMouseEnter={e => { if (!isDone) e.currentTarget.style.background = '#FFF4F8'; }}
-                  onMouseLeave={e => { if (!isDone) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  {isDone && (
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                  {isUpdating && <Loader2 className="h-3 w-3 animate-spin" style={{ color: isDone ? '#fff' : '#FB3D80' }} />}
-                </button>
-                <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setExpandedAction(isExpanded ? null : action.id)}>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: isDone ? '#6B5A62' : '#1A1A1A', textDecoration: isDone ? 'line-through' : 'none' }}>{action.task}</p>
-                  {isExpanded && action.description && <p style={{ fontSize: 12, color: '#6B5A62', marginTop: 4, lineHeight: 1.5 }}>{action.description}</p>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  <span style={{ fontSize: 11, color: '#6B5A62' }}>
-                    {/* Pas de date de complétion en base : afficher new Date() mentait (toujours « aujourd'hui ») */}
-                    {isDone ? '✓ Fait' : action.target_date ? format(new Date(action.target_date), 'd MMM', { locale: fr }) : ''}
-                  </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setPendingActionId(action.id); actionFileInputRef.current?.click(); }}
-                    style={{ width: 26, height: 26, borderRadius: 6, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#FFF4F8'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <Paperclip style={{ width: 14, height: 14, color: '#FB3D80' }} />
-                  </button>
-                </div>
-              </div>
-              {/* Expanded: comment zone */}
-              {isExpanded && (
-                <div style={{ marginTop: 10, paddingLeft: 32 }}>
-                  {action.client_comment && !(commentDrafts[action.id] !== undefined) && (
-                    <p style={{ fontSize: 12, color: '#6B5A62', background: '#FFF4F8', borderRadius: 6, padding: '6px 10px', marginBottom: 6, lineHeight: 1.5 }}>
-                      💬 {action.client_comment}
-                    </p>
-                  )}
-                  <textarea
-                    placeholder="Ajoute un commentaire…"
-                    value={commentDrafts[action.id] ?? action.client_comment ?? ''}
-                    onChange={e => setCommentDrafts(p => ({ ...p, [action.id]: e.target.value }))}
-                    style={{
-                      width: '100%', fontSize: 12, border: '1px solid #FFD6E8', borderRadius: 6,
-                      padding: '6px 10px', minHeight: 50, resize: 'vertical', fontFamily: SANS,
-                      outline: 'none', transition: 'border-color 0.15s',
-                    }}
-                    onFocus={e => { e.currentTarget.style.borderColor = '#FB3D80'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#FFD6E8'; }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
-                    <button
-                      onClick={() => handleSaveComment(action.id)}
-                      disabled={savingComment === action.id}
-                      style={{
-                        fontSize: 12, fontWeight: 600, color: '#fff', background: '#FB3D80',
-                        border: 'none', borderRadius: 6, padding: '5px 14px', cursor: 'pointer',
-                        opacity: savingComment === action.id ? 0.6 : 1, transition: 'opacity 0.15s',
-                      }}
-                    >
-                      {savingComment === action.id ? 'Envoi…' : 'Enregistrer'}
-                    </button>
-                  </div>
-                </div>
-              )}
+      {/* Actions à faire */}
+      {todoClientActions.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {todoClientActions.map(action => renderActionRow(action, false))}
+        </div>
+      )}
+
+      {/* Actions terminées : repliées par défaut */}
+      {doneClientActions.length > 0 && (
+        <div style={{ marginTop: todoClientActions.length > 0 ? 16 : 0 }}>
+          <button
+            onClick={() => setShowDoneActions(p => !p)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#FFF4F8', border: '1px solid #FFD6E8', borderRadius: 10,
+              padding: '10px 14px', cursor: 'pointer', fontSize: 12, color: '#91014b', fontWeight: 600,
+            }}
+          >
+            <span>{doneClientActions.length} action{doneClientActions.length > 1 ? 's' : ''} terminée{doneClientActions.length > 1 ? 's' : ''}</span>
+            {showDoneActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {showDoneActions && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+              {doneClientActions.map(action => renderActionRow(action, true))}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
+
       <input
         ref={actionFileInputRef}
         type="file"
@@ -987,6 +1058,7 @@ const ClientView = () => {
       />
     </section>
   ) : null;
+
 
   const documentsBlock = (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
