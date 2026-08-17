@@ -39,8 +39,9 @@ interface AiUpdate {
 }
 
 export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaultActionsDismissed }: ActionsTabProps) {
-  const { actions, isLoading, addAction, updateAction, deleteAction, reorderActions, isSaving } =
+  const { actions, archivedActions, isLoading, addAction, updateAction, deleteAction, archiveActions, reorderActions, isSaving } =
     useActions(missionId);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<'laetitia' | 'client'>('laetitia');
@@ -553,11 +554,14 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
         <div className="space-y-3">
           <ClientActionsTable
             actions={clientActions}
+            archivedActions={archivedActions.filter((a) => a.assignee === 'client')}
             missionId={missionId}
             onUpdate={updateAction}
             onDelete={deleteAction}
+            onArchive={archiveActions}
             onReorder={reorderActions}
           />
+
           <Button
             variant="outline"
             size="sm"
