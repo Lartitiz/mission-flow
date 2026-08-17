@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Upload, FileDown, File, GripVertical } from 'lucide-react';
+import { Trash2, Upload, FileDown, File, GripVertical, Archive, ArchiveRestore } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,11 +46,14 @@ const PHASE_OPTIONS = [
 
 interface ClientActionsTableProps {
   actions: Action[];
+  archivedActions?: Action[];
   missionId: string;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
+  onArchive?: (ids: string[], archived?: boolean) => void;
   onReorder: (orderedIds: string[]) => void;
 }
+
 
 function EditableCell({ value, onSave, className }: {
   value: string | null;
@@ -180,12 +183,14 @@ function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missi
   );
 }
 
-function SortableRow({ action, missionId, onUpdate, onDelete }: {
+function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
   action: Action;
   missionId: string;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
+  onArchive?: (ids: string[], archived?: boolean) => void;
 }) {
+
   const {
     attributes,
     listeners,
@@ -294,7 +299,19 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
           }}
         />
       </td>
+      <td className="px-1 py-1 w-8">
+        {onArchive && (
+          <button
+            onClick={() => onArchive([action.id], true)}
+            title="Archiver — l'action disparaît de l'espace cliente"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1"
+          >
+            <Archive className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </td>
       <td className="px-2 py-1">
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button className="text-muted-foreground hover:text-destructive transition-colors p-1">
@@ -324,7 +341,8 @@ function SortableRow({ action, missionId, onUpdate, onDelete }: {
   );
 }
 
-export function ClientActionsTable({ actions, missionId, onUpdate, onDelete, onReorder }: ClientActionsTableProps) {
+export function ClientActionsTable({ actions, archivedActions = [], missionId, onUpdate, onDelete, onArchive, onReorder }: ClientActionsTableProps) {
+  const [showArchived, setShowArchived] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor)
@@ -344,47 +362,107 @@ export function ClientActionsTable({ actions, missionId, onUpdate, onDelete, onR
     onReorder(newOrder.map((a) => a.id));
   }, [actions, onReorder]);
 
+  // Archivage groupé : « toutes les tâches encore ouvertes d'une phase »
+  const openByPhase = PHASE_OPTIONS.filter((p) => p.value).map((p) => ({
+    ...p,
+    ids: actions.filter((a) => (a as any).phase === p.value && a.status !== 'done').map((a) => a.id),
+  })).filter((p) => p.ids.length > 0);
+
+  const archivedBlock = archivedActions.length > 0 ? (
+    <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-3">
+      <button
+        onClick={() => setShowArchived((v) => !v)}
+        className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {archivedActions.length} action{archivedActions.length > 1 ? 's' : ''} archivée{archivedActions.length > 1 ? 's' : ''} {showArchived ? '▲' : '▼'}
+      </button>
+      {showArchived && (
+        <ul className="mt-2 space-y-1">
+          {archivedActions.map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-2 font-body text-xs text-muted-foreground">
+              <span className="truncate line-through">{a.task || '(sans titre)'}</span>
+              {onArchive && (
+                <button
+                  onClick={() => onArchive([a.id], false)}
+                  className="flex items-center gap-1 shrink-0 text-primary hover:underline"
+                >
+                  <ArchiveRestore className="h-3 w-3" /> Restaurer
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  ) : null;
+
   if (actions.length === 0) {
     return (
-      <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8 text-center">
-        <p className="font-body text-sm text-muted-foreground">Aucune action client·e pour l'instant.</p>
+      <div className="space-y-3">
+        <div className="bg-card rounded-xl shadow-[var(--card-shadow)] p-8 text-center">
+          <p className="font-body text-sm text-muted-foreground">Aucune action client·e pour l'instant.</p>
+        </div>
+        {archivedBlock}
       </div>
     );
   }
 
   return (
-    <div className="bg-card rounded-xl shadow-[var(--card-shadow)] overflow-hidden">
-      <div className="overflow-x-auto">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="px-1 py-2 w-8"></th>
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phase</th>
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fichiers</th>
-                <th className="px-3 py-2 w-10"></th>
-              </tr>
-            </thead>
-            <SortableContext items={actions.map((a) => a.id)} strategy={verticalListSortingStrategy}>
-              <tbody>
-                {actions.map((action) => (
-                  <SortableRow
-                    key={action.id}
-                    action={action}
-                    missionId={missionId}
-                    onUpdate={onUpdate}
-                    onDelete={onDelete}
-                  />
-                ))}
-              </tbody>
-            </SortableContext>
-          </table>
-        </DndContext>
+    <div className="space-y-3">
+      {onArchive && openByPhase.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-body text-[11px] text-muted-foreground">Archiver les tâches ouvertes de :</span>
+          {openByPhase.map((p) => (
+            <Button
+              key={p.value}
+              variant="outline"
+              size="sm"
+              className="font-body h-7 gap-1 text-[11px]"
+              onClick={() => onArchive(p.ids, true)}
+            >
+              <Archive className="h-3 w-3" />
+              {p.label} ({p.ids.length})
+            </Button>
+          ))}
+        </div>
+      )}
+      <div className="bg-card rounded-xl shadow-[var(--card-shadow)] overflow-hidden">
+        <div className="overflow-x-auto">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30">
+                  <th className="px-1 py-2 w-8"></th>
+                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
+                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
+                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phase</th>
+                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
+                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fichiers</th>
+                  <th className="px-1 py-2 w-8"></th>
+                  <th className="px-3 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <SortableContext items={actions.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+                <tbody>
+                  {actions.map((action) => (
+                    <SortableRow
+                      key={action.id}
+                      action={action}
+                      missionId={missionId}
+                      onUpdate={onUpdate}
+                      onDelete={onDelete}
+                      onArchive={onArchive}
+                    />
+                  ))}
+                </tbody>
+              </SortableContext>
+            </table>
+          </DndContext>
+        </div>
       </div>
+      {archivedBlock}
     </div>
   );
+
 }

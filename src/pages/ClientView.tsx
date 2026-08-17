@@ -252,6 +252,9 @@ const ClientView = () => {
   const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
   const [showDoneActions, setShowDoneActions] = useState(false);
+  const [showLateActions, setShowLateActions] = useState(false);
+  const [showUpcomingActions, setShowUpcomingActions] = useState(false);
+
 
 
   const fetchData = useCallback(async () => {
@@ -503,6 +506,47 @@ const ClientView = () => {
   const PHASE_ORDER = ['mois_1_2', 'mois_1', 'mois_2', 'mois_3', 'mois_4_5', 'mois_4', 'mois_5', 'mois_6', 'phase_1', 'phase_2', 'continu', '__other__'];
   const DONE_STATUSES = ['validated', 'delivered', 'done'];
   const ACTIVE_STATUSES = ['in_progress', 'to_validate'];
+
+  /* ─── FOCUS : on n'affiche déplié que la phase en cours ───
+     Les tâches des mois précédents (accès, logo…) restent accessibles mais
+     repliées, pour ne pas noyer la cliente à chaque visite. */
+  const TIMED_PHASES = PHASE_ORDER.filter(p => p !== 'continu' && p !== '__other__');
+  const phaseIdx = (a: ClientAction) => {
+    const key = a.phase?.trim() || '__other__';
+    const i = TIMED_PHASES.indexOf(key);
+    return i === -1 ? null : i;
+  };
+  const currentPhaseIdx = (() => {
+    const doneIdx = clientActions
+      .filter(a => a.status === 'done')
+      .map(phaseIdx)
+      .filter((i): i is number => i !== null);
+    const todoIdx = todoClientActions
+      .map(phaseIdx)
+      .filter((i): i is number => i !== null);
+    if (todoIdx.length === 0) return null;
+    const minTodo = Math.min(...todoIdx);
+    const maxDone = doneIdx.length > 0 ? Math.max(...doneIdx) : -1;
+    // La phase en cours = la plus avancée entre « là où on en est » et
+    // « la première tâche encore ouverte ».
+    const candidate = Math.max(minTodo, maxDone);
+    // On ne saute pas sur une phase future sans tâche ouverte.
+    const withTodo = todoIdx.filter(i => i >= candidate);
+    return withTodo.length > 0 ? Math.min(...withTodo) : minTodo;
+  })();
+  const phaseLabel = (i: number) => PHASE_CONFIG[TIMED_PHASES[i]]?.label || TIMED_PHASES[i];
+  const lateActions = currentPhaseIdx === null ? [] : todoClientActions.filter(a => {
+    const i = phaseIdx(a);
+    return i !== null && i < currentPhaseIdx;
+  });
+  const upcomingActions = currentPhaseIdx === null ? [] : todoClientActions.filter(a => {
+    const i = phaseIdx(a);
+    return i !== null && i > currentPhaseIdx;
+  });
+  const currentActions = todoClientActions.filter(
+    a => !lateActions.includes(a) && !upcomingActions.includes(a)
+  );
+
 
   const laetitiaByPhase = (() => {
     const map = new Map<string, ClientAction[]>();
@@ -1002,25 +1046,75 @@ const ClientView = () => {
 
   const clientActionsBlock = hasClientActions ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
         <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal' }}>Ce que j'attends de toi</h2>
         <span style={{
-          background: todoClientActions.length > 0 ? '#FB3D80' : '#91014b',
+          background: currentActions.length > 0 ? '#FB3D80' : '#91014b',
           color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 99,
           padding: '2px 10px', lineHeight: '18px',
         }}>
-          {todoClientActions.length > 0
-            ? `${todoClientActions.length} restante${todoClientActions.length > 1 ? 's' : ''}`
+          {currentActions.length > 0
+            ? `${currentActions.length} restante${currentActions.length > 1 ? 's' : ''}`
             : 'Tout est bon ✓'}
         </span>
       </div>
+      {currentPhaseIdx !== null && (
+        <p style={{ fontSize: 12, color: '#6B5A62', marginBottom: 12 }}>
+          On en est à : <strong style={{ color: '#91014b' }}>{phaseLabel(currentPhaseIdx)}</strong>
+        </p>
+      )}
 
-      {/* Actions à faire */}
-      {todoClientActions.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {todoClientActions.map(action => renderActionRow(action, false))}
+      {/* Tâches des mois précédents encore ouvertes : repliées */}
+      {lateActions.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => setShowLateActions(p => !p)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#FFF9E6', border: '1px solid #FFE561', borderRadius: 10,
+              padding: '10px 14px', cursor: 'pointer', fontSize: 12, color: '#7A5B00', fontWeight: 600,
+            }}
+          >
+            <span>{lateActions.length} tâche{lateActions.length > 1 ? 's' : ''} des mois précédents encore ouverte{lateActions.length > 1 ? 's' : ''}</span>
+            {showLateActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {showLateActions && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+              {lateActions.map(action => renderActionRow(action, false))}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Phase en cours : dépliée */}
+      {currentActions.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {currentActions.map(action => renderActionRow(action, false))}
+        </div>
+      )}
+
+      {/* À venir : replié */}
+      {upcomingActions.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <button
+            onClick={() => setShowUpcomingActions(p => !p)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#FFF4F8', border: '1px solid #FFD6E8', borderRadius: 10,
+              padding: '10px 14px', cursor: 'pointer', fontSize: 12, color: '#91014b', fontWeight: 600,
+            }}
+          >
+            <span>À venir : {upcomingActions.length} tâche{upcomingActions.length > 1 ? 's' : ''} pour la suite</span>
+            {showUpcomingActions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {showUpcomingActions && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+              {upcomingActions.map(action => renderActionRow(action, false))}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Actions terminées : repliées par défaut */}
       {doneClientActions.length > 0 && (

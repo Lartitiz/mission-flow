@@ -9,7 +9,7 @@ export type Action = Tables<'actions'>;
 export function useActions(missionId: string) {
   const queryClient = useQueryClient();
 
-  const { data: actions = [], isLoading } = useQuery({
+  const { data: allActions = [], isLoading } = useQuery({
     queryKey: ['actions', missionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -22,6 +22,12 @@ export function useActions(missionId: string) {
     },
     enabled: !!missionId,
   });
+
+  // Les actions archivées restent en base (récupérables) mais disparaissent
+  // partout ailleurs : plan d'action, stats et espace client.
+  const actions = allActions.filter((a) => !(a as any).archived_at);
+  const archivedActions = allActions.filter((a) => !!(a as any).archived_at);
+
 
   const createMutation = useMutation({
     mutationFn: async (action: TablesInsert<'actions'>) => {
@@ -174,6 +180,37 @@ export function useActions(missionId: string) {
     [deleteMutation]
   );
 
+  const archiveMutation = useMutation({
+    mutationFn: async ({ ids, archived }: { ids: string[]; archived: boolean }) => {
+      const { error } = await supabase
+        .from('actions')
+        .update({ archived_at: archived ? new Date().toISOString() : null } as any)
+        .in('id', ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (count, { archived }) => {
+      queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
+      toast.success(
+        archived
+          ? `${count} action${count > 1 ? 's' : ''} archivée${count > 1 ? 's' : ''} — plus visible${count > 1 ? 's' : ''} côté cliente.`
+          : `${count} action${count > 1 ? 's' : ''} remise${count > 1 ? 's' : ''} dans le plan.`
+      );
+    },
+    onError: (err) => {
+      console.error('[useActions] archive failed', err);
+      toast.error("Archivage non enregistré — réessaie.");
+    },
+  });
+
+  const archiveActions = useCallback(
+    (ids: string[], archived = true) => {
+      if (ids.length === 0) return;
+      archiveMutation.mutate({ ids, archived });
+    },
+    [archiveMutation]
+  );
+
   const reorderActions = useCallback(
     (orderedIds: string[]) => {
       reorderMutation.mutate(orderedIds);
@@ -183,11 +220,14 @@ export function useActions(missionId: string) {
 
   return {
     actions,
+    archivedActions,
     isLoading,
     addAction,
     updateAction,
     deleteAction,
+    archiveActions,
     reorderActions,
-    isSaving: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isSaving: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || archiveMutation.isPending,
   };
 }
+

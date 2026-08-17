@@ -64,7 +64,10 @@ serve(async (req) => {
         .from("actions")
         .select("id, task, description, category, channel, target_date, status, assignee, sort_order, client_comment, phase")
         .eq("mission_id", missionId)
+        // Les actions archivées par Laetitia ne doivent plus apparaître côté cliente
+        .is("archived_at", null)
         .order("sort_order"),
+
       supabase
         .from("sessions")
         .select("id, session_date, session_type, client_summary, next_session_date, next_session_agenda")
