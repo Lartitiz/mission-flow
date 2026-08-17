@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Upload, FileDown, File, GripVertical } from 'lucide-react';
+import { Trash2, Upload, FileDown, File, GripVertical, Archive, ArchiveRestore } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -183,12 +183,14 @@ function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missi
   );
 }
 
-function SortableRow({ action, missionId, onUpdate, onDelete }: {
+function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
   action: Action;
   missionId: string;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
+  onArchive?: (ids: string[], archived?: boolean) => void;
 }) {
+
   const {
     attributes,
     listeners,
