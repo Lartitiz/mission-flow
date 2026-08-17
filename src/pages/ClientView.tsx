@@ -252,6 +252,9 @@ const ClientView = () => {
   const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
   const [showDoneActions, setShowDoneActions] = useState(false);
+  const [showLateActions, setShowLateActions] = useState(false);
+  const [showUpcomingActions, setShowUpcomingActions] = useState(false);
+
 
 
   const fetchData = useCallback(async () => {
