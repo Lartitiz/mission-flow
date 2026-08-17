@@ -475,13 +475,16 @@ const ClientView = () => {
   const laetitiaDone = laetitiaActions.filter(a => ['done', 'delivered', 'validated'].includes(a.status)).length;
   const laetitiaTodo = laetitiaActions.filter(a => a.status === 'not_started').length;
 
-  // Sort client actions: done first, then by sort_order
+  // Sort client actions: to-do first (by sort_order), then done ones (collapsed by default)
   const sortedClientActions = [...clientActions].sort((a, b) => {
-    const aDone = a.status === 'done' ? 0 : 1;
-    const bDone = b.status === 'done' ? 0 : 1;
+    const aDone = a.status === 'done' ? 1 : 0;
+    const bDone = b.status === 'done' ? 1 : 0;
     if (aDone !== bDone) return aDone - bDone;
     return a.sort_order - b.sort_order;
   });
+  const todoClientActions = sortedClientActions.filter(a => a.status !== 'done');
+  const doneClientActions = sortedClientActions.filter(a => a.status === 'done');
+
 
   // Phase timeline config
   const PHASE_CONFIG: Record<string, { label: string; description: string }> = {
