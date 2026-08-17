@@ -1,28 +1,41 @@
-# Nouvelle image sociale (aperçu de partage)
+# Liens clients personnalisés
 
-Refonte de l'image qui s'affiche quand un lien de l'app est partagé (LinkedIn, WhatsApp, Slack…), pour qu'elle colle à la direction artistique Nowadays.
+Aujourd'hui le lien envoyé aux clientes ressemble à :
+`.../client/8f3c1a2e-...-9b7d` — illisible et impersonnel.
 
-## Direction retenue
+Objectif : un lien qui porte le nom de la cliente, tout en restant privé.
 
-Papier crème, minimaliste, éditorial :
-- Fond crème #FAF7F2 avec une légère texture papier et un liseré fin #F0E9E0
-- Titre en Libre Baskerville, framboise #91014b
-- Sur-titre « NOWADAYS AGENCY » en IBM Plex Sans, lettrage espacé, gris profond
-- Un seul accent rose #FB3D80 (filet court sous le sur-titre)
-- Aucune forme décorative superflue, beaucoup de blanc
+## Nouveau format
 
-## Ce qui sera produit
+```text
+https://nowadays-mission-flow.lovable.app/client/adeline-durand/8f3c1a2e...
+                                                  ↑ nom lisible   ↑ clé d'accès
+```
 
-Deux visuels au format 1200×630 :
-1. `public/og-client-space.png` — « Espace projet », baseline « Suivez l'avancement de votre mission de communication »
-2. `public/og-default.png` — visuel générique Nowadays Agency, même grille
+Le nom rend le lien reconnaissable ; la clé reste ce qui protège l'espace
+(sans elle, aucun accès). Les anciens liens déjà envoyés continuent de
+fonctionner.
 
-Les deux gardent la même structure pour former une famille cohérente.
+## Ce qui change dans l'app
+
+- **Nom du lien modifiable** : dans la fiche mission, à côté du nom de la
+  cliente, un champ « adresse du lien » (ex. `adeline-durand`, `studio-violaine`)
+  qu'on peut éditer. Vérification d'unicité et normalisation automatique
+  (minuscules, tirets, sans accents).
+- **Dialogue « Lien client »** : affiche et copie le nouveau lien joli.
+- **Email de lancement** et **récap mission** : utilisent le même lien.
+- **Espace client** : accessible via `/client/:slug/:token` et toujours via
+  `/client/:token`.
 
 ## Détails techniques
 
-- Génération des visuels en 1200×630 (ratio Open Graph standard), remplacement des fichiers existants dans `public/`
-- Les balises `og:image` / `twitter:image` de `index.html` pointent déjà vers `/og-client-space.png` : aucune modification de balise nécessaire
-- Vérification visuelle des deux fichiers après génération (lisibilité, marges, contraste)
-
-Note : LinkedIn et consorts gardent en cache l'ancienne image ; il faudra forcer un rafraîchissement via leur outil d'aperçu de lien après publication.
+- Route ajoutée dans `src/App.tsx` : `/client/:slug/:token`, `ClientView` lit le
+  dernier segment comme token (aucun changement de logique d'accès).
+- `get-client-space` reste inchangé : validation par `client_token` UUID
+  uniquement, le slug n'est jamais une clé d'accès.
+- Édition du slug : mise à jour de `missions.client_slug` avec normalisation
+  côté client + contrainte d'unicité en base ; message d'erreur si déjà pris.
+- Fichiers touchés : `src/App.tsx`, `src/pages/MissionDetail.tsx`,
+  `src/components/mission/ClientLinkDialog.tsx`,
+  `src/components/mission/LaunchEmailDialog.tsx`, et l'edge function
+  `send-mission-recap` pour l'URL du lien.
