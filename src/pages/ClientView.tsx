@@ -1320,8 +1320,8 @@ const ClientView = () => {
   );
 
   const sessionsBlock = data.sessions.length > 0 ? (
-    <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 14 }}>Nos sessions</h2>
+    <section id="nos-ateliers" className="cv-anim" style={{ animationDelay: delay(), marginTop: 28, scrollMarginTop: 24 }}>
+      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 14 }}>Nos ateliers</h2>
       <div style={{ borderLeft: '2px solid #FFD6E8', paddingLeft: 22, marginLeft: 5 }}>
         {data.sessions.map((session, idx) => {
           const isLatest = idx === 0;
@@ -1437,6 +1437,7 @@ const ClientView = () => {
           <>
             {stickerBlock}
             {nextSessionBlock}
+            {ateliersBlock}
             {laetitiaBlock}
             {documentsBlock}
             {softMessageBlock}
@@ -1447,11 +1448,13 @@ const ClientView = () => {
           <>
             {stickerBlock}
             {nextSessionBlock}
+            {ateliersBlock}
             {progressBlock}
             {pinsBlock}
             {laetitiaBlock}
             {documentsBlock}
             {softMessageBlock}
+            {sessionsBlock}
             {footerBlock}
           </>
         )}
@@ -1459,6 +1462,7 @@ const ClientView = () => {
           <>
             {stickerBlock}
             {nextSessionBlock}
+            {ateliersBlock}
             {progressBlock}
             {pinsBlock}
             {laetitiaBlock}
