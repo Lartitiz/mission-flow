@@ -5,6 +5,8 @@ import { Loader2, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { decodeCompactToken } from '@/lib/client-link';
+
 
 /* ─── TYPES ─── */
 interface ClientAction {
