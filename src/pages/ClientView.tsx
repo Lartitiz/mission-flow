@@ -229,6 +229,7 @@ if (typeof document !== 'undefined' && !document.getElementById(ANIM_ID)) {
     @keyframes cv-fade-up { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
     .cv-anim { animation: cv-fade-up 0.4s ease both }
     @keyframes cv-confetti { 0% { opacity:1; transform:translate(0,0) rotate(0) } 100% { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) } }
+    @keyframes cv-pulse { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.7; transform: scale(1.25) } }
     @media (prefers-reduced-motion: reduce) { .cv-confetti-bit { display:none } }
   `;
   document.head.appendChild(style);
