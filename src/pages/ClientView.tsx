@@ -521,6 +521,25 @@ const ClientView = () => {
     const i = TIMED_PHASES.indexOf(key);
     return i === -1 ? null : i;
   };
+  /* Mois de démarrage de la mission = première session passée (ou à défaut la
+     plus ancienne date connue). Sert à ne pas rester bloqué sur « Mois 1-2 »
+     quand des tâches anciennes traînent encore. */
+  const PHASE_START_MONTH: Record<string, number> = {
+    mois_1_2: 1, mois_1: 1, mois_2: 2, mois_3: 3,
+    mois_4_5: 4, mois_4: 4, mois_5: 5, mois_6: 6,
+    phase_1: 1, phase_2: 4,
+  };
+  const elapsedMonth = (() => {
+    const dates = data.sessions
+      .map(s => new Date(s.session_date))
+      .filter(d => !isNaN(d.getTime()) && d.getTime() <= Date.now())
+      .sort((a, b) => a.getTime() - b.getTime());
+    if (dates.length === 0) return null;
+    const first = dates[0];
+    const now = new Date();
+    const months = (now.getFullYear() - first.getFullYear()) * 12 + (now.getMonth() - first.getMonth());
+    return months + 1; // le mois du démarrage = mois 1
+  })();
   const currentPhaseIdx = (() => {
     const doneIdx = clientActions
       .filter(a => a.status === 'done')
@@ -532,13 +551,22 @@ const ClientView = () => {
     if (todoIdx.length === 0) return null;
     const minTodo = Math.min(...todoIdx);
     const maxDone = doneIdx.length > 0 ? Math.max(...doneIdx) : -1;
-    // La phase en cours = la plus avancée entre « là où on en est » et
-    // « la première tâche encore ouverte ».
-    const candidate = Math.max(minTodo, maxDone);
+    // Phase déduite du temps écoulé depuis la première session
+    const timeIdx = elapsedMonth === null ? -1 : (() => {
+      const known = [...new Set(clientActions.map(a => a.phase?.trim()).filter(Boolean) as string[])]
+        .filter(k => TIMED_PHASES.includes(k) && PHASE_START_MONTH[k] <= elapsedMonth)
+        .map(k => TIMED_PHASES.indexOf(k));
+      return known.length > 0 ? Math.max(...known) : -1;
+    })();
+    // La phase en cours = la plus avancée entre le temps écoulé, « là où on en
+    // est » et la première tâche encore ouverte.
+    const candidate = Math.max(minTodo, maxDone, timeIdx);
     // On ne saute pas sur une phase future sans tâche ouverte.
     const withTodo = todoIdx.filter(i => i >= candidate);
-    return withTodo.length > 0 ? Math.min(...withTodo) : minTodo;
+    if (withTodo.length > 0) return Math.min(...withTodo);
+    return Math.max(candidate, minTodo);
   })();
+
   const phaseLabel = (i: number) => PHASE_CONFIG[TIMED_PHASES[i]]?.label || TIMED_PHASES[i];
   const lateActions = currentPhaseIdx === null ? [] : todoClientActions.filter(a => {
     const i = phaseIdx(a);
