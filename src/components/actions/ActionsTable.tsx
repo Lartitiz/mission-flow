@@ -46,7 +46,15 @@ const STATUS_OPTIONS = [
   { value: 'delivered', label: 'Livrée', bg: '#2E7D32', text: '#fff', order: 4 },
 ];
 
-type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status';
+// Ordre chronologique des phases (mois croissants, "Continu" et sans phase en fin)
+const PHASE_RANK: Record<string, number> = {
+  mois_1: 1, mois_1_2: 1, mois_2: 2, mois_3: 3, mois_4: 4, mois_4_5: 4, mois_5: 5, mois_6: 6,
+  phase_1: 1, phase_2: 2,
+  continu: 90,
+};
+const phaseRank = (p?: string | null) => (p ? PHASE_RANK[p] ?? 80 : 99);
+
+type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status' | 'phase';
 type SortDir = 'asc' | 'desc';
 
 interface ActionsTableProps {
@@ -327,7 +335,14 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
   };
 
   const sortedActions = useMemo(() => {
-    if (!sort) return actions;
+    // Par défaut : tri automatique par phase (ordre chronologique des mois)
+    if (!sort) {
+      return [...actions].sort((a, b) => {
+        const d = phaseRank((a as any).phase) - phaseRank((b as any).phase);
+        if (d !== 0) return d;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+    }
     const { key, dir } = sort;
     return [...actions].sort((a, b) => {
       let aVal: string | number | null;
@@ -336,10 +351,14 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
       if (key === 'status') {
         aVal = STATUS_OPTIONS.find((s) => s.value === a.status)?.order ?? 99;
         bVal = STATUS_OPTIONS.find((s) => s.value === b.status)?.order ?? 99;
+      } else if (key === 'phase') {
+        aVal = phaseRank((a as any).phase);
+        bVal = phaseRank((b as any).phase);
       } else {
         aVal = a[key] ?? '';
         bVal = b[key] ?? '';
       }
+
 
       if (aVal < bVal) return dir === 'asc' ? -1 : 1;
       if (aVal > bVal) return dir === 'asc' ? 1 : -1;
@@ -378,7 +397,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                 <SortHeader label="Tâche" sortKey="task" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Description" sortKey="description" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Date cible" sortKey="target_date" currentSort={sort} onSort={handleSort} />
-                <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phase</th>
+                <SortHeader label="Phase" sortKey="phase" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Statut" sortKey="status" currentSort={sort} onSort={handleSort} />
                 <th className="px-3 py-2 w-10"></th>
               </tr>
