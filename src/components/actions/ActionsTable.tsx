@@ -335,7 +335,14 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
   };
 
   const sortedActions = useMemo(() => {
-    if (!sort) return actions;
+    // Par défaut : tri automatique par phase (ordre chronologique des mois)
+    if (!sort) {
+      return [...actions].sort((a, b) => {
+        const d = phaseRank((a as any).phase) - phaseRank((b as any).phase);
+        if (d !== 0) return d;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+    }
     const { key, dir } = sort;
     return [...actions].sort((a, b) => {
       let aVal: string | number | null;
@@ -344,10 +351,14 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
       if (key === 'status') {
         aVal = STATUS_OPTIONS.find((s) => s.value === a.status)?.order ?? 99;
         bVal = STATUS_OPTIONS.find((s) => s.value === b.status)?.order ?? 99;
+      } else if (key === 'phase') {
+        aVal = phaseRank((a as any).phase);
+        bVal = phaseRank((b as any).phase);
       } else {
         aVal = a[key] ?? '';
         bVal = b[key] ?? '';
       }
+
 
       if (aVal < bVal) return dir === 'asc' ? -1 : 1;
       if (aVal > bVal) return dir === 'asc' ? 1 : -1;
