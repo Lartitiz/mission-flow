@@ -808,9 +808,11 @@ const ClientView = () => {
                 zIndex: 2,
               }}>
                 {isOther ? null : (
-                  <span style={{ color: gStatus === 'active' ? '#91014b' : '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>
-                    {headerIconContent ?? headerIconInner}
-                  </span>
+                  gStatus === 'done' ? (
+                    <span style={{ color: '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✓</span>
+                  ) : (
+                    <div style={{ width: 10, height: 10, borderRadius: 3, background: '#fff' }} />
+                  )
                 )}
               </div>
 
