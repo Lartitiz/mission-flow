@@ -46,7 +46,15 @@ const STATUS_OPTIONS = [
   { value: 'delivered', label: 'Livrée', bg: '#2E7D32', text: '#fff', order: 4 },
 ];
 
-type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status';
+// Ordre chronologique des phases (mois croissants, "Continu" et sans phase en fin)
+const PHASE_RANK: Record<string, number> = {
+  mois_1: 1, mois_1_2: 1, mois_2: 2, mois_3: 3, mois_4: 4, mois_4_5: 4, mois_5: 5, mois_6: 6,
+  phase_1: 1, phase_2: 2,
+  continu: 90,
+};
+const phaseRank = (p?: string | null) => (p ? PHASE_RANK[p] ?? 80 : 99);
+
+type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status' | 'phase';
 type SortDir = 'asc' | 'desc';
 
 interface ActionsTableProps {
