@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Copy, Check, ExternalLink, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { buildClientLink, slugifyClientSlug } from '@/lib/client-link';
 
 interface ClientLinkDialogProps {
   open: boolean;
