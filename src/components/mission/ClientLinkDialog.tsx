@@ -16,8 +16,10 @@ interface ClientLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientToken: string;
+  clientSlug?: string | null;
   clientLinkActive: boolean;
   onToggleActive: (active: boolean) => void;
+  onSlugChange?: (slug: string) => void;
   questionnaireToken?: string | null;
   questionnaireStatus?: string | null;
 }
@@ -26,18 +28,22 @@ export function ClientLinkDialog({
   open,
   onOpenChange,
   clientToken,
+  clientSlug,
   clientLinkActive,
   onToggleActive,
+  onSlugChange,
   questionnaireToken,
   questionnaireStatus,
 }: ClientLinkDialogProps) {
   const { toast } = useToast();
   const [copiedClient, setCopiedClient] = useState(false);
   const [copiedQuestionnaire, setCopiedQuestionnaire] = useState(false);
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugValue, setSlugValue] = useState(clientSlug ?? '');
 
-  // Le lien court /c/{slug} a été supprimé : le slug (dérivé du nom de la
-  // cliente) était devinable et donnait accès à tout l'espace client.
-  const clientLink = `${window.location.origin}/client/${clientToken}`;
+  // Le lien porte le nom de la cliente (slug, lisible) suivi du token UUID :
+  // seul le token donne accès, le slug est purement cosmétique.
+  const clientLink = buildClientLink(clientToken, clientSlug);
   const questionnaireLink = questionnaireToken
     ? `${window.location.origin}/questionnaire/${questionnaireToken}`
     : null;
