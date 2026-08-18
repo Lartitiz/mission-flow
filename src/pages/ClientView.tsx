@@ -777,8 +777,6 @@ const ClientView = () => {
           // Phase header icon
           const headerIconColor = gStatus === 'done' ? '#FB3D80' : gStatus === 'active' ? '#FFE561' : '#FFD6E8';
           const headerIconSize = isOther ? 12 : 28;
-          const headerIconInner = isOther ? null : <div style={{ width: 10, height: 10, borderRadius: 3, background: '#fff' }} />;
-          const headerIconContent = gStatus === 'done' ? '✓' : null;
 
           // Badge config
           const badgeCfg = gStatus === 'done'
