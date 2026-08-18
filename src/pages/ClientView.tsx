@@ -776,18 +776,22 @@ const ClientView = () => {
 
   const laetitiaBlock = laetitiaActions.length > 0 ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
-      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 14 }}>Ce que je fais pour toi</h2>
+      <h2 style={{ fontFamily: SERIF, color: '#91014b', fontSize: 24, fontWeight: 'normal', marginBottom: 6 }}>Ce que je fais pour toi</h2>
+      <p style={{ fontSize: 12, color: '#6B5A62', marginBottom: 14, lineHeight: 1.4 }}>
+        Chaque nombre compte une action de ma part pour ta mission : celles déjà livrées, celles en cours et celles qui arrivent.
+      </p>
 
       {/* Stats bar */}
       <div style={{ display: 'flex', borderRadius: 12, overflow: 'hidden', background: '#FFD6E8', gap: 1, marginBottom: 16 }}>
         {[
-          { count: laetitiaDelivered.length, label: 'Livrées', color: '#FB3D80' },
-          { count: laetitiaInProgress.length, label: 'En cours', color: '#91014b' },
-          { count: laetitiaUpcoming.length, label: 'Prévues', color: '#6B5A62' },
+          { count: laetitiaDelivered.length, label: 'Livrées', caption: 'Déjà faites', color: '#FB3D80' },
+          { count: laetitiaInProgress.length, label: 'En cours', caption: 'Actuellement', color: '#91014b' },
+          { count: laetitiaUpcoming.length, label: 'À venir', caption: 'À venir', color: '#6B5A62' },
         ].map((s, i) => (
           <div key={i} style={{ flex: 1, background: '#fff', padding: '12px 0', textAlign: 'center' }}>
             <p style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.count}</p>
-            <p style={{ fontSize: 11, color: '#6B5A62', marginTop: 4 }}>{s.label}</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#91014b', marginTop: 4 }}>{s.label}</p>
+            <p style={{ fontSize: 10, color: '#6B5A62', marginTop: 2 }}>{s.caption}</p>
           </div>
         ))}
       </div>
