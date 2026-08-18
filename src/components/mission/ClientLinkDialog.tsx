@@ -11,13 +11,17 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Copy, Check, ExternalLink, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { buildClientLink, slugifyClientSlug } from '@/lib/client-link';
 
 interface ClientLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientToken: string;
+  clientSlug?: string | null;
   clientLinkActive: boolean;
   onToggleActive: (active: boolean) => void;
+  onSlugChange?: (slug: string) => void;
   questionnaireToken?: string | null;
   questionnaireStatus?: string | null;
 }
@@ -26,18 +30,22 @@ export function ClientLinkDialog({
   open,
   onOpenChange,
   clientToken,
+  clientSlug,
   clientLinkActive,
   onToggleActive,
+  onSlugChange,
   questionnaireToken,
   questionnaireStatus,
 }: ClientLinkDialogProps) {
   const { toast } = useToast();
   const [copiedClient, setCopiedClient] = useState(false);
   const [copiedQuestionnaire, setCopiedQuestionnaire] = useState(false);
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugValue, setSlugValue] = useState(clientSlug ?? '');
 
-  // Le lien court /c/{slug} a été supprimé : le slug (dérivé du nom de la
-  // cliente) était devinable et donnait accès à tout l'espace client.
-  const clientLink = `${window.location.origin}/client/${clientToken}`;
+  // Le lien porte le nom de la cliente (slug, lisible) suivi du token UUID :
+  // seul le token donne accès, le slug est purement cosmétique.
+  const clientLink = buildClientLink(clientToken, clientSlug);
   const questionnaireLink = questionnaireToken
     ? `${window.location.origin}/questionnaire/${questionnaireToken}`
     : null;
@@ -92,6 +100,58 @@ export function ClientLinkDialog({
                 </a>
               </Button>
             </div>
+
+            {/* Personnalisation du nom dans le lien */}
+            {onSlugChange && (
+              editingSlug ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    autoFocus
+                    value={slugValue}
+                    onChange={(e) => setSlugValue(e.target.value)}
+                    placeholder="prenom-nom"
+                    className="font-body text-sm h-9"
+                  />
+                  <Button
+                    size="sm"
+                    className="font-body"
+                    onClick={() => {
+                      const clean = slugifyClientSlug(slugValue);
+                      if (!clean) {
+                        toast({ title: 'Nom de lien invalide', variant: 'destructive' });
+                        return;
+                      }
+                      setSlugValue(clean);
+                      setEditingSlug(false);
+                      if (clean !== clientSlug) onSlugChange(clean);
+                    }}
+                  >
+                    Enregistrer
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="font-body"
+                    onClick={() => {
+                      setSlugValue(clientSlug ?? '');
+                      setEditingSlug(false);
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setSlugValue(clientSlug ?? '');
+                    setEditingSlug(true);
+                  }}
+                  className="font-body text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                >
+                  Personnaliser le nom dans le lien ({clientSlug || 'non défini'})
+                </button>
+              )
+            )}
           </div>
 
           {/* Toggle active */}
