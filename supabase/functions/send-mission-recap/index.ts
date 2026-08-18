@@ -188,7 +188,7 @@ serve(async (req) => {
 
     const { data: mission, error: missionError } = await supabase
       .from("missions")
-      .select("id, client_name, client_email, client_token, client_link_active, mission_type, created_at, last_recap_sent_at")
+      .select("id, client_name, client_email, client_token, client_slug, client_link_active, mission_type, created_at, last_recap_sent_at")
       .eq("id", mission_id)
       .single();
     if (missionError || !mission) {
@@ -241,7 +241,9 @@ serve(async (req) => {
       progressLabel: inc.progress ? blocks.progress.label : "",
       progressCount: inc.progress ? blocks.progress.count : "",
       upcomingItems: inc.upcoming ? blocks.upcomingItems : [],
-      clientSpaceUrl: `https://nowadays-mission-flow.lovable.app/client/${mission.client_token}`,
+      clientSpaceUrl: mission.client_slug
+        ? `https://nowadays-mission-flow.lovable.app/client/${mission.client_slug}/${mission.client_token}`
+        : `https://nowadays-mission-flow.lovable.app/client/${mission.client_token}`,
     };
 
     const { data: sendResult, error: sendError } = await supabase.functions.invoke(
