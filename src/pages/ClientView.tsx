@@ -783,15 +783,30 @@ const ClientView = () => {
     </div>
   ) : null;
 
+  /* ─── Avancement global : pas seulement les actions ───
+     3 axes : les actions faites, les ateliers déjà passés et le temps écoulé
+     sur la durée de la mission. On affiche la moyenne des axes disponibles. */
+  const totalAteliers = data.sessions.length > 0
+    ? Math.max(data.sessions.length, pastCount, 6)
+    : 0;
+  const ateliersPct = totalAteliers > 0 ? Math.round((pastCount / totalAteliers) * 100) : null;
+  const tempsPct = elapsedMonth === null ? null : Math.min(100, Math.round((elapsedMonth / 6) * 100));
+  const axes = [
+    { key: 'actions', label: 'Actions', value: progressPct, detail: `${doneAll}/${allActions.length}` },
+    ...(ateliersPct !== null ? [{ key: 'ateliers', label: 'Ateliers', value: ateliersPct, detail: `${pastCount}/${totalAteliers}` }] : []),
+    ...(tempsPct !== null ? [{ key: 'temps', label: 'Temps', value: tempsPct, detail: `mois ${Math.min(elapsedMonth!, 6)}/6` }] : []),
+  ];
+  const globalPct = Math.round(axes.reduce((s, a) => s + a.value, 0) / axes.length);
+
   const progressBlock = showProgress && allActions.length > 0 ? (
     <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: '18px 12px 22px 14px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         {/* Le palier nommé : la jauge raconte au lieu de compter */}
-        <span style={{ fontFamily: SERIF, fontSize: 19, color: '#91014b' }}>{palierFor(progressPct)}</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b', whiteSpace: 'nowrap' }}>{progressPct}%</span>
+        <span style={{ fontFamily: SERIF, fontSize: 19, color: '#91014b' }}>{palierFor(globalPct)}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#91014b', whiteSpace: 'nowrap' }}>{globalPct}%</span>
       </div>
       <div style={{ marginTop: 12, height: 8, borderRadius: 4, background: '#FFD6E8', position: 'relative' }}>
-        <div style={{ height: '100%', borderRadius: 4, background: '#FB3D80', width: `${progressPct}%`, transition: 'width 0.5s ease' }} />
+        <div style={{ height: '100%', borderRadius: 4, background: '#FB3D80', width: `${globalPct}%`, transition: 'width 0.5s ease' }} />
         {/* Jalons sur la jauge : ils s'allument quand on les dépasse */}
         {[
           { at: 25, emoji: '✨' },
@@ -803,16 +818,33 @@ const ClientView = () => {
             position: 'absolute', top: -7, left: `${m.at}%`, transform: 'translateX(-100%)',
             width: 22, height: 22, borderRadius: '50%', fontSize: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: progressPct >= m.at ? '#FFE561' : '#fff',
-            border: `2px solid ${progressPct >= m.at ? '#91014b' : '#FFA7C6'}`,
-            filter: progressPct >= m.at ? 'none' : 'grayscale(1)',
-            opacity: progressPct >= m.at ? 1 : 0.6,
+            background: globalPct >= m.at ? '#FFE561' : '#fff',
+            border: `2px solid ${globalPct >= m.at ? '#91014b' : '#FFA7C6'}`,
+            filter: globalPct >= m.at ? 'none' : 'grayscale(1)',
+            opacity: globalPct >= m.at ? 1 : 0.6,
           }}>
             {m.emoji}
           </span>
         ))}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+      <p style={{ fontSize: 11, color: '#6B5A62', marginTop: 8, lineHeight: 1.4 }}>
+        Cet avancement mélange {axes.map(a => a.label.toLowerCase()).join(', ')} — pas seulement les cases cochées.
+      </p>
+      {/* Le détail des 3 axes, pour comprendre d'où vient le pourcentage */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${axes.length}, 1fr)`, gap: 10, marginTop: 10 }}>
+        {axes.map(a => (
+          <div key={a.key}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B5A62' }}>
+              <span style={{ fontWeight: 600, color: '#91014b' }}>{a.label}</span>
+              <span>{a.detail}</span>
+            </div>
+            <div style={{ marginTop: 4, height: 5, borderRadius: 3, background: '#FFE9F2' }}>
+              <div style={{ height: '100%', borderRadius: 3, background: '#FB3D80', opacity: 0.75, width: `${a.value}%`, transition: 'width 0.5s ease' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
         <span style={{ fontSize: 11, color: '#6B5A62' }}>{inProgressAll} en cours</span>
         <span style={{ fontSize: 11, color: '#6B5A62' }}>
           {hasClientActions
@@ -823,6 +855,7 @@ const ClientView = () => {
       </div>
     </div>
   ) : null;
+
 
   const laetitiaBlock = laetitiaActions.length > 0 ? (
     <section className="cv-anim" style={{ animationDelay: delay(), marginTop: 28 }}>
