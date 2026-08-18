@@ -18,10 +18,12 @@ import {
 import { DeleteMissionDialog } from '@/components/pipeline/DeleteMissionDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 const MissionDetail = () => {
   const { id, tab } = useParams<{ id: string; tab?: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { data: mission, isLoading, isError } = useMission(id!);
   const { data: discoveryCalls } = useMissionDiscoveryCalls(id!);
   const updateMission = useUpdateMission();

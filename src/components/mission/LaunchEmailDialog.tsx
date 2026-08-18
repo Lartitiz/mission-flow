@@ -7,6 +7,8 @@ import { Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+import { buildClientLink } from '@/lib/client-link';
+
 interface LaunchEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,6 +18,7 @@ interface LaunchEmailDialogProps {
   missionId: string;
   amount: number | null;
   clientToken: string;
+  clientSlug?: string | null;
 }
 
 type AccompType = 'binome' | 'agency' | 'courte';
@@ -123,6 +126,7 @@ export function LaunchEmailDialog({
   missionId,
   amount,
   clientToken,
+  clientSlug,
 }: LaunchEmailDialogProps) {
   const prenom = clientName.split(' ')[0];
   const defaultAccomp: AccompType = missionType === 'agency' ? 'agency' : 'binome';
@@ -167,7 +171,7 @@ export function LaunchEmailDialog({
   }, [open, missionId, missionType, prenom, amount]);
 
   // Rebuild email when toggles change
-  const clientSpaceUrl = `${window.location.origin}/client/${clientToken}`;
+  const clientSpaceUrl = buildClientLink(clientToken, clientSlug);
 
   const regenerate = useCallback(
     (a: AccompType, p: PaymentType, k: KickoffType, prop: typeof proposal, ac: string) => {
