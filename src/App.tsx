@@ -61,6 +61,8 @@ const App = () => (
           <Route path="/client/:token" element={<ClientView />} />
           <Route path="/client/:slug/:token" element={<ClientView />} />
           <Route path="/c/:token" element={<ClientView />} />
+          <Route path="/c/:slug/:token" element={<ClientView />} />
+
           <Route path="/questionnaire/:token" element={<QuestionnaireView />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
