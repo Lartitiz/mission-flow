@@ -234,7 +234,9 @@ if (typeof document !== 'undefined' && !document.getElementById(ANIM_ID)) {
 
 /* ─── MAIN COMPONENT ─── */
 const ClientView = () => {
-  const { token } = useParams<{ token: string }>();
+  const { token: rawToken } = useParams<{ token: string }>();
+  const token = rawToken ? decodeCompactToken(rawToken) : undefined;
+
   const { toast } = useToast();
   const [data, setData] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
