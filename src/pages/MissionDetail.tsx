@@ -354,9 +354,24 @@ const MissionDetail = () => {
         open={clientLinkOpen}
         onOpenChange={setClientLinkOpen}
         clientToken={mission.client_token}
+        clientSlug={mission.client_slug}
         clientLinkActive={mission.client_link_active ?? true}
         onToggleActive={(active) => {
           updateMission.mutate({ id: mission.id, client_link_active: active });
+        }}
+        onSlugChange={(slug) => {
+          updateMission.mutate(
+            { id: mission.id, client_slug: slug },
+            {
+              onError: () => {
+                toast({
+                  title: 'Ce nom de lien est déjà utilisé',
+                  description: 'Choisis une autre variante (ex. prenom-nom-2).',
+                  variant: 'destructive',
+                });
+              },
+            }
+          );
         }}
         questionnaireToken={kickoff?.questionnaire_token}
         questionnaireStatus={kickoff?.questionnaire_status}
@@ -371,7 +386,9 @@ const MissionDetail = () => {
         missionId={mission.id}
         amount={mission.amount}
         clientToken={mission.client_token}
+        clientSlug={mission.client_slug}
       />
+
 
       {canFollowUp && (
         <FollowUpEmailDialog
