@@ -773,14 +773,15 @@ const ClientView = () => {
           const isOther = group.key === '__other__';
           const collapsed = collapsedPhases.has(group.key);
 
-          // Pastille config
-          const pastilleColor = gStatus === 'done' ? '#FB3D80' : gStatus === 'active' ? '#FFE561' : '#FFD6E8';
-          const pastilleContent = gStatus === 'done' ? '✓' : '';
-          const pastilleShadow = gStatus === 'active' ? '0 0 0 4px rgba(251,61,128,0.15)' : 'none';
+          // Phase header icon
+          const headerIconColor = gStatus === 'done' ? '#FB3D80' : gStatus === 'active' ? '#FFE561' : '#FFD6E8';
+          const headerIconSize = isOther ? 12 : 28;
+          const headerIconInner = isOther ? null : <div style={{ width: 10, height: 10, borderRadius: 3, background: '#fff' }} />;
+          const headerIconContent = gStatus === 'done' ? '✓' : null;
 
           // Badge config
           const badgeCfg = gStatus === 'done'
-            ? { label: 'Terminé', bg: '#fff', color: '#91014b' }
+            ? { label: 'Terminé', bg: '#FCE7F0', color: '#91014b' }
             : gStatus === 'active'
             ? { label: 'En cours', bg: '#FFE561', color: '#91014b' }
             : { label: 'À venir', bg: '#F4EFF1', color: '#6B5A62' };
@@ -793,29 +794,32 @@ const ClientView = () => {
           const hiddenCount = shouldCondense ? group.actions.length - 2 : 0;
 
           return (
-            <div key={group.key} style={{ position: 'relative', marginBottom: gIdx < laetitiaByPhase.length - 1 ? 20 : 0 }}>
-              {/* Pastille */}
+            <div key={group.key} style={{ position: 'relative', marginBottom: gIdx < laetitiaByPhase.length - 1 ? 24 : 0 }}>
+              {/* Phase header icon */}
               <div style={{
-                position: 'absolute', left: -28 + (isOther ? 3 : 0), top: 0,
-                width: isOther ? 12 : 18, height: isOther ? 12 : 18,
-                borderRadius: isOther ? 99 : 6,
-                background: isOther ? '#FFD6E8' : pastilleColor,
+                position: 'absolute', left: -28 + (isOther ? 6 : 0), top: 0,
+                width: headerIconSize, height: headerIconSize,
+                borderRadius: isOther ? 99 : 8,
+                background: isOther ? '#FFD6E8' : headerIconColor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: isOther ? 'none' : pastilleShadow,
+                boxShadow: isOther ? 'none' : '0 0 0 4px rgba(255,229,97,0.25), 0 1px 2px rgba(145,1,75,0.08)',
                 marginTop: isOther ? 3 : 0,
+                zIndex: 2,
               }}>
-                {!isOther && (
-                  <span style={{ color: gStatus === 'active' ? '#91014b' : '#fff', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>{pastilleContent}</span>
+                {isOther ? null : (
+                  <span style={{ color: gStatus === 'active' ? '#91014b' : '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>
+                    {headerIconContent ?? headerIconInner}
+                  </span>
                 )}
               </div>
 
               {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, paddingTop: 2 }}>
                 <span style={{
-                  fontFamily: SANS,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: gStatus === 'done' ? '#6B5A62' : '#1A1A1A',
+                  fontFamily: SERIF,
+                  fontSize: 17,
+                  fontWeight: 400,
+                  color: gStatus === 'done' ? '#6B5A62' : '#91014b',
                 }}>
                   {group.label}
                 </span>
@@ -830,47 +834,82 @@ const ClientView = () => {
 
               {/* Description */}
               {group.description && gStatus !== 'done' && (
-                <p style={{ fontSize: 12, fontStyle: 'italic', color: '#6B5A62', marginBottom: 8 }}>{group.description}</p>
+                <p style={{ fontSize: 12, fontStyle: 'italic', color: '#6B5A62', marginBottom: 10 }}>{group.description}</p>
               )}
 
-              {/* Actions */}
-              <div>
-                {visibleActions.map(a => {
-                  const isDone = DONE_STATUSES.includes(a.status);
-                  const isWip = ACTIVE_STATUSES.includes(a.status);
-                  const dotColor = isDone ? '#FB3D80' : isWip ? '#91014b' : '#FFD6E8';
-                  const textColor = isDone ? '#6B5A62' : isWip ? '#91014b' : '#6B5A62';
-                  const isCollab = isCollabKeyword(a.task);
+              {/* Actions list with timeline markers */}
+              <div style={{ position: 'relative', paddingLeft: 20 }}>
+                {/* Actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {visibleActions.map((a, aIdx) => {
+                    const isDone = DONE_STATUSES.includes(a.status);
+                    const isWip = ACTIVE_STATUSES.includes(a.status);
+                    const isUpcoming = !isDone && !isWip;
+                    const isCollab = isCollabKeyword(a.task);
 
-                  return (
-                    <div key={a.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '7px 12px', background: '#fff', borderRadius: 8,
-                      marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                    }}>
-                      <span style={{ width: 5, height: 5, borderRadius: 99, background: dotColor, flexShrink: 0 }} />
-                      <span style={{
-                        flex: 1, fontSize: 12,
-                        color: textColor,
-                        fontWeight: isWip ? 600 : 400,
-                        textDecoration: isDone ? 'line-through' : 'none',
-                      }}>
-                        {a.task}
-                      </span>
-                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                        {isCollab && (
-                          <span style={{ fontSize: 10, borderRadius: 99, padding: '1px 6px', background: '#FFF4F8', color: '#91014b' }}>🤝 ensemble</span>
-                        )}
-                        {isDone && (
-                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#FFF4F8', color: '#91014b' }}>Livré</span>
-                        )}
-                        {isWip && (
-                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '1px 6px', background: '#FFE561', color: '#91014b' }}>En cours</span>
-                        )}
+                    return (
+                      <div key={a.id} style={{ position: 'relative' }}>
+                        {/* Timeline dot */}
+                        <div style={{
+                          position: 'absolute',
+                          left: -20,
+                          top: isWip ? 14 : 11,
+                          width: isWip ? 12 : 8,
+                          height: isWip ? 12 : 8,
+                          borderRadius: 99,
+                          background: isDone ? '#E8B4C8' : isWip ? '#FB3D80' : '#FFD6E8',
+                          boxShadow: isWip ? '0 0 0 4px rgba(251,61,128,0.15)' : '0 0 0 4px #fff',
+                          zIndex: 1,
+                        }}>
+                          {isWip && (
+                            <span style={{
+                              display: 'block', width: '100%', height: '100%', borderRadius: 99,
+                              animation: 'cv-pulse 2s ease-in-out infinite',
+                              background: 'inherit',
+                            }} />
+                          )}
+                        </div>
+
+                        {/* Action card */}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: isWip ? '12px 14px' : '10px 12px',
+                          background: isDone ? '#FFF4F8' : isWip ? '#fff' : '#fff',
+                          borderRadius: 10,
+                          border: `1px solid ${isDone ? '#FFD6E8' : isWip ? '#FFD6E8' : '#F4EFF1'}`,
+                          boxShadow: isWip ? '0 1px 4px rgba(145,1,75,0.08)' : '0 1px 2px rgba(0,0,0,0.03)',
+                          opacity: isDone ? 0.55 : 1,
+                          transition: 'all 0.15s',
+                          transform: isWip ? 'scale(1.01)' : 'scale(1)',
+                        }}>
+                          <span style={{
+                            flex: 1, fontSize: isWip ? 13 : 12,
+                            color: isDone ? '#6B5A62' : isWip ? '#91014b' : '#6B5A62',
+                            fontWeight: isWip ? 600 : 400,
+                            textDecoration: isDone ? 'line-through' : 'none',
+                            lineHeight: 1.4,
+                          }}>
+                            {a.task}
+                          </span>
+                          <div style={{ display: 'flex', gap: 4, flexShrink: 0, alignItems: 'center' }}>
+                            {isCollab && (
+                              <span style={{ fontSize: 10, borderRadius: 99, padding: '2px 6px', background: '#FFF4F8', color: '#91014b', fontWeight: 500 }}>🤝 ensemble</span>
+                            )}
+                            {isDone && (
+                              <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '2px 8px', background: '#FCE7F0', color: '#91014b' }}>Livré</span>
+                            )}
+                            {isWip && (
+                              <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 99, padding: '2px 8px', background: '#FFE561', color: '#91014b' }}>En cours</span>
+                            )}
+                            {isUpcoming && (
+                              <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 99, padding: '2px 8px', background: '#F4EFF1', color: '#6B5A62' }}>À venir</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
 
                 {/* Condensed expand link */}
                 {shouldCondense && !collapsed && hiddenCount > 0 && (
@@ -879,7 +918,7 @@ const ClientView = () => {
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       fontSize: 11, color: '#91014b', fontWeight: 500,
-                      padding: '4px 12px', marginTop: 2,
+                      padding: '4px 12px', marginTop: 4,
                     }}
                   >
                     + {hiddenCount} autres actions terminées
@@ -891,7 +930,7 @@ const ClientView = () => {
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       fontSize: 11, color: '#91014b', fontWeight: 500,
-                      padding: '4px 12px', marginTop: 2,
+                      padding: '4px 12px', marginTop: 4,
                     }}
                   >
                     Réduire
