@@ -733,6 +733,56 @@ const ClientView = () => {
     </div>
   ) : null;
 
+  /* ─── Badge « Ateliers » : rendre visibles les ateliers déjà passés ─── */
+  const todayISO = format(new Date(), 'yyyy-MM-dd');
+  const pastSessions = data.sessions.filter((s) => s.session_date <= todayISO);
+  const pastCount = pastSessions.length;
+  const lastPast = pastSessions[0] ?? null; // sessions triées du + récent au + ancien
+  const ateliersBlock = pastCount > 0 ? (
+    <div
+      className="cv-anim"
+      style={{
+        animationDelay: delay(), marginTop: 14, background: '#fff',
+        borderRadius: '18px 12px 22px 14px', padding: '14px 18px',
+        boxShadow: '0 1px 3px rgba(145,1,75,0.05)',
+        display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+      }}
+    >
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: '#91014b', background: '#FFE561',
+        borderRadius: 99, padding: '4px 12px', whiteSpace: 'nowrap',
+      }}>
+        🗓 {pastCount} atelier{pastCount > 1 ? 's' : ''} déjà {pastCount > 1 ? 'faits' : 'fait'}
+      </span>
+      <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+        {pastSessions.slice(0, 8).map((s) => (
+          <span
+            key={s.id}
+            title={format(new Date(s.session_date), 'd MMMM yyyy', { locale: fr })}
+            style={{ width: 10, height: 10, borderRadius: 3, background: '#FB3D80' }}
+          />
+        ))}
+        {data.next_session?.date && (
+          <span style={{ width: 10, height: 10, borderRadius: 3, border: '2px dashed #FFA7C6' }} />
+        )}
+      </div>
+      {lastPast && (
+        <span style={{ fontSize: 12, color: '#6B5A62' }}>
+          Dernier le {format(new Date(lastPast.session_date), 'd MMMM', { locale: fr })}
+          {lastPast.client_summary?.headline ? ` · ${lastPast.client_summary.headline}` : ''}
+        </span>
+      )}
+      {data.sessions.length > 0 && (
+        <a
+          href="#nos-ateliers"
+          style={{ fontSize: 12, fontWeight: 600, color: '#91014b', marginLeft: 'auto', whiteSpace: 'nowrap' }}
+        >
+          Voir les comptes rendus →
+        </a>
+      )}
+    </div>
+  ) : null;
+
   const progressBlock = showProgress && allActions.length > 0 ? (
     <div className="cv-anim" style={{ animationDelay: delay(), marginTop: 24, background: '#fff', borderRadius: '18px 12px 22px 14px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(145,1,75,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
