@@ -254,6 +254,27 @@ function SortableRow({ action, onUpdate, onDelete }: {
           </SelectContent>
         </Select>
       </td>
+      <td className="px-2 py-1 w-[70px]">
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Checkbox
+                  checked={!!(action as any).workshop_only}
+                  onCheckedChange={(c) => onUpdate(action.id, { workshop_only: !!c })}
+                  aria-label="À voir en atelier"
+                />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-body text-xs">
+                À voir en atelier — sujet à discuter ensemble, pas une tâche que tu réalises.
+                Exclu de la progression et du suivi Mois 1-3.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </td>
       <td className="px-2 py-1 w-[120px]">
         <StatusBadge
           status={action.status}
