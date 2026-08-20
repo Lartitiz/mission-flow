@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal, Trash2, Mail, CalendarX, CalendarCheck } from 'lucide-react';
+import { MoreHorizontal, Trash2, Mail, CalendarX, CalendarCheck, CheckCircle2 } from 'lucide-react';
 import type { Mission } from '@/lib/missions';
 import { formatMissionType, formatAmount, timeAgo, getDaysSince } from '@/lib/missions';
+import type { PhaseProgress } from '@/hooks/useMissions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +18,10 @@ import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
   mission: Mission;
+  phaseProgress?: PhaseProgress;
 }
 
-export function MissionCard({ mission }: MissionCardProps) {
+export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
@@ -40,6 +42,7 @@ export function MissionCard({ mission }: MissionCardProps) {
     boxShadow: isDragging ? 'var(--card-shadow-drag)' : undefined,
     rotate: isDragging ? '1.5deg' : undefined,
   };
+
 
 
   // Charte : plus de barre de couleur sur le côté des cartes (tic banni).
@@ -137,9 +140,25 @@ export function MissionCard({ mission }: MissionCardProps) {
           </DropdownMenu>
         </div>
 
-        <p className="font-body font-bold text-[15px] text-card-foreground leading-snug mb-3 break-words pr-7">
+        <p className="font-body font-bold text-[15px] text-card-foreground leading-snug mb-1.5 break-words pr-7">
           {mission.client_name}
         </p>
+
+        {mission.status === 'active' && phaseProgress?.hasPhase && (
+          <div className="mb-2">
+            {phaseProgress.phase1to3Done ? (
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Mois 1-3 terminés
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-jaune text-jaune-foreground">
+                Mois 1-3 en cours ({phaseProgress.done}/{phaseProgress.total})
+              </span>
+            )}
+          </div>
+        )}
+
 
         <div className="flex items-center justify-between gap-2">
           {typeBadge()}

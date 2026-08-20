@@ -1,15 +1,17 @@
 import { useDroppable } from '@dnd-kit/core';
 import { MissionCard } from './MissionCard';
 import type { Mission } from '@/lib/missions';
+import type { PhaseProgress } from '@/hooks/useMissions';
 
 interface KanbanColumnProps {
   id: string;
   label: string;
   missions: Mission[];
   isLost?: boolean;
+  phaseProgress?: Record<string, PhaseProgress>;
 }
 
-export function KanbanColumn({ id, label, missions, isLost }: KanbanColumnProps) {
+export function KanbanColumn({ id, label, missions, isLost, phaseProgress }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
@@ -34,10 +36,11 @@ export function KanbanColumn({ id, label, missions, isLost }: KanbanColumnProps)
         }`}
       >
         {missions.map((mission) => (
-          <MissionCard key={mission.id} mission={mission} />
+          <MissionCard key={mission.id} mission={mission} phaseProgress={phaseProgress?.[mission.id]} />
         ))}
       </div>
     </div>
   );
 }
+
 

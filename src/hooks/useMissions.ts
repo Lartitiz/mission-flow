@@ -3,6 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Mission } from '@/lib/missions';
 
+const PHASE_1_TO_3 = ['mois_1', 'mois_2', 'mois_1_2', 'mois_3'];
+const DONE_STATUSES = ['validated', 'delivered', 'done'];
+
+export interface PhaseProgress {
+  phase1to3Done: boolean;
+  total: number;
+  done: number;
+  hasPhase: boolean;
+}
+
 export function useMissions() {
   return useQuery({
     queryKey: ['missions'],
@@ -133,6 +143,46 @@ export function useDeleteMission() {
 }
 
 /**
+ * Progrès des phases "1 à 3 mois" pour chaque mission affichée dans le pipeline.
+ * Permet d'identifier d'un coup d'œil les missions actives dont les actions des
+ * premiers mois sont terminées.
+ */
+export function useMissionsPhaseProgress(missionIds: string[]) {
+  return useQuery({
+    queryKey: ['missions-phase-progress', missionIds],
+    queryFn: async () => {
+      if (missionIds.length === 0) return {} as Record<string, PhaseProgress>;
+      const { data, error } = await supabase
+        .from('actions')
+        .select('mission_id, phase, status')
+        .in('mission_id', missionIds);
+      if (error) throw error;
+
+      const byMission: Record<string, { phase: string | null; status: string }[]> = {};
+      for (const action of data ?? []) {
+        if (!byMission[action.mission_id]) byMission[action.mission_id] = [];
+        byMission[action.mission_id].push({ phase: action.phase, status: action.status });
+      }
+
+      const result: Record<string, PhaseProgress> = {};
+      for (const missionId of missionIds) {
+        const actions = byMission[missionId] || [];
+        const phaseActions = actions.filter((a) => PHASE_1_TO_3.includes(a.phase ?? ''));
+        const done = phaseActions.filter((a) => DONE_STATUSES.includes(a.status)).length;
+        result[missionId] = {
+          phase1to3Done: phaseActions.length > 0 && done === phaseActions.length,
+          total: phaseActions.length,
+          done,
+          hasPhase: phaseActions.length > 0,
+        };
+      }
+      return result;
+    },
+    enabled: missionIds.length > 0,
+  });
+}
+
+/**
  * Dernière activité réelle par mission : la date de mise à jour de la fiche
  * `missions` ne bouge pas quand on modifie un atelier, une action ou le journal.
  * On agrège donc toutes ces sources pour dater correctement « sans nouvelle ».
@@ -182,4 +232,5 @@ export function useMissionsNextSession() {
     refetchOnWindowFocus: true,
   });
 }
+
 
