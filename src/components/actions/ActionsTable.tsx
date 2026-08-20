@@ -55,7 +55,7 @@ const PHASE_RANK: Record<string, number> = {
 };
 const phaseRank = (p?: string | null) => (p ? PHASE_RANK[p] ?? 80 : 99);
 
-type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status' | 'phase';
+type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status' | 'phase' | 'workshop_only';
 type SortDir = 'asc' | 'desc';
 
 interface ActionsTableProps {
