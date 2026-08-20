@@ -84,7 +84,7 @@ serve(async (req) => {
       });
     }
 
-    const { meeting_notes, existing_actions, mission_type } = await req.json();
+    const { meeting_notes, existing_actions, mission_type, proposal_content } = await req.json();
 
     if (!meeting_notes || typeof meeting_notes !== "string") {
       return new Response(JSON.stringify({ error: "meeting_notes est requis" }), {
@@ -93,7 +93,20 @@ serve(async (req) => {
       });
     }
 
-    const userPrompt = `Compte-rendu de réunion :
+    let proposalText = "";
+    if (proposal_content) {
+      const sections = (proposal_content as any).sections ?? proposal_content;
+      proposalText = Array.isArray(sections)
+        ? sections.map((s: any) => `## ${s.title}\n${s.content}`).join("\n\n")
+        : JSON.stringify(proposal_content);
+      if (proposalText.length > 30000) proposalText = proposalText.slice(0, 30000);
+    }
+
+    const userPrompt = `${
+      proposalText
+        ? `Proposition validée (périmètre contractuel de référence) :\n\n${proposalText}\n\n---\n\n`
+        : `Aucune proposition validée fournie pour cette mission.\n\n`
+    }Compte-rendu de réunion :
 
 ${meeting_notes}
 
