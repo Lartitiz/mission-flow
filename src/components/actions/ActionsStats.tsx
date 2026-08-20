@@ -9,7 +9,11 @@ interface ActionsStatsProps {
 
 const DONE_STATUSES = ['validated', 'delivered', 'done'];
 
-export function ActionsStats({ actions }: ActionsStatsProps) {
+export function ActionsStats({ actions: allActions }: ActionsStatsProps) {
+  // Les sujets « à voir en atelier » ne sont pas des tâches à réaliser :
+  // ils ne comptent ni dans la progression ni dans les retards.
+  const actions = allActions.filter((a) => !(a as any).workshop_only);
+  const workshopCount = allActions.length - actions.length;
   const total = actions.length;
   const done = actions.filter((a) => DONE_STATUSES.includes(a.status)).length;
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
