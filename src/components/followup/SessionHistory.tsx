@@ -31,6 +31,7 @@ interface SessionHistoryProps {
   onDelete: (id: string) => void;
   addJournalEntry: (content: string, source?: 'manual' | 'auto') => void;
   isSaving: boolean;
+  proposalContent?: unknown;
 }
 
 const SESSION_TYPES = [
@@ -70,6 +71,7 @@ export function SessionHistory({
   onDelete,
   addJournalEntry,
   isSaving,
+  proposalContent,
 }: SessionHistoryProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

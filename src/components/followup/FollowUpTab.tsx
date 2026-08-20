@@ -157,6 +157,7 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
             onDelete={deleteSession}
             addJournalEntry={addEntry}
             isSaving={sessionsSaving}
+            proposalContent={proposal?.content ?? null}
           />
         </div>
       )}
