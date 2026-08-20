@@ -56,39 +56,6 @@ Pour chaque nouvelle action, détermine :
 
 Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "...", "phase": "...", "out_of_scope": false, "out_of_scope_reason": "", "scope_hint": "" }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
 
-Tu reçois aussi la liste des actions existantes pour éviter les doublons et pour proposer des mises à jour de statut.
-
-Extrais :
-- NOUVELLES ACTIONS : tâches mentionnées qui n'existent pas encore
-- MISES À JOUR : changements de statut, de date, ou de description pour des actions existantes
-
-RÈGLE CRITIQUE — ÉQUILIBRE LAETITIA / CLIENT·E :
-Pour CHAQUE sujet abordé dans le CR, tu te poses systématiquement DEUX questions :
-1. "Qu'est-ce que Laetitia doit faire ?" → action avec assignee="laetitia"
-2. "Qu'est-ce que le/la décisionnaire côté client doit faire ?" → action avec assignee="client"
-
-Les actions client typiques à NE PAS oublier :
-- Validations à donner (sur un visuel, un texte, une offre, un tarif)
-- Contenus à fournir (photos, textes, témoignages, chiffres internes)
-- Décisions à prendre (arbitrages stratégiques, choix d'options)
-- Infos à transmettre (accès comptes, documents, contacts)
-- Retours à faire (feedback sur livrable, relecture)
-- Tests/expérimentations à mener côté terrain
-- RDV/échanges à organiser de leur côté (équipe interne, prestataire)
-
-Si le CR mentionne un livrable de Laetitia, il y a presque toujours une action client associée (valider, relire, partager). Ne te limite JAMAIS aux seules tâches de Laetitia.
-
-Pour chaque nouvelle action, détermine :
-- assignee : "laetitia" ou "client"
-- category : la catégorie la plus adaptée parmi : Cadrage, Messages, Site web, Social media, Emailing, Branding, Cross-posting, Influence/Presse, Formation, Commercial, Support, Finalisation, Autre
-- task : intitulé court (verbe d'action)
-- description : détail (1-2 phrases)
-- channel : si applicable, parmi : Instagram, LinkedIn, Pinterest, Site web, Brevo, Facebook, Telegram/WhatsApp, Identité, Orga, Autre
-- target_date : si mentionnée (format YYYY-MM-DD)
-- phase : la phase temporelle de l'action. Pour un accompagnement Binôme 6 mois : "mois_1_2", "mois_3", "mois_4_5", "mois_6". Pour Agency 3 mois : "mois_1", "mois_2", "mois_3". Mission courte : "phase_1", "phase_2". Récurrent : "continu".
-
-Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "...", "phase": "..." }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
