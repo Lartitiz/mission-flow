@@ -376,9 +376,12 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
       } else if (key === 'phase') {
         aVal = phaseRank((a as any).phase);
         bVal = phaseRank((b as any).phase);
+      } else if (key === 'workshop_only') {
+        aVal = (a as any).workshop_only ? 0 : 1;
+        bVal = (b as any).workshop_only ? 0 : 1;
       } else {
-        aVal = a[key] ?? '';
-        bVal = b[key] ?? '';
+        aVal = (a[key] as string | number | null) ?? '';
+        bVal = (b[key] as string | number | null) ?? '';
       }
 
 
