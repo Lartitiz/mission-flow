@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal, Trash2, Mail, CalendarX, CalendarCheck } from 'lucide-react';
+import { MoreHorizontal, Trash2, Mail, CalendarX, CalendarCheck, CheckCircle2 } from 'lucide-react';
 import type { Mission } from '@/lib/missions';
 import { formatMissionType, formatAmount, timeAgo, getDaysSince } from '@/lib/missions';
+import type { PhaseProgress } from '@/hooks/useMissions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +18,10 @@ import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
   mission: Mission;
+  phaseProgress?: PhaseProgress;
 }
 
-export function MissionCard({ mission }: MissionCardProps) {
+export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
@@ -40,6 +42,7 @@ export function MissionCard({ mission }: MissionCardProps) {
     boxShadow: isDragging ? 'var(--card-shadow-drag)' : undefined,
     rotate: isDragging ? '1.5deg' : undefined,
   };
+
 
 
   // Charte : plus de barre de couleur sur le côté des cartes (tic banni).
