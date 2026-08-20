@@ -36,6 +36,7 @@ export function ActionsStats({ actions: allActions }: ActionsStatsProps) {
         </div>
         <p className="font-body text-xs text-muted-foreground mt-1">
           {done}/{total} actions terminées
+          {workshopCount > 0 && ` · ${workshopCount} à voir en atelier (non comptée${workshopCount > 1 ? 's' : ''})`}
         </p>
       </div>
 
