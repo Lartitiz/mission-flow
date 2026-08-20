@@ -207,6 +207,7 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
             assignee: a.assignee, target_date: a.target_date, category: a.category, channel: a.channel,
           })),
           mission_type: mission?.mission_type ?? 'binome',
+          proposal_content: proposal?.content ?? null,
         },
       });
       const newActions = extractData?.new_actions ?? [];

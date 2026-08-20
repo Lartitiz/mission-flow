@@ -28,6 +28,9 @@ interface AiNewAction {
   description: string;
   channel?: string;
   target_date?: string;
+  out_of_scope?: boolean;
+  out_of_scope_reason?: string;
+  scope_hint?: string;
 }
 
 interface AiUpdate {
@@ -228,6 +231,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
             channel: a.channel,
           })),
           mission_type: mission?.mission_type ?? 'binome',
+          proposal_content: proposal?.content ?? null,
         },
       });
 

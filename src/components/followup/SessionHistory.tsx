@@ -31,6 +31,7 @@ interface SessionHistoryProps {
   onDelete: (id: string) => void;
   addJournalEntry: (content: string, source?: 'manual' | 'auto') => void;
   isSaving: boolean;
+  proposalContent?: unknown;
 }
 
 const SESSION_TYPES = [
@@ -50,6 +51,9 @@ interface AiNewAction {
   description: string;
   channel?: string;
   target_date?: string;
+  out_of_scope?: boolean;
+  out_of_scope_reason?: string;
+  scope_hint?: string;
 }
 
 interface AiUpdate {
@@ -70,6 +74,7 @@ export function SessionHistory({
   onDelete,
   addJournalEntry,
   isSaving,
+  proposalContent,
 }: SessionHistoryProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -259,6 +264,7 @@ export function SessionHistory({
               channel: a.channel,
             })),
             mission_type: missionType,
+            proposal_content: proposalContent ?? null,
           },
         }
       );
@@ -351,6 +357,7 @@ export function SessionHistory({
               channel: a.channel,
             })),
             mission_type: missionType,
+            proposal_content: proposalContent ?? null,
           },
         }
       );

@@ -11,11 +11,22 @@ const SYSTEM_PROMPT = `Tu es l'assistante IA de Laetitia Mattioli (Nowadays Agen
 
 Tu reçois aussi la liste des actions existantes pour éviter les doublons et pour proposer des mises à jour de statut.
 
+RÈGLE CRITIQUE — PÉRIMÈTRE CONTRACTUEL :
+Si une "Proposition validée" est fournie, elle définit le périmètre du travail dû. Tu dois :
+- Ne créer une action QUE si elle correspond à un livrable/engagement présent dans la proposition, OU si elle est explicitement demandée dans le compte-rendu.
+- NE JAMAIS ajouter de "bonnes idées", suggestions d'amélioration, optimisations ou tâches d'anticipation que personne n'a demandées.
+- NE PAS découper un livrable en dix micro-tâches : reste au niveau des engagements réels de la proposition.
+- Toute action explicitement demandée en séance mais absente de la proposition doit être marquée out_of_scope=true, avec out_of_scope_reason court (ex : "demandé en séance, non prévu dans la proposition") et un scope_hint parmi :
+  - "atelier" : sujet à traiter/creuser lors d'un prochain atelier (pas un livrable supplémentaire)
+  - "avenant" : vrai travail supplémentaire, à cadrer/facturer à part
+Les actions dans le périmètre ont out_of_scope=false.
+Si aucune proposition n'est fournie, mets out_of_scope=false partout, et reste malgré tout strictement collé à ce qui est dit dans le compte-rendu.
+
 Extrais :
 - NOUVELLES ACTIONS : tâches mentionnées qui n'existent pas encore
 - MISES À JOUR : changements de statut, de date, ou de description pour des actions existantes
 
-RÈGLE CRITIQUE — ÉQUILIBRE LAETITIA / CLIENT·E :
+RÈGLE CRITIQUE — ÉQUILIBRE LAETITIA / CLIENT·E (dans les limites du périmètre) :
 Pour CHAQUE sujet abordé dans le CR, tu te poses systématiquement DEUX questions :
 1. "Qu'est-ce que Laetitia doit faire ?" → action avec assignee="laetitia"
 2. "Qu'est-ce que le/la décisionnaire côté client doit faire ?" → action avec assignee="client"
@@ -29,7 +40,7 @@ Les actions client typiques à NE PAS oublier :
 - Tests/expérimentations à mener côté terrain
 - RDV/échanges à organiser de leur côté (équipe interne, prestataire)
 
-Si le CR mentionne un livrable de Laetitia, il y a presque toujours une action client associée (valider, relire, partager). Ne te limite JAMAIS aux seules tâches de Laetitia.
+Si le CR mentionne un livrable de Laetitia, il y a presque toujours une action client associée (valider, relire, partager). Ne te limite JAMAIS aux seules tâches de Laetitia. Cet équilibre ne t'autorise pas à sortir du périmètre : il s'applique aux sujets réellement abordés.
 
 Pour chaque nouvelle action, détermine :
 - assignee : "laetitia" ou "client"
@@ -39,8 +50,11 @@ Pour chaque nouvelle action, détermine :
 - channel : si applicable, parmi : Instagram, LinkedIn, Pinterest, Site web, Brevo, Facebook, Telegram/WhatsApp, Identité, Orga, Autre
 - target_date : si mentionnée (format YYYY-MM-DD)
 - phase : la phase temporelle de l'action. Pour un accompagnement Binôme 6 mois : "mois_1_2", "mois_3", "mois_4_5", "mois_6". Pour Agency 3 mois : "mois_1", "mois_2", "mois_3". Mission courte : "phase_1", "phase_2". Récurrent : "continu".
+- out_of_scope : true/false
+- out_of_scope_reason : string (vide si dans le périmètre)
+- scope_hint : "atelier" | "avenant" | "" (vide si dans le périmètre)
 
-Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "...", "phase": "..." }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
+Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "...", "phase": "...", "out_of_scope": false, "out_of_scope_reason": "", "scope_hint": "" }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -70,7 +84,7 @@ serve(async (req) => {
       });
     }
 
-    const { meeting_notes, existing_actions, mission_type } = await req.json();
+    const { meeting_notes, existing_actions, mission_type, proposal_content } = await req.json();
 
     if (!meeting_notes || typeof meeting_notes !== "string") {
       return new Response(JSON.stringify({ error: "meeting_notes est requis" }), {
@@ -79,7 +93,20 @@ serve(async (req) => {
       });
     }
 
-    const userPrompt = `Compte-rendu de réunion :
+    let proposalText = "";
+    if (proposal_content) {
+      const sections = (proposal_content as any).sections ?? proposal_content;
+      proposalText = Array.isArray(sections)
+        ? sections.map((s: any) => `## ${s.title}\n${s.content}`).join("\n\n")
+        : JSON.stringify(proposal_content);
+      if (proposalText.length > 30000) proposalText = proposalText.slice(0, 30000);
+    }
+
+    const userPrompt = `${
+      proposalText
+        ? `Proposition validée (périmètre contractuel de référence) :\n\n${proposalText}\n\n---\n\n`
+        : `Aucune proposition validée fournie pour cette mission.\n\n`
+    }Compte-rendu de réunion :
 
 ${meeting_notes}
 
