@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
-import { useMissions, useUpdateMissionStatus } from '@/hooks/useMissions';
+import { useMissions, useUpdateMissionStatus, useMissionsPhaseProgress } from '@/hooks/useMissions';
 import { PIPELINE_COLUMNS } from '@/lib/missions';
 import { KanbanColumn } from '@/components/pipeline/KanbanColumn';
 import { PipelineStats } from '@/components/pipeline/PipelineStats';
@@ -15,6 +15,9 @@ const Pipeline = () => {
   const updateStatus = useUpdateMissionStatus();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeMissionId, setActiveMissionId] = useState<string | null>(null);
+
+  const missionIds = missions.map((m) => m.id);
+  const { data: phaseProgress = {} } = useMissionsPhaseProgress(missionIds);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -81,12 +84,13 @@ const Pipeline = () => {
               label={col.label}
               missions={missions.filter((m) => m.status === col.id)}
               isLost={col.id === 'lost'}
+              phaseProgress={phaseProgress}
             />
           ))}
         </div>
 
         <DragOverlay>
-          {activeMission ? <MissionCard mission={activeMission} /> : null}
+          {activeMission ? <MissionCard mission={activeMission} phaseProgress={phaseProgress[activeMission.id]} /> : null}
         </DragOverlay>
       </DndContext>
 
@@ -105,3 +109,4 @@ const Pipeline = () => {
 };
 
 export default Pipeline;
+
