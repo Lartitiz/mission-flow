@@ -156,7 +156,9 @@ export function useMissionsPhaseProgress(missionIds: string[]) {
         .from('actions')
         .select('mission_id, phase, status')
         .in('mission_id', missionIds)
-        .eq('assignee', 'laetitia');
+        .eq('assignee', 'laetitia')
+        // Les sujets « à voir en atelier » ne sont pas des tâches à réaliser.
+        .eq('workshop_only', false);
       if (error) throw error;
 
       const byMission: Record<string, { phase: string | null; status: string }[]> = {};

@@ -34,6 +34,7 @@ export type Database = {
           target_date: string | null
           task: string
           updated_at: string
+          workshop_only: boolean
         }
         Insert: {
           archived_at?: string | null
@@ -54,6 +55,7 @@ export type Database = {
           target_date?: string | null
           task: string
           updated_at?: string
+          workshop_only?: boolean
         }
         Update: {
           archived_at?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           target_date?: string | null
           task?: string
           updated_at?: string
+          workshop_only?: boolean
         }
         Relationships: [
           {

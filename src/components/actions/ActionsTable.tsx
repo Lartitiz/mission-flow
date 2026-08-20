@@ -3,6 +3,7 @@ import type { Action } from '@/hooks/useActions';
 import { Trash2, GripVertical, ArrowUp, ArrowDown, ArrowUpDown, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -54,7 +55,7 @@ const PHASE_RANK: Record<string, number> = {
 };
 const phaseRank = (p?: string | null) => (p ? PHASE_RANK[p] ?? 80 : 99);
 
-type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status' | 'phase';
+type SortKey = 'category' | 'task' | 'description' | 'target_date' | 'status' | 'phase' | 'workshop_only';
 type SortDir = 'asc' | 'desc';
 
 interface ActionsTableProps {
@@ -254,6 +255,27 @@ function SortableRow({ action, onUpdate, onDelete }: {
           </SelectContent>
         </Select>
       </td>
+      <td className="px-2 py-1 w-[70px]">
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Checkbox
+                  checked={!!(action as any).workshop_only}
+                  onCheckedChange={(c) => onUpdate(action.id, { workshop_only: !!c })}
+                  aria-label="À voir en atelier"
+                />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-body text-xs">
+                À voir en atelier — sujet à discuter ensemble, pas une tâche que tu réalises.
+                Exclu de la progression et du suivi Mois 1-3.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </td>
       <td className="px-2 py-1 w-[120px]">
         <StatusBadge
           status={action.status}
@@ -354,9 +376,12 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
       } else if (key === 'phase') {
         aVal = phaseRank((a as any).phase);
         bVal = phaseRank((b as any).phase);
+      } else if (key === 'workshop_only') {
+        aVal = (a as any).workshop_only ? 0 : 1;
+        bVal = (b as any).workshop_only ? 0 : 1;
       } else {
-        aVal = a[key] ?? '';
-        bVal = b[key] ?? '';
+        aVal = (a[key] as string | number | null) ?? '';
+        bVal = (b[key] as string | number | null) ?? '';
       }
 
 
@@ -398,6 +423,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                 <SortHeader label="Description" sortKey="description" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Date cible" sortKey="target_date" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Phase" sortKey="phase" currentSort={sort} onSort={handleSort} />
+                <SortHeader label="Atelier" sortKey="workshop_only" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Statut" sortKey="status" currentSort={sort} onSort={handleSort} />
                 <th className="px-3 py-2 w-10"></th>
               </tr>
