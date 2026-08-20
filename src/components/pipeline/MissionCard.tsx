@@ -140,9 +140,25 @@ export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
           </DropdownMenu>
         </div>
 
-        <p className="font-body font-bold text-[15px] text-card-foreground leading-snug mb-3 break-words pr-7">
+        <p className="font-body font-bold text-[15px] text-card-foreground leading-snug mb-1.5 break-words pr-7">
           {mission.client_name}
         </p>
+
+        {mission.status === 'active' && phaseProgress?.hasPhase && (
+          <div className="mb-2">
+            {phaseProgress.phase1to3Done ? (
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Mois 1-3 terminés
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-jaune text-jaune-foreground">
+                Mois 1-3 en cours ({phaseProgress.done}/{phaseProgress.total})
+              </span>
+            )}
+          </div>
+        )}
+
 
         <div className="flex items-center justify-between gap-2">
           {typeBadge()}
