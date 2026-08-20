@@ -420,6 +420,7 @@ export function ActionsTable({ actions, onUpdate, onDelete, onReorder }: Actions
                 <SortHeader label="Description" sortKey="description" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Date cible" sortKey="target_date" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Phase" sortKey="phase" currentSort={sort} onSort={handleSort} />
+                <SortHeader label="Atelier" sortKey="workshop_only" currentSort={sort} onSort={handleSort} />
                 <SortHeader label="Statut" sortKey="status" currentSort={sort} onSort={handleSort} />
                 <th className="px-3 py-2 w-10"></th>
               </tr>
