@@ -1,0 +1,1 @@
+ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS workshop_only boolean NOT NULL DEFAULT false;
