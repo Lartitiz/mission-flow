@@ -431,6 +431,7 @@ export function SessionHistory({
           target_date: action.target_date || null,
           sort_order: nextSort(action.assignee),
           status: 'not_started',
+          workshop_only: action.scope_hint === 'atelier',
         });
         if (error) {
           failed++;

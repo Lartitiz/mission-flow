@@ -145,6 +145,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           target_date: action.target_date || null,
           sort_order: nextSort(action.assignee),
           status: 'not_started',
+          workshop_only: action.scope_hint === 'atelier',
         });
         if (error) {
           failed++;
@@ -291,6 +292,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           target_date: action.target_date || null,
           sort_order: nextSort(action.assignee),
           status: 'not_started',
+          workshop_only: action.scope_hint === 'atelier',
         });
         if (error) {
           failed++;
