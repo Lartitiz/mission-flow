@@ -155,7 +155,8 @@ export function useMissionsPhaseProgress(missionIds: string[]) {
       const { data, error } = await supabase
         .from('actions')
         .select('mission_id, phase, status')
-        .in('mission_id', missionIds);
+        .in('mission_id', missionIds)
+        .eq('assignee', 'laetitia');
       if (error) throw error;
 
       const byMission: Record<string, { phase: string | null; status: string }[]> = {};
