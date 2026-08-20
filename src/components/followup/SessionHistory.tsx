@@ -259,6 +259,7 @@ export function SessionHistory({
               channel: a.channel,
             })),
             mission_type: missionType,
+            proposal_content: proposalContent ?? null,
           },
         }
       );
@@ -351,6 +352,7 @@ export function SessionHistory({
               channel: a.channel,
             })),
             mission_type: missionType,
+            proposal_content: proposalContent ?? null,
           },
         }
       );

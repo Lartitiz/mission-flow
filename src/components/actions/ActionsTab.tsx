@@ -228,6 +228,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
             channel: a.channel,
           })),
           mission_type: mission?.mission_type ?? 'binome',
+          proposal_content: proposal?.content ?? null,
         },
       });
 
