@@ -41,15 +41,33 @@ export function decodeCompactToken(value: string): string {
   }
 }
 
+// Les liens clients doivent toujours pointer vers le site PUBLIÉ :
+// les URLs de preview Lovable (id-preview--*.lovable.app, *.lovableproject.com)
+// demandent une connexion Lovable, ce qui bloquerait les clientes.
+const PUBLISHED_ORIGIN = 'https://nowadays-mission-flow.lovable.app';
+
+function resolveClientOrigin(origin?: string): string {
+  if (origin) return origin;
+  if (typeof window === 'undefined') return PUBLISHED_ORIGIN;
+  const current = window.location.origin;
+  const isPreview =
+    current.includes('id-preview--') ||
+    current.endsWith('.lovableproject.com') ||
+    current.includes('localhost') ||
+    current.includes('127.0.0.1');
+  return isPreview ? PUBLISHED_ORIGIN : current;
+}
+
 export function buildClientLink(
   token: string,
   slug?: string | null,
-  origin: string = typeof window !== 'undefined' ? window.location.origin : ''
+  origin?: string
 ): string {
+  const base = resolveClientOrigin(origin);
   const clean = slug ? slugifyClientSlug(slug) : '';
   const short = encodeCompactToken(token);
   return clean
-    ? `${origin}/c/${clean}/${short}`
-    : `${origin}/c/${short}`;
+    ? `${base}/c/${clean}/${short}`
+    : `${base}/c/${short}`;
 }
 
