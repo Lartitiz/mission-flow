@@ -135,7 +135,7 @@ Type de mission : ${mission_type || "non_determine"}`;
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20250929",
-        max_tokens: 3000,
+        max_tokens: 16000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userPrompt }],
       }),
@@ -163,19 +163,63 @@ Type de mission : ${mission_type || "non_determine"}`;
     }
 
     let jsonStr = textContent.trim();
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) jsonStr = jsonMatch[1].trim();
+    // Réponse tronquée (max_tokens) : la fence fermante manque, on prend tout
+    // ce qui suit l'ouverture.
+    const fenced = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenced) jsonStr = fenced[1].trim();
+    else jsonStr = jsonStr.replace(/^```(?:json)?\s*/, "").replace(/```\s*$/, "").trim();
+
+    // Répare un JSON coupé en plein vol : on remonte au dernier objet complet
+    // et on referme les tableaux/objets ouverts, plutôt que de tout perdre.
+    const repairTruncatedJson = (s: string): string => {
+      let depth = 0, inStr = false, esc = false, lastSafe = -1;
+      for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (inStr) {
+          if (esc) esc = false;
+          else if (c === "\\") esc = true;
+          else if (c === '"') inStr = false;
+          continue;
+        }
+        if (c === '"') inStr = true;
+        else if (c === "{" || c === "[") depth++;
+        else if (c === "}" || c === "]") { depth--; if (depth === 0) return s.slice(0, i + 1); }
+        else if (c === "," && depth === 2) lastSafe = i;
+      }
+      if (lastSafe === -1) return s;
+      let head = s.slice(0, lastSafe);
+      // referme les niveaux encore ouverts (objet racine + tableau courant)
+      const openers: string[] = [];
+      let d = 0; inStr = false; esc = false;
+      for (let i = 0; i < head.length; i++) {
+        const c = head[i];
+        if (inStr) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false; continue; }
+        if (c === '"') inStr = true;
+        else if (c === "{" || c === "[") { openers.push(c); d++; }
+        else if (c === "}" || c === "]") { openers.pop(); d--; }
+      }
+      while (openers.length) head += openers.pop() === "[" ? "]" : "}";
+      return head;
+    };
 
     let parsed;
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      console.error("Invalid JSON from Claude:", textContent);
-      return new Response(JSON.stringify({ error: "Réponse JSON invalide" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      try {
+        parsed = JSON.parse(repairTruncatedJson(jsonStr));
+        console.warn("JSON tronqué réparé", { stop_reason: result.stop_reason });
+      } catch {
+        console.error("Invalid JSON from Claude:", result.stop_reason, textContent.slice(0, 2000));
+        return new Response(JSON.stringify({ error: "Réponse JSON invalide" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
+    if (!Array.isArray(parsed?.new_actions)) parsed.new_actions = [];
+    if (!Array.isArray(parsed?.updates)) parsed.updates = [];
+
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
