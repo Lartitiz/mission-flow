@@ -142,7 +142,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           category: action.category || null,
           channel: action.channel || null,
           phase: (action as unknown as { phase?: string }).phase || null,
-          target_date: action.target_date || null,
+          target_date: /^\d{4}-\d{2}-\d{2}$/.test(action.target_date ?? '') ? action.target_date : null,
           sort_order: nextSort(action.assignee),
           status: 'not_started',
           workshop_only: action.scope_hint === 'atelier',
