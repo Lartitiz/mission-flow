@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,15 @@ export function AiExtractionResults({
     newActions.map((a) => !a.out_of_scope)
   );
   const [updateToggles, setUpdateToggles] = useState<boolean[]>(updates.map(() => true));
+
+  // Une nouvelle extraction réutilise le même composant : sans resynchro, les
+  // cases restaient calées sur les résultats précédents (mauvaises actions envoyées).
+  useEffect(() => {
+    setNewToggles(newActions.map((a) => !a.out_of_scope));
+  }, [newActions]);
+  useEffect(() => {
+    setUpdateToggles(updates.map(() => true));
+  }, [updates]);
 
   const handleApply = () => {
     const selectedNew = newActions.filter((_, i) => newToggles[i]);
