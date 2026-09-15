@@ -462,6 +462,40 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
           ))}
         </div>
       )}
+      {selectedVisible.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+          <span className="font-body text-xs text-foreground font-medium">
+            {selectedVisible.length} tâche{selectedVisible.length > 1 ? 's' : ''} sélectionnée{selectedVisible.length > 1 ? 's' : ''}
+          </span>
+          <Button
+            size="sm"
+            className="font-body h-7 gap-1 text-[11px]"
+            onClick={markSelectedDone}
+          >
+            <CheckCheck className="h-3 w-3" />
+            Marquer comme fait
+          </Button>
+          {onArchive && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-body h-7 gap-1 text-[11px]"
+              onClick={() => { onArchive(selectedVisible, true); setSelectedIds(new Set()); }}
+            >
+              <Archive className="h-3 w-3" />
+              Archiver
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="font-body h-7 text-[11px] text-muted-foreground"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Désélectionner
+          </Button>
+        </div>
+      )}
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] overflow-hidden">
         <div className="overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
