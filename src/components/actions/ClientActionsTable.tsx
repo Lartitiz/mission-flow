@@ -31,10 +31,45 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const CLIENT_STATUS_OPTIONS = [
-  { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333' },
-  { value: 'in_progress', label: 'En cours', bg: '#4A90D9', text: '#fff' },
-  { value: 'done', label: 'Fait', bg: '#4CAF50', text: '#fff' },
+  { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333', order: 0 },
+  { value: 'in_progress', label: 'En cours', bg: '#4A90D9', text: '#fff', order: 1 },
+  { value: 'done', label: 'Fait', bg: '#4CAF50', text: '#fff', order: 2 },
 ];
+
+// Ordre chronologique des phases (identique au plan d'action)
+const PHASE_RANK: Record<string, number> = {
+  mois_1: 1, mois_1_2: 1, mois_2: 2, mois_3: 3, mois_4: 4, mois_4_5: 4, mois_5: 5, mois_6: 6,
+  phase_1: 1, phase_2: 2,
+  continu: 90,
+};
+const phaseRank = (p?: string | null) => (p ? PHASE_RANK[p] ?? 80 : 99);
+
+type SortKey = 'task' | 'description' | 'target_date' | 'status' | 'phase';
+type SortDir = 'asc' | 'desc';
+
+function SortHeader({ label, sortKey, currentSort, onSort }: {
+  label: string;
+  sortKey: SortKey;
+  currentSort: { key: SortKey; dir: SortDir } | null;
+  onSort: (key: SortKey) => void;
+}) {
+  const isActive = currentSort?.key === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none transition-colors"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {isActive ? (
+          currentSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
+      </span>
+    </th>
+  );
+}
 
 const PHASE_OPTIONS = [
   { value: '', label: '(aucune)' },
