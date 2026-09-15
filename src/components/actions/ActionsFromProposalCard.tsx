@@ -90,7 +90,8 @@ export function ActionsFromProposalCard({
     try {
       let sortOrder = maxSortOrder + 1;
       let failed = 0;
-      for (const action of sortedActions) {
+      const { toCreate: dedupedActions, duplicates } = await filterDuplicateActions(missionId, sortedActions);
+      for (const action of dedupedActions) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
