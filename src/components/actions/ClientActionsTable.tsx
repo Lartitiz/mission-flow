@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Upload, FileDown, File, GripVertical, Archive, ArchiveRestore, CheckCheck } from 'lucide-react';
+import { Trash2, Upload, FileDown, File, GripVertical, Archive, ArchiveRestore, CheckCheck, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,10 +31,45 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const CLIENT_STATUS_OPTIONS = [
-  { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333' },
-  { value: 'in_progress', label: 'En cours', bg: '#4A90D9', text: '#fff' },
-  { value: 'done', label: 'Fait', bg: '#4CAF50', text: '#fff' },
+  { value: 'not_started', label: 'Pas commencée', bg: '#E0E0E0', text: '#333', order: 0 },
+  { value: 'in_progress', label: 'En cours', bg: '#4A90D9', text: '#fff', order: 1 },
+  { value: 'done', label: 'Fait', bg: '#4CAF50', text: '#fff', order: 2 },
 ];
+
+// Ordre chronologique des phases (identique au plan d'action)
+const PHASE_RANK: Record<string, number> = {
+  mois_1: 1, mois_1_2: 1, mois_2: 2, mois_3: 3, mois_4: 4, mois_4_5: 4, mois_5: 5, mois_6: 6,
+  phase_1: 1, phase_2: 2,
+  continu: 90,
+};
+const phaseRank = (p?: string | null) => (p ? PHASE_RANK[p] ?? 80 : 99);
+
+type SortKey = 'task' | 'description' | 'target_date' | 'status' | 'phase';
+type SortDir = 'asc' | 'desc';
+
+function SortHeader({ label, sortKey, currentSort, onSort }: {
+  label: string;
+  sortKey: SortKey;
+  currentSort: { key: SortKey; dir: SortDir } | null;
+  onSort: (key: SortKey) => void;
+}) {
+  const isActive = currentSort?.key === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none transition-colors"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {isActive ? (
+          currentSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
+      </span>
+    </th>
+  );
+}
 
 const PHASE_OPTIONS = [
   { value: '', label: '(aucune)' },
@@ -357,6 +392,46 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive, selecte
 export function ClientActionsTable({ actions, archivedActions = [], missionId, onUpdate, onDelete, onArchive, onReorder }: ClientActionsTableProps) {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
+
+  const handleSort = (key: SortKey) => {
+    setSort((prev) => {
+      if (prev?.key === key) {
+        if (prev.dir === 'asc') return { key, dir: 'desc' };
+        return null;
+      }
+      return { key, dir: 'asc' };
+    });
+  };
+
+  const sortedActions = useMemo(() => {
+    // Par défaut : tri chronologique par phase puis ordre manuel
+    if (!sort) {
+      return [...actions].sort((a, b) => {
+        const d = phaseRank((a as any).phase) - phaseRank((b as any).phase);
+        if (d !== 0) return d;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+    }
+    const { key, dir } = sort;
+    return [...actions].sort((a, b) => {
+      let aVal: string | number | null;
+      let bVal: string | number | null;
+      if (key === 'status') {
+        aVal = CLIENT_STATUS_OPTIONS.find((s) => s.value === a.status)?.order ?? 99;
+        bVal = CLIENT_STATUS_OPTIONS.find((s) => s.value === b.status)?.order ?? 99;
+      } else if (key === 'phase') {
+        aVal = phaseRank((a as any).phase);
+        bVal = phaseRank((b as any).phase);
+      } else {
+        aVal = (a[key] as string | number | null) ?? '';
+        bVal = (b[key] as string | number | null) ?? '';
+      }
+      if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [actions, sort]);
 
   const toggleSelect = useCallback((id: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -366,7 +441,7 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
     });
   }, []);
 
-  const visibleIds = actions.map((a) => a.id);
+  const visibleIds = sortedActions.map((a) => a.id);
   const selectedVisible = visibleIds.filter((id) => selectedIds.has(id));
   const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
 
@@ -388,15 +463,16 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = actions.findIndex((a) => a.id === active.id);
-    const newIndex = actions.findIndex((a) => a.id === over.id);
+    const oldIndex = sortedActions.findIndex((a) => a.id === active.id);
+    const newIndex = sortedActions.findIndex((a) => a.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const newOrder = [...actions];
+    const newOrder = [...sortedActions];
     const [moved] = newOrder.splice(oldIndex, 1);
     newOrder.splice(newIndex, 0, moved);
     onReorder(newOrder.map((a) => a.id));
-  }, [actions, onReorder]);
+    setSort(null); // reset sort after manual reorder
+  }, [sortedActions, onReorder]);
 
   // Archivage groupé : « toutes les tâches encore ouvertes d'une phase »
   const openByPhase = PHASE_OPTIONS.filter((p) => p.value).map((p) => ({
@@ -510,19 +586,19 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
                     />
                   </th>
                   <th className="px-1 py-2 w-8"></th>
-                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
-                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Date cible</th>
-                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phase</th>
-                  <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
+                  <SortHeader label="Tâche" sortKey="task" currentSort={sort} onSort={handleSort} />
+                  <SortHeader label="Description" sortKey="description" currentSort={sort} onSort={handleSort} />
+                  <SortHeader label="Date cible" sortKey="target_date" currentSort={sort} onSort={handleSort} />
+                  <SortHeader label="Phase" sortKey="phase" currentSort={sort} onSort={handleSort} />
+                  <SortHeader label="Statut" sortKey="status" currentSort={sort} onSort={handleSort} />
                   <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fichiers</th>
                   <th className="px-1 py-2 w-8"></th>
                   <th className="px-3 py-2 w-10"></th>
                 </tr>
               </thead>
-              <SortableContext items={actions.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext items={sortedActions.map((a) => a.id)} strategy={verticalListSortingStrategy}>
                 <tbody>
-                  {actions.map((action) => (
+                  {sortedActions.map((action) => (
                     <SortableRow
                       key={action.id}
                       action={action}
