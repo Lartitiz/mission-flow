@@ -2,8 +2,9 @@ import { useState, useRef, useCallback } from 'react';
 import type { Action } from '@/hooks/useActions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Upload, FileDown, File, GripVertical, Archive, ArchiveRestore } from 'lucide-react';
+import { Trash2, Upload, FileDown, File, GripVertical, Archive, ArchiveRestore, CheckCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -183,12 +184,14 @@ function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missi
   );
 }
 
-function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
+function SortableRow({ action, missionId, onUpdate, onDelete, onArchive, selected, onToggleSelect }: {
   action: Action;
   missionId: string;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
   onArchive?: (ids: string[], archived?: boolean) => void;
+  selected: boolean;
+  onToggleSelect: (id: string, checked: boolean) => void;
 }) {
 
   const {
@@ -210,8 +213,18 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
     <tr
       ref={setNodeRef}
       style={style}
-      className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+      className={cn(
+        'border-b border-border last:border-0 hover:bg-secondary/20 transition-colors',
+        selected && 'bg-primary/5'
+      )}
     >
+      <td className="px-2 py-1 w-8">
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(c) => onToggleSelect(action.id, !!c)}
+          aria-label="Sélectionner la tâche"
+        />
+      </td>
       <td className="px-1 py-1 w-8">
         <button
           {...attributes}
@@ -343,6 +356,29 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
 
 export function ClientActionsTable({ actions, archivedActions = [], missionId, onUpdate, onDelete, onArchive, onReorder }: ClientActionsTableProps) {
   const [showArchived, setShowArchived] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const visibleIds = actions.map((a) => a.id);
+  const selectedVisible = visibleIds.filter((id) => selectedIds.has(id));
+  const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(visibleIds) : new Set());
+  };
+
+  const markSelectedDone = () => {
+    selectedVisible.forEach((id) => onUpdate(id, { status: 'done' }));
+    setSelectedIds(new Set());
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor)
@@ -426,12 +462,53 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
           ))}
         </div>
       )}
+      {selectedVisible.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+          <span className="font-body text-xs text-foreground font-medium">
+            {selectedVisible.length} tâche{selectedVisible.length > 1 ? 's' : ''} sélectionnée{selectedVisible.length > 1 ? 's' : ''}
+          </span>
+          <Button
+            size="sm"
+            className="font-body h-7 gap-1 text-[11px]"
+            onClick={markSelectedDone}
+          >
+            <CheckCheck className="h-3 w-3" />
+            Marquer comme fait
+          </Button>
+          {onArchive && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-body h-7 gap-1 text-[11px]"
+              onClick={() => { onArchive(selectedVisible, true); setSelectedIds(new Set()); }}
+            >
+              <Archive className="h-3 w-3" />
+              Archiver
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="font-body h-7 text-[11px] text-muted-foreground"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Désélectionner
+          </Button>
+        </div>
+      )}
       <div className="bg-card rounded-xl shadow-[var(--card-shadow)] overflow-hidden">
         <div className="overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border bg-secondary/30">
+                  <th className="px-2 py-2 w-8">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={(c) => toggleSelectAll(!!c)}
+                      aria-label="Tout sélectionner"
+                    />
+                  </th>
                   <th className="px-1 py-2 w-8"></th>
                   <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
                   <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
@@ -453,6 +530,8 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
                       onUpdate={onUpdate}
                       onDelete={onDelete}
                       onArchive={onArchive}
+                      selected={selectedIds.has(action.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   ))}
                 </tbody>
