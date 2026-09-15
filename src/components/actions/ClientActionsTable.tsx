@@ -392,6 +392,46 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive, selecte
 export function ClientActionsTable({ actions, archivedActions = [], missionId, onUpdate, onDelete, onArchive, onReorder }: ClientActionsTableProps) {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
+
+  const handleSort = (key: SortKey) => {
+    setSort((prev) => {
+      if (prev?.key === key) {
+        if (prev.dir === 'asc') return { key, dir: 'desc' };
+        return null;
+      }
+      return { key, dir: 'asc' };
+    });
+  };
+
+  const sortedActions = useMemo(() => {
+    // Par défaut : tri chronologique par phase puis ordre manuel
+    if (!sort) {
+      return [...actions].sort((a, b) => {
+        const d = phaseRank((a as any).phase) - phaseRank((b as any).phase);
+        if (d !== 0) return d;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+    }
+    const { key, dir } = sort;
+    return [...actions].sort((a, b) => {
+      let aVal: string | number | null;
+      let bVal: string | number | null;
+      if (key === 'status') {
+        aVal = CLIENT_STATUS_OPTIONS.find((s) => s.value === a.status)?.order ?? 99;
+        bVal = CLIENT_STATUS_OPTIONS.find((s) => s.value === b.status)?.order ?? 99;
+      } else if (key === 'phase') {
+        aVal = phaseRank((a as any).phase);
+        bVal = phaseRank((b as any).phase);
+      } else {
+        aVal = (a[key] as string | number | null) ?? '';
+        bVal = (b[key] as string | number | null) ?? '';
+      }
+      if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [actions, sort]);
 
   const toggleSelect = useCallback((id: string, checked: boolean) => {
     setSelectedIds((prev) => {
