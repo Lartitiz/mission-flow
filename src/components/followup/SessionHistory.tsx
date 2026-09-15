@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 import { saveAs } from 'file-saver';
 import { NotesEditor } from '@/components/discovery/NotesEditor';
 import { AiExtractionResults } from '@/components/actions/AiExtractionResults';

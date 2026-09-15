@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { useQueryClient } from '@tanstack/react-query';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 
 interface GeneratedAction {
   assignee: string;
