@@ -133,7 +133,8 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
         return sortCounters[assignee]++;
       };
       let failed = 0;
-      for (const action of selectedNew) {
+      const { toCreate: dedupedNew, duplicates: dupNew } = await filterDuplicateActions(missionId, selectedNew);
+      for (const action of dedupedNew) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
@@ -168,7 +169,12 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
       const sn = (session?.structured_notes as Record<string, unknown>) || {};
       const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
       await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
-      toast({ title: 'Suggestions appliquées', description: `${selectedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.` });
+      toast({
+        title: 'Suggestions appliquées',
+        description:
+          `${dedupedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.` +
+          (dupNew.length ? ` ${duplicatesMessage(dupNew.length)}` : ''),
+      });
       setOpenPendingSessionId(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['pending-extracted-sessions', missionId] });
@@ -281,7 +287,8 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
         return sortCounters[assignee]++;
       };
       let failed = 0;
-      for (const action of selectedNew) {
+      const { toCreate: dedupedNew, duplicates: dupNew } = await filterDuplicateActions(missionId, selectedNew);
+      for (const action of dedupedNew) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
