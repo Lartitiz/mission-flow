@@ -356,6 +356,29 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive, selecte
 
 export function ClientActionsTable({ actions, archivedActions = [], missionId, onUpdate, onDelete, onArchive, onReorder }: ClientActionsTableProps) {
   const [showArchived, setShowArchived] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const visibleIds = actions.map((a) => a.id);
+  const selectedVisible = visibleIds.filter((id) => selectedIds.has(id));
+  const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(visibleIds) : new Set());
+  };
+
+  const markSelectedDone = () => {
+    selectedVisible.forEach((id) => onUpdate(id, { status: 'done' }));
+    setSelectedIds(new Set());
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor)
@@ -445,6 +468,13 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border bg-secondary/30">
+                  <th className="px-2 py-2 w-8">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={(c) => toggleSelectAll(!!c)}
+                      aria-label="Tout sélectionner"
+                    />
+                  </th>
                   <th className="px-1 py-2 w-8"></th>
                   <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Tâche</th>
                   <th className="px-3 py-2 font-body text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</th>
@@ -466,6 +496,8 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
                       onUpdate={onUpdate}
                       onDelete={onDelete}
                       onArchive={onArchive}
+                      selected={selectedIds.has(action.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   ))}
                 </tbody>
