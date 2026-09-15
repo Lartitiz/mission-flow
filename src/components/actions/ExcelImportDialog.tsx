@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 import {
   Select,
   SelectContent,
@@ -256,12 +257,20 @@ export function ExcelImportDialog({
         return action;
       });
 
-      const { error: insertError } = await supabase.from('actions').insert(actionsToInsert as any);
-      if (insertError) throw insertError;
+      const { toCreate: rowsToInsert, duplicates } = await filterDuplicateActions(
+        missionId,
+        actionsToInsert as unknown as { task: string; assignee?: string | null }[]
+      );
+      if (rowsToInsert.length > 0) {
+        const { error: insertError } = await supabase.from('actions').insert(rowsToInsert as any);
+        if (insertError) throw insertError;
+      }
 
       toast({
-        title: `${actionsToInsert.length} action(s) importée(s)`,
-        description: 'Les actions ont été ajoutées au plan.',
+        title: `${rowsToInsert.length} action(s) importée(s)`,
+        description: duplicates.length
+          ? duplicatesMessage(duplicates.length)
+          : 'Les actions ont été ajoutées au plan.',
       });
 
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { useQueryClient } from '@tanstack/react-query';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 
 interface GeneratedAction {
   assignee: string;
@@ -89,7 +90,8 @@ export function ActionsFromProposalCard({
     try {
       let sortOrder = maxSortOrder + 1;
       let failed = 0;
-      for (const action of sortedActions) {
+      const { toCreate: dedupedActions, duplicates } = await filterDuplicateActions(missionId, sortedActions);
+      for (const action of dedupedActions) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
@@ -113,11 +115,14 @@ export function ActionsFromProposalCard({
       // Journal entry
       await supabase.from('journal_entries').insert({
         mission_id: missionId,
-        content: `Plan d'actions initialisé à partir de la proposition (${sortedActions.length} actions)`,
+        content: `Plan d'actions initialisé à partir de la proposition (${dedupedActions.length} actions)`,
         source: 'auto',
       });
 
-      toast.success(`${sortedActions.length} actions créées depuis la proposition`);
+      toast.success(
+        `${dedupedActions.length} actions créées depuis la proposition` +
+          (duplicates.length ? ` — ${duplicatesMessage(duplicates.length)}` : '')
+      );
 
       // Auto-assign phases for any actions that don't have one
       try {

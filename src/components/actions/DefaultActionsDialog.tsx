@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 
 interface DefaultActionsDialogProps {
   open: boolean;
@@ -80,7 +81,7 @@ export function DefaultActionsDialog({
     setIsCreating(true);
     try {
       let sortOrder = maxSortOrder + 1;
-      const rows = toCreate.map((a) => ({
+      const allRows = toCreate.map((a) => ({
         mission_id: missionId,
         assignee: 'client',
         task: a.task,
@@ -91,11 +92,15 @@ export function DefaultActionsDialog({
         sort_order: sortOrder++,
       }));
 
-      const { error } = await supabase.from('actions').insert(rows);
-      if (error) throw error;
+      const { toCreate: rows, duplicates } = await filterDuplicateActions(missionId, allRows);
+      if (rows.length > 0) {
+        const { error } = await supabase.from('actions').insert(rows);
+        if (error) throw error;
+      }
 
       toast({
-        title: `${toCreate.length} action${toCreate.length > 1 ? 's' : ''} client·e créée${toCreate.length > 1 ? 's' : ''}`,
+        title: `${rows.length} action${rows.length > 1 ? 's' : ''} client·e créée${rows.length > 1 ? 's' : ''}`,
+        description: duplicates.length ? duplicatesMessage(duplicates.length) : undefined,
       });
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
       onOpenChange(false);

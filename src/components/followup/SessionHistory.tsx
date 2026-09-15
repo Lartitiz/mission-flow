@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 import { saveAs } from 'file-saver';
 import { NotesEditor } from '@/components/discovery/NotesEditor';
 import { AiExtractionResults } from '@/components/actions/AiExtractionResults';
@@ -419,7 +420,8 @@ export function SessionHistory({
         return sortCounters[assignee]++;
       };
       let failed = 0;
-      for (const action of sortedNew) {
+      const { toCreate: dedupedNew, duplicates: dupNew } = await filterDuplicateActions(missionId, sortedNew);
+      for (const action of dedupedNew) {
         const { error } = await supabase.from('actions').insert({
           mission_id: missionId,
           assignee: action.assignee,
@@ -461,7 +463,9 @@ export function SessionHistory({
       }
       toast({
         title: 'Changements appliqués',
-        description: `${sortedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
+        description:
+          `${dedupedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.` +
+          (dupNew.length ? ` ${duplicatesMessage(dupNew.length)}` : ''),
       });
       setExtractionResults(null);
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
@@ -515,18 +519,24 @@ export function SessionHistory({
         actions.length > 0
           ? Math.max(0, ...actions.filter((a) => a.assignee === assignee).map((a) => a.sort_order)) + 1
           : 0;
-      const rows = lines.map((task, i) => ({
+      const allRows = lines.map((task, i) => ({
         mission_id: missionId,
         assignee,
         task,
         sort_order: baseSort + i,
         status: 'not_started',
       }));
-      const { error } = await supabase.from('actions').insert(rows);
-      if (error) throw error;
+      const { toCreate: rows, duplicates } = await filterDuplicateActions(missionId, allRows);
+      if (rows.length > 0) {
+        const { error } = await supabase.from('actions').insert(rows);
+        if (error) throw error;
+      }
       setQuickTasks((p) => ({ ...p, [sessionId]: '' }));
       queryClient.invalidateQueries({ queryKey: ['actions', missionId] });
-      toast({ title: `${lines.length} action(s) ajoutée(s) au plan` });
+      toast({
+        title: `${rows.length} action(s) ajoutée(s) au plan`,
+        description: duplicates.length ? duplicatesMessage(duplicates.length) : undefined,
+      });
     } catch {
       toast({ title: 'Erreur', description: "Impossible d'ajouter les actions.", variant: 'destructive' });
     } finally {
