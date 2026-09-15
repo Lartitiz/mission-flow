@@ -115,11 +115,14 @@ export function ActionsFromProposalCard({
       // Journal entry
       await supabase.from('journal_entries').insert({
         mission_id: missionId,
-        content: `Plan d'actions initialisé à partir de la proposition (${sortedActions.length} actions)`,
+        content: `Plan d'actions initialisé à partir de la proposition (${dedupedActions.length} actions)`,
         source: 'auto',
       });
 
-      toast.success(`${sortedActions.length} actions créées depuis la proposition`);
+      toast.success(
+        `${dedupedActions.length} actions créées depuis la proposition` +
+          (duplicates.length ? ` — ${duplicatesMessage(duplicates.length)}` : '')
+      );
 
       // Auto-assign phases for any actions that don't have one
       try {
