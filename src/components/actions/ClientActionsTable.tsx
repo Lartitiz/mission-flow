@@ -184,12 +184,14 @@ function FileCell({ actionId, missionId, onUploaded }: { actionId: string; missi
   );
 }
 
-function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
+function SortableRow({ action, missionId, onUpdate, onDelete, onArchive, selected, onToggleSelect }: {
   action: Action;
   missionId: string;
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
   onArchive?: (ids: string[], archived?: boolean) => void;
+  selected: boolean;
+  onToggleSelect: (id: string, checked: boolean) => void;
 }) {
 
   const {
@@ -211,8 +213,18 @@ function SortableRow({ action, missionId, onUpdate, onDelete, onArchive }: {
     <tr
       ref={setNodeRef}
       style={style}
-      className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+      className={cn(
+        'border-b border-border last:border-0 hover:bg-secondary/20 transition-colors',
+        selected && 'bg-primary/5'
+      )}
     >
+      <td className="px-2 py-1 w-8">
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(c) => onToggleSelect(action.id, !!c)}
+          aria-label="Sélectionner la tâche"
+        />
+      </td>
       <td className="px-1 py-1 w-8">
         <button
           {...attributes}
