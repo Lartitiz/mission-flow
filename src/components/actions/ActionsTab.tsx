@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExcelImportDialog } from './ExcelImportDialog';
 import { DefaultActionsDialog } from './DefaultActionsDialog';
+import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
 
 interface ActionsTabProps {
   missionId: string;
@@ -328,7 +329,9 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
 
       toast({
         title: 'Changements appliqués',
-        description: `${selectedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.`,
+        description:
+          `${dedupedNew.length} action(s) créée(s), ${selectedUpdates.length} mise(s) à jour.` +
+          (dupNew.length ? ` ${duplicatesMessage(dupNew.length)}` : ''),
       });
 
       setExtractionResults(null);
