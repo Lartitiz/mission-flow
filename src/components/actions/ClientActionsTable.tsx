@@ -441,7 +441,7 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
     });
   }, []);
 
-  const visibleIds = actions.map((a) => a.id);
+  const visibleIds = sortedActions.map((a) => a.id);
   const selectedVisible = visibleIds.filter((id) => selectedIds.has(id));
   const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
 
@@ -463,15 +463,16 @@ export function ClientActionsTable({ actions, archivedActions = [], missionId, o
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = actions.findIndex((a) => a.id === active.id);
-    const newIndex = actions.findIndex((a) => a.id === over.id);
+    const oldIndex = sortedActions.findIndex((a) => a.id === active.id);
+    const newIndex = sortedActions.findIndex((a) => a.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const newOrder = [...actions];
+    const newOrder = [...sortedActions];
     const [moved] = newOrder.splice(oldIndex, 1);
     newOrder.splice(newIndex, 0, moved);
     onReorder(newOrder.map((a) => a.id));
-  }, [actions, onReorder]);
+    setSort(null); // reset sort after manual reorder
+  }, [sortedActions, onReorder]);
 
   // Archivage groupé : « toutes les tâches encore ouvertes d'une phase »
   const openByPhase = PHASE_OPTIONS.filter((p) => p.value).map((p) => ({
