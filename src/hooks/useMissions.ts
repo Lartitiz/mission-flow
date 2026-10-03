@@ -236,4 +236,36 @@ export function useMissionsNextSession() {
   });
 }
 
+export interface AtelierCounts {
+  /** ateliers déjà donnés (date passée ou aujourd'hui) */
+  done: number;
+  /** ateliers planifiés à venir */
+  planned: number;
+}
+
+/** mission_id -> { ateliers donnés, ateliers planifiés } pour l'affichage dans le pipeline */
+export function useMissionsAtelierCounts() {
+  return useQuery({
+    queryKey: ['missions-atelier-counts'],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('mission_id, session_date');
+      if (error) throw error;
+      const map: Record<string, AtelierCounts> = {};
+      (data ?? []).forEach((r: any) => {
+        const entry = map[r.mission_id] ?? (map[r.mission_id] = { done: 0, planned: 0 });
+        // Même convention que le suivi : la date fait foi, un atelier du jour est « donné »
+        if (r.session_date <= today) entry.done++;
+        else entry.planned++;
+      });
+      return map;
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+}
+
 
