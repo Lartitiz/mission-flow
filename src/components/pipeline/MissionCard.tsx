@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DeleteMissionDialog } from './DeleteMissionDialog';
-import { useDeleteMission, useMissionsActivity, useMissionsNextSession } from '@/hooks/useMissions';
+import { useDeleteMission, useMissionsActivity, useMissionsNextSession, useMissionsAtelierCounts } from '@/hooks/useMissions';
 import { FollowUpEmailDialog } from '@/components/mission/FollowUpEmailDialog';
 
 interface MissionCardProps {
@@ -28,7 +28,13 @@ export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
   const deleteMission = useDeleteMission();
   const { data: activity = {} } = useMissionsActivity();
   const { data: nextSessions = {} } = useMissionsNextSession();
+  const { data: ateliers = {} } = useMissionsAtelierCounts();
   const nextSession = nextSessions[mission.id];
+  const at = ateliers[mission.id] ?? { done: 0, planned: 0 };
+  const plannedTotal =
+    mission.planned_sessions_total ?? (mission.mission_type === 'binome' ? 6 : null);
+  const atTotal = plannedTotal ?? at.done + at.planned;
+  const atRemaining = Math.max(0, atTotal - at.done - at.planned);
   const noUpcoming = !nextSession && (mission.status === 'active' || mission.status === 'signed');
   const canFollowUp = mission.status === 'proposal_sent' || mission.status === 'signed';
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -174,15 +180,25 @@ export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
             {timeAgo(lastActivity)}
           </p>
           <div className="flex items-center gap-1.5">
-            {noUpcoming ? (
+            {atTotal > 0 && (mission.status === 'active' || mission.status === 'signed') && (
               <span
-                title="Aucun atelier planifié"
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-jaune/25 text-foreground"
+                title={`${at.done} atelier${at.done > 1 ? 's' : ''} donné${at.done > 1 ? 's' : ''} sur ${atTotal} prévus`}
+                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                  noUpcoming && atRemaining > 0
+                    ? 'bg-jaune/25 text-foreground'
+                    : 'text-muted-foreground'
+                }`}
               >
-                <CalendarX className="h-3 w-3" />
-                Pas d'atelier planifié
+                {noUpcoming && atRemaining > 0 ? (
+                  <CalendarX className="h-3 w-3" />
+                ) : (
+                  <CalendarCheck className="h-3 w-3" />
+                )}
+                {at.done}/{atTotal} ateliers
+                {noUpcoming && atRemaining > 0 && ` · ${atRemaining} à planifier`}
               </span>
-            ) : nextSession ? (
+            )}
+            {nextSession && (mission.status === 'active' || mission.status === 'signed') && (
               <span
                 title="Prochain atelier"
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
@@ -190,7 +206,7 @@ export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
                 <CalendarCheck className="h-3 w-3" />
                 {new Date(nextSession).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
               </span>
-            ) : null}
+            )}
             {staleBadge && (
               <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${staleBadge.cls}`}>
                 {staleBadge.label}
