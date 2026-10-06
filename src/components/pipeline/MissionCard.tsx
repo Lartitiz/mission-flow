@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
 import { MoreHorizontal, Trash2, Mail, CalendarX, CalendarCheck, CheckCircle2 } from 'lucide-react';
 import type { Mission } from '@/lib/missions';
-import { formatMissionType, formatAmount, timeAgo, getDaysSince } from '@/lib/missions';
+import { formatMissionType, formatAmount, timeAgo } from '@/lib/missions';
 import type { PhaseProgress } from '@/hooks/useMissions';
 import {
   DropdownMenu,
@@ -51,21 +51,12 @@ export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
 
 
 
-  // Charte : plus de barre de couleur sur le côté des cartes (tic banni).
-  // Le retard devient un badge lisible au lieu d'un filet à décoder.
   // La date de référence = dernière activité réelle (atelier, action, journal),
   // pas seulement la modification de la fiche mission.
   const lastActivity =
     activity[mission.id] && activity[mission.id] > mission.updated_at
       ? activity[mission.id]
       : mission.updated_at;
-  const daysSinceUpdate = getDaysSince(lastActivity);
-  const staleBadge =
-    daysSinceUpdate > 14
-      ? { label: `Sans nouvelle depuis ${daysSinceUpdate} j`, cls: 'bg-warning-red text-primary-foreground' }
-      : daysSinceUpdate > 7
-        ? { label: 'À relancer', cls: 'bg-jaune text-jaune-foreground' }
-        : null;
 
   const typeBadge = () => {
     const label = formatMissionType(mission.mission_type);
@@ -205,11 +196,6 @@ export function MissionCard({ mission, phaseProgress }: MissionCardProps) {
               >
                 <CalendarCheck className="h-3 w-3" />
                 {new Date(nextSession).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-              </span>
-            )}
-            {staleBadge && (
-              <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${staleBadge.cls}`}>
-                {staleBadge.label}
               </span>
             )}
           </div>
