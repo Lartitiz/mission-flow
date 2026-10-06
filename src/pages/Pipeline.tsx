@@ -77,16 +77,27 @@ const Pipeline = () => {
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-5 overflow-x-auto pb-6 -mx-4 px-4 md:mx-0 md:px-0">
-          {PIPELINE_COLUMNS.map((col) => (
-            <KanbanColumn
-              key={col.id}
-              id={col.id}
-              label={col.label}
-              missions={missions.filter((m) => m.status === col.id)}
-              isLost={col.id === 'lost'}
-              phaseProgress={phaseProgress}
-            />
-          ))}
+          {PIPELINE_COLUMNS.map((col) => {
+            // Les missions « Mois 1-3 terminés » descendent en bas de la
+            // colonne : celles qui restent à avancer restent en haut.
+            const columnMissions = missions
+              .filter((m) => m.status === col.id)
+              .sort((a, b) => {
+                const aDone = phaseProgress[a.id]?.phase1to3Done ? 1 : 0;
+                const bDone = phaseProgress[b.id]?.phase1to3Done ? 1 : 0;
+                return aDone - bDone;
+              });
+            return (
+              <KanbanColumn
+                key={col.id}
+                id={col.id}
+                label={col.label}
+                missions={columnMissions}
+                isLost={col.id === 'lost'}
+                phaseProgress={phaseProgress}
+              />
+            );
+          })}
         </div>
 
         <DragOverlay>
