@@ -131,6 +131,7 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
             totalActions={totalActions}
             actionsPercent={actionsPercent}
           />
+          <NextSessionBookingMessage clientName={clientName} />
           <AteliersCard
             pastSessions={pastSessions}
             futureSessions={futureSessions}
@@ -171,7 +172,6 @@ export function FollowUpTab({ missionId, clientName, missionType, amount }: Foll
       {sousOnglet === 'outils' && (
         <div className="space-y-6">
           <LaunchMessageCard clientName={clientName} />
-          <NextSessionBookingMessage clientName={clientName} />
           <ContextExport missionId={missionId} clientName={clientName} />
           <ClaudeProjectExport missionId={missionId} clientName={clientName} />
         </div>
