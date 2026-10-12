@@ -88,7 +88,8 @@ ${contextSummary}`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-5-5',
+        thinking: { type: 'between_tools' },
         max_tokens: 1000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
@@ -105,7 +106,7 @@ ${contextSummary}`;
     }
 
     const aiResponse = await response.json();
-    const textContent = aiResponse.content?.[0]?.text;
+    const textContent = aiResponse.content?.find((b: any) => b.type === "text")?.text;
 
     if (!textContent) {
       return new Response(JSON.stringify({ error: 'Empty AI response' }), { status: 500, headers: corsHeaders });

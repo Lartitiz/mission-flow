@@ -124,7 +124,8 @@ ${JSON.stringify(actions?.map((a: any) => ({ id: a.id, task: a.task, description
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-sonnet-5-5",
+        thinking: { type: "between_tools" },
         max_tokens: 2000,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],
@@ -141,7 +142,7 @@ ${JSON.stringify(actions?.map((a: any) => ({ id: a.id, task: a.task, description
     }
 
     const aiData = await anthropicRes.json();
-    const rawText = aiData.content?.[0]?.text || "";
+    const rawText = aiData.content?.find((b: any) => b.type === "text")?.text || "";
 
     // Extract JSON from response
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);

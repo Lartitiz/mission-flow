@@ -84,7 +84,8 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-sonnet-5-5",
+        thinking: { type: "between_tools" },
         max_tokens: 500,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: `Notes actuelles de l'appel :\n\n${current_notes}` }],
@@ -104,7 +105,7 @@ serve(async (req) => {
     }
 
     const result = await response.json();
-    const textContent = result.content?.[0]?.text;
+    const textContent = result.content?.find((b: any) => b.type === "text")?.text;
     if (!textContent) {
       return new Response(JSON.stringify({ error: "Réponse Claude vide" }), {
         status: 500,
