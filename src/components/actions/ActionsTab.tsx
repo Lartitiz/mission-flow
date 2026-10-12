@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExcelImportDialog } from './ExcelImportDialog';
 import { DefaultActionsDialog } from './DefaultActionsDialog';
 import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
+import { clearPendingWithRejected } from '@/lib/rejected-suggestions';
 
 interface ActionsTabProps {
   missionId: string;
@@ -165,10 +166,12 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
       }
       // En cas d'échec, ne pas effacer les suggestions : on pourra réessayer.
       if (failed > 0) throw new Error(`${failed} écriture(s) refusée(s)`);
-      // Clear pending on the source session
+      // Clear pending on the source session, en gardant trace des suggestions
+      // décochées pour que la prochaine extraction ne les repropose pas.
       const session = pendingSessions?.find((s) => s.id === sessionId);
       const sn = (session?.structured_notes as Record<string, unknown>) || {};
-      const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+      const pendingNew = ((sn._pending_extracted as { new_actions?: AiNewAction[] } | undefined)?.new_actions) ?? [];
+      const rest = clearPendingWithRejected(sn, pendingNew.filter((a) => !selectedNew.includes(a)));
       await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
       toast({
         title: 'Suggestions appliquées',
@@ -190,7 +193,8 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
   const handleDismissPending = async (sessionId: string) => {
     const session = pendingSessions?.find((s) => s.id === sessionId);
     const sn = (session?.structured_notes as Record<string, unknown>) || {};
-    const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+    const pendingNew = ((sn._pending_extracted as { new_actions?: AiNewAction[] } | undefined)?.new_actions) ?? [];
+    const rest = clearPendingWithRejected(sn, pendingNew);
     await supabase.from('sessions').update({ structured_notes: rest as any }).eq('id', sessionId);
     setOpenPendingSessionId(null);
     queryClient.invalidateQueries({ queryKey: ['pending-extracted-sessions', missionId] });
@@ -240,6 +244,7 @@ export function ActionsTab({ missionId, clientName, showDefaultActions, onDefaul
           })),
           mission_type: mission?.mission_type ?? 'binome',
           proposal_content: proposal?.content ?? null,
+          mission_id: missionId,
         },
       });
 

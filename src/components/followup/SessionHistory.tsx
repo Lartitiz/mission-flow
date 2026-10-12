@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { filterDuplicateActions, duplicatesMessage } from '@/lib/action-dedupe';
+import { clearPendingWithRejected, getRejected } from '@/lib/rejected-suggestions';
 import { saveAs } from 'file-saver';
 import { NotesEditor } from '@/components/discovery/NotesEditor';
 import { AiExtractionResults } from '@/components/actions/AiExtractionResults';
@@ -221,7 +222,12 @@ export function SessionHistory({
         return;
       }
 
-      onUpdate(session.id, { structured_notes: data });
+      // Re-structurer ne doit pas effacer la mémoire des suggestions écartées.
+      const previousRejected = getRejected(session.structured_notes);
+      const structuredData = previousRejected.length
+        ? { ...(data || {}), _rejected_suggestions: previousRejected }
+        : data;
+      onUpdate(session.id, { structured_notes: structuredData });
 
       // Generate short client-facing summary in background
       supabase.functions.invoke('summarize-session-for-client', {
@@ -266,6 +272,8 @@ export function SessionHistory({
             })),
             mission_type: missionType,
             proposal_content: proposalContent ?? null,
+            mission_id: missionId,
+            session_id: session.id,
           },
         }
       );
@@ -282,7 +290,7 @@ export function SessionHistory({
         // Persist pending suggestions so they remain available in the Action plan tab
         onUpdate(session.id, {
           structured_notes: {
-            ...(data || {}),
+            ...(structuredData || {}),
             _pending_extracted: {
               new_actions: newActions,
               updates,
@@ -359,6 +367,8 @@ export function SessionHistory({
             })),
             mission_type: missionType,
             proposal_content: proposalContent ?? null,
+            mission_id: missionId,
+            session_id: session.id,
           },
         }
       );
@@ -458,7 +468,10 @@ export function SessionHistory({
       if (extractionResults?.sessionId) {
         const session = sessions.find((s) => s.id === extractionResults.sessionId);
         const sn = (session?.structured_notes as Record<string, unknown>) || {};
-        const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+        const rest = clearPendingWithRejected(
+          sn,
+          extractionResults.new_actions.filter((a) => !selectedNew.includes(a))
+        );
         onUpdate(extractionResults.sessionId, { structured_notes: rest });
       }
       toast({
@@ -930,7 +943,7 @@ export function SessionHistory({
                         onCancel={() => {
                           // Clear persisted suggestions when user dismisses
                           const sn = (session.structured_notes as Record<string, unknown>) || {};
-                          const { _pending_extracted, ...rest } = sn as { _pending_extracted?: unknown };
+                          const rest = clearPendingWithRejected(sn, extractionResults.new_actions);
                           onUpdate(session.id, { structured_notes: rest });
                           setExtractionResults(null);
                           queryClient.invalidateQueries({ queryKey: ['sessions', missionId] });

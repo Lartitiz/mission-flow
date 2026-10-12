@@ -69,7 +69,7 @@ export function useActions(missionId: string) {
             const completed: number[] = Array.isArray((project as any).completed_prompts)
               ? ((project as any).completed_prompts as number[])
               : [];
-            const shouldBeChecked = ['in_progress', 'to_validate', 'validated', 'delivered'].includes(updates.status as string);
+            const shouldBeChecked = ['in_progress', 'to_validate', 'validated', 'delivered', 'done'].includes(updates.status as string);
             const isChecked = completed.includes(promptOrder);
             if (shouldBeChecked !== isChecked) {
               const newCompleted = shouldBeChecked
