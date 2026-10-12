@@ -54,7 +54,9 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  // The pgmq RPCs used here (move_to_dlq, read_email_batch) aren't in the generated
+  // Database types, so this helper works with an untyped client on purpose.
+  supabase: any,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -156,12 +158,12 @@ Deno.serve(async (req) => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg) =>
+          .map((msg: any) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
               ? msg.message.message_id
               : null
           )
-          .filter((id): id is string => Boolean(id))
+          .filter((id: unknown): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
