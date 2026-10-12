@@ -14,6 +14,7 @@ import { Video, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActions } from '@/hooks/useActions';
+import { getRejected } from '@/lib/rejected-suggestions';
 
 interface KickoffTabProps {
   missionId: string;
@@ -198,6 +199,14 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
       const sessionDate = (kickoff.created_at ?? new Date().toISOString()).slice(0, 10);
       const structuredText = sections.map((s) => `## ${s.title}\n${s.content}`).join('\n\n');
 
+      // Idempotent upsert: find existing session for this kickoff
+      const { data: existing } = await supabase
+        .from('sessions')
+        .select('id, structured_notes')
+        .eq('mission_id', missionId)
+        .filter('structured_notes->>_from_kickoff', 'eq', kickoff.id)
+        .limit(1);
+
       // Extract actions
       const { data: extractData } = await supabase.functions.invoke('extract-actions-from-cr', {
         body: {
@@ -208,6 +217,8 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
           })),
           mission_type: mission?.mission_type ?? 'binome',
           proposal_content: proposal?.content ?? null,
+          mission_id: missionId,
+          session_id: existing?.[0]?.id ?? null,
         },
       });
       const newActions = extractData?.new_actions ?? [];
@@ -217,6 +228,9 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
         sections,
         _from_kickoff: kickoff.id,
       };
+      // Garder la mémoire des suggestions écartées lors d'une re-synchronisation.
+      const previousRejected = getRejected(existing?.[0]?.structured_notes);
+      if (previousRejected.length) sessionStructured._rejected_suggestions = previousRejected;
       if (newActions.length > 0 || updates.length > 0) {
         sessionStructured._pending_extracted = {
           new_actions: newActions,
@@ -224,14 +238,6 @@ export function KickoffTab({ missionId, clientName }: KickoffTabProps) {
           generated_at: new Date().toISOString(),
         };
       }
-
-      // Idempotent upsert: find existing session for this kickoff
-      const { data: existing } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('mission_id', missionId)
-        .filter('structured_notes->>_from_kickoff', 'eq', kickoff.id)
-        .limit(1);
 
       if (existing && existing.length > 0) {
         await supabase

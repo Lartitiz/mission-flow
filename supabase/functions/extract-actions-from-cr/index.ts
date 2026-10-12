@@ -26,6 +26,25 @@ Extrais :
 - NOUVELLES ACTIONS : tâches mentionnées qui n'existent pas encore
 - MISES À JOUR : changements de statut, de date, ou de description pour des actions existantes
 
+RÈGLE CRITIQUE — ZÉRO DOUBLON AVEC LE PLAN EXISTANT :
+Avant de proposer une nouvelle action, compare-la au SENS (pas seulement au libellé) de TOUTES les actions existantes, quel que soit leur statut (y compris terminées, livrées, validées ou faites) et quelle que soit la personne assignée.
+- Même livrable ou même tâche reformulée (ex : "Rédiger la page À propos" / "Écrire le texte de la page qui je suis") = DOUBLON → ne crée rien.
+- Si le compte-rendu apporte une info nouvelle sur une action existante (date, précision, avancement), propose une MISE À JOUR de cette action, jamais une nouvelle action.
+- Une sous-partie d'une action existante (ex : "choisir les photos" alors que "Refaire la page d'accueil" existe) n'est PAS une nouvelle action, sauf si elle est explicitement assignée à une autre personne (typiquement une validation ou un envoi côté client·e).
+- Dans le doute, ne crée pas : un doublon coûte plus cher qu'un oubli, Laetitia peut toujours ajouter une action à la main.
+
+RÈGLE CRITIQUE — PISTES ABANDONNÉES :
+Une transcription contient beaucoup d'idées évoquées puis écartées. Tu n'extrais que ce qui est DÉCIDÉ à l'issue de l'échange.
+- Une idée explorée puis écartée dans la même réunion ("finalement non", "on laisse tomber", "pas pour l'instant", "on verra plus tard", "c'est pas prioritaire", ou remplacée par une autre option) → aucune action.
+- Si plusieurs options ont été discutées, ne garde que celle retenue.
+- Une simple réflexion à voix haute, une hypothèse ou une envie sans décision ("ce serait bien de…", "on pourrait peut-être…") → aucune action, sauf si une suite concrète est actée.
+- Si un "Historique de la mission" est fourni (décisions des sessions précédentes, journal) : ne repropose JAMAIS une piste qui y a été abandonnée, reportée ou remplacée, sauf si le compte-rendu la relance explicitement (dans ce cas, précise-le dans la description : "relancé en séance du …").
+- Si des "Suggestions déjà écartées par Laetitia" sont fournies : ne les repropose pas, même reformulées, sauf demande explicite et nouvelle dans le compte-rendu.
+
+STATUTS VALIDES (pour les mises à jour de statut) :
+- Actions de Laetitia : not_started, in_progress, to_validate, validated, delivered, done (= terminée).
+- Actions de la cliente : not_started, in_progress, done (= fait).
+
 RÈGLE CRITIQUE — ÉQUILIBRE LAETITIA / CLIENT·E (dans les limites du périmètre) :
 Pour CHAQUE sujet abordé dans le CR, tu te poses systématiquement DEUX questions :
 1. "Qu'est-ce que Laetitia doit faire ?" → action avec assignee="laetitia"
@@ -56,6 +75,83 @@ Pour chaque nouvelle action, détermine :
 
 Réponds UNIQUEMENT en JSON valide : { "new_actions": [{ "assignee": "...", "category": "...", "task": "...", "description": "...", "channel": "...", "target_date": "...", "phase": "...", "out_of_scope": false, "out_of_scope_reason": "", "scope_hint": "" }], "updates": [{ "action_id": "...", "field": "status|target_date|description", "old_value": "...", "new_value": "...", "reason": "..." }] }`;
 
+// Même normalisation que src/lib/action-dedupe.ts (non importable depuis Deno).
+const normalizeTask = (task: string): string =>
+  (task || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const isSameTask = (a: string, b: string): boolean => {
+  const na = normalizeTask(a);
+  const nb = normalizeTask(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.length >= 15 && nb.length >= 15) return na.includes(nb) || nb.includes(na);
+  return false;
+};
+
+// Sections des notes structurées qui portent les arbitrages d'une session.
+const HISTORY_SECTIONS = ["résultats clés", "décisions prises", "points de vigilance"];
+
+type HistoryContext = { historyText: string; rejected: { task: string; assignee?: string | null }[] };
+
+// Récupère l'historique de la mission (décisions des sessions précédentes,
+// journal, suggestions déjà écartées) pour que l'IA ne ressorte pas des pistes
+// abandonnées. En cas d'erreur, on continue sans : l'extraction reste possible.
+async function loadHistory(
+  supabase: ReturnType<typeof createClient>,
+  missionId: string,
+  currentSessionId: string | null,
+): Promise<HistoryContext> {
+  const [{ data: sessions }, { data: journal }] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select("id, session_date, topic, structured_notes")
+      .eq("mission_id", missionId)
+      .order("session_date", { ascending: true }),
+    supabase
+      .from("journal_entries")
+      .select("entry_date, content")
+      .eq("mission_id", missionId)
+      .order("entry_date", { ascending: false })
+      .limit(40),
+  ]);
+
+  const rejected: HistoryContext["rejected"] = [];
+  const sessionBlocks: string[] = [];
+  for (const sess of (sessions ?? []) as any[]) {
+    const sn = sess.structured_notes ?? {};
+    if (Array.isArray(sn._rejected_suggestions)) {
+      for (const r of sn._rejected_suggestions) {
+        if (r?.task) rejected.push({ task: r.task, assignee: r.assignee ?? null });
+      }
+    }
+    if (sess.id === currentSessionId) continue;
+    const sections = Array.isArray(sn.sections) ? sn.sections : [];
+    const kept = sections
+      .filter((sec: any) => HISTORY_SECTIONS.includes(String(sec?.title ?? "").trim().toLowerCase()))
+      .map((sec: any) => `### ${sec.title}\n${sec.content}`);
+    if (kept.length) {
+      sessionBlocks.push(`## Session du ${sess.session_date}${sess.topic ? ` (${sess.topic})` : ""}\n${kept.join("\n")}`);
+    }
+  }
+
+  const journalLines = ((journal ?? []) as any[])
+    .reverse()
+    .map((j) => `- ${j.entry_date} : ${j.content}`);
+
+  let historyText = "";
+  if (sessionBlocks.length) historyText += `Décisions des sessions précédentes :\n\n${sessionBlocks.join("\n\n")}\n\n`;
+  if (journalLines.length) historyText += `Journal de bord (récent) :\n${journalLines.join("\n")}\n\n`;
+  // Les sessions les plus récentes comptent le plus : on coupe par le début.
+  if (historyText.length > 20000) historyText = "…\n" + historyText.slice(-20000);
+
+  return { historyText, rejected };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -84,7 +180,7 @@ serve(async (req) => {
       });
     }
 
-    const { meeting_notes, existing_actions, mission_type, proposal_content } = await req.json();
+    const { meeting_notes, existing_actions, mission_type, proposal_content, mission_id, session_id } = await req.json();
 
     if (!meeting_notes || typeof meeting_notes !== "string") {
       return new Response(JSON.stringify({ error: "meeting_notes est requis" }), {
@@ -102,11 +198,28 @@ serve(async (req) => {
       if (proposalText.length > 30000) proposalText = proposalText.slice(0, 30000);
     }
 
+    let history: HistoryContext = { historyText: "", rejected: [] };
+    if (typeof mission_id === "string" && mission_id) {
+      try {
+        history = await loadHistory(supabase, mission_id, typeof session_id === "string" ? session_id : null);
+      } catch (e) {
+        console.warn("Historique de mission indisponible:", e);
+      }
+    }
+    const rejectedText = history.rejected.length
+      ? `Suggestions déjà écartées par Laetitia (ne pas reproposer) :\n${history.rejected
+          .slice(-150)
+          .map((r) => `- ${r.task}${r.assignee ? ` (${r.assignee})` : ""}`)
+          .join("\n")}\n\n`
+      : "";
+
     const userPrompt = `${
       proposalText
         ? `Proposition validée (périmètre contractuel de référence) :\n\n${proposalText}\n\n---\n\n`
         : `Aucune proposition validée fournie pour cette mission.\n\n`
-    }Compte-rendu de réunion :
+    }${
+      history.historyText ? `Historique de la mission (pour repérer les pistes abandonnées) :\n\n${history.historyText}---\n\n` : ""
+    }${rejectedText}Compte-rendu de réunion :
 
 ${meeting_notes}
 
@@ -220,6 +333,28 @@ Type de mission : ${mission_type || "non_determine"}`;
     }
     if (!Array.isArray(parsed?.new_actions)) parsed.new_actions = [];
     if (!Array.isArray(parsed?.updates)) parsed.updates = [];
+
+    // Filet de sécurité : l'IA laisse parfois passer un doublon évident ou une
+    // suggestion déjà écartée. On les retire avant de les présenter.
+    const existingList = (Array.isArray(existing_actions) ? existing_actions : []) as {
+      task?: string;
+      assignee?: string;
+    }[];
+    const kept: any[] = [];
+    let dropped = 0;
+    for (const a of parsed.new_actions) {
+      const task = String(a?.task ?? "");
+      const sameAssignee = (other?: string | null) => !a?.assignee || !other || other === a.assignee;
+      const duplicate =
+        !task.trim() ||
+        existingList.some((e) => sameAssignee(e.assignee) && isSameTask(e.task ?? "", task)) ||
+        history.rejected.some((r) => sameAssignee(r.assignee) && isSameTask(r.task, task)) ||
+        kept.some((k) => sameAssignee(k.assignee) && isSameTask(k.task, task));
+      if (duplicate) dropped++;
+      else kept.push(a);
+    }
+    parsed.new_actions = kept;
+    if (dropped) parsed.filtered_duplicates = dropped;
 
 
     return new Response(JSON.stringify(parsed), {

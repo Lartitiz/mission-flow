@@ -159,7 +159,7 @@ export function ClaudeProjectExport({ missionId, clientName }: ClaudeProjectExpo
     const linkedAction = actions.find((a) => (a as any).claude_prompt_order === order);
     if (linkedAction) {
       const newStatus = wasChecked ? 'not_started' : 'in_progress';
-      // Don't override 'to_validate' / 'validated' / 'delivered' on uncheck : only reset 'in_progress'
+      // Don't override 'to_validate' / 'validated' / 'delivered' / 'done' on uncheck : only reset 'in_progress'
       const skip = wasChecked && !['in_progress', 'not_started'].includes(linkedAction.status);
       if (!skip && linkedAction.status !== newStatus) {
         await supabase

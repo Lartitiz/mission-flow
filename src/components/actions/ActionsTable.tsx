@@ -45,6 +45,7 @@ const STATUS_OPTIONS = [
   { value: 'to_validate', label: 'À valider', bg: '#FFE561', text: '#333', order: 2 },
   { value: 'validated', label: 'Validée', bg: '#4CAF50', text: '#fff', order: 3 },
   { value: 'delivered', label: 'Livrée', bg: '#2E7D32', text: '#fff', order: 4 },
+  { value: 'done', label: 'Terminée', bg: '#1B3A2B', text: '#fff', order: 5 },
 ];
 
 // Ordre chronologique des phases (mois croissants, "Continu" et sans phase en fin)

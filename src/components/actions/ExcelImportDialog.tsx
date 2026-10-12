@@ -98,7 +98,8 @@ function mapStatus(val: string): string {
   const n = normalize(val);
   if (['pas commencee', 'pas commencée', 'not_started', 'a faire', 'à faire'].some((k) => n.includes(normalize(k)))) return 'not_started';
   if (['en cours', 'in_progress'].some((k) => n.includes(normalize(k)))) return 'in_progress';
-  if (['terminee', 'terminée', 'livree', 'livrée', 'delivered', 'done', 'fait'].some((k) => n.includes(normalize(k)))) return 'delivered';
+  if (['livree', 'livrée', 'delivered'].some((k) => n.includes(normalize(k)))) return 'delivered';
+  if (['terminee', 'terminée', 'done', 'fait'].some((k) => n.includes(normalize(k)))) return 'done';
   return 'not_started';
 }
 
@@ -252,6 +253,11 @@ export function ExcelImportDialog({
 
         if (overrideAssignee) {
           action.assignee = assigneeOverride;
+        }
+
+        // Côté cliente, le seul statut « fini » est « Fait ».
+        if (action.assignee === 'client' && action.status === 'delivered') {
+          action.status = 'done';
         }
 
         return action;
