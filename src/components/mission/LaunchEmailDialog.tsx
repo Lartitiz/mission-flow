@@ -95,7 +95,7 @@ function buildEmail(
 
   // PAIEMENT
   if (payment === 'stripe') {
-    body += `Pour activer ton accompagnement, voici le lien de paiement (350€/mois) :\n👉 ${BINOME_PAYMENT_LINK}\nUne fois le premier paiement reçu, on planifie l'atelier de lancement.\n\n`;
+    body += `Pour activer ton accompagnement, voici le lien de paiement (325 € HT/mois) :\n👉 ${BINOME_PAYMENT_LINK}\nUne fois le premier paiement reçu, on planifie l'atelier de lancement.\n\n`;
   } else {
     body += `Je t'envoie le devis et la facture d'acompte en pièce jointe. Voici les coordonnées bancaires pour le virement :\nIBAN : FR76 4061 8804 9300 0405 1786 861\nBIC : BOUSFRPPXXX\nTitulaire : Laetitia Mattioli / Nowadays Agency\nMontant acompte : ${acompte}€\nDès réception, on planifie l'atelier de lancement.\n\n`;
   }
@@ -242,7 +242,7 @@ export function LaunchEmailDialog({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground font-body w-28">Paiement</span>
-            <Toggle label="Stripe (350€/mois)" active={payment === 'stripe'} onClick={() => handleToggle(setPayment, 'stripe')} />
+            <Toggle label="Stripe (325 € HT/mois)" active={payment === 'stripe'} onClick={() => handleToggle(setPayment, 'stripe')} />
             <Toggle label="Virement (devis)" active={payment === 'virement'} onClick={() => handleToggle(setPayment, 'virement')} />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
