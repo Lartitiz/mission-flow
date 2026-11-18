@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 import { buildClientLink } from '@/lib/client-link';
+import { BINOME_PAYMENT_LINK } from '@/lib/payment-links';
 
 interface LaunchEmailDialogProps {
   open: boolean;
@@ -94,7 +95,7 @@ function buildEmail(
 
   // PAIEMENT
   if (payment === 'stripe') {
-    body += `Pour activer ton accompagnement, voici le lien de paiement (350€/mois) :\n👉 https://buy.stripe.com/28EdRa9BreIgdfycrn67S04\nUne fois le premier paiement reçu, on planifie l'atelier de lancement.\n\n`;
+    body += `Pour activer ton accompagnement, voici le lien de paiement (350€/mois) :\n👉 ${BINOME_PAYMENT_LINK}\nUne fois le premier paiement reçu, on planifie l'atelier de lancement.\n\n`;
   } else {
     body += `Je t'envoie le devis et la facture d'acompte en pièce jointe. Voici les coordonnées bancaires pour le virement :\nIBAN : FR76 4061 8804 9300 0405 1786 861\nBIC : BOUSFRPPXXX\nTitulaire : Laetitia Mattioli / Nowadays Agency\nMontant acompte : ${acompte}€\nDès réception, on planifie l'atelier de lancement.\n\n`;
   }
