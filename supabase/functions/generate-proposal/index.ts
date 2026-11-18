@@ -124,8 +124,8 @@ SECTION 6 — "Investissement"
 Tableau markdown clair :
 | Format | Montant |
 |---|---|
-| **Ta Binôme de Com' — 6 mois** | **350€/mois × 6 = 2 100€** |
-| Paiement mensuel par prélèvement | *TVA non applicable, art. 293 B du CGI* |
+| **Ta Binôme de Com' — 6 mois** | **325 € HT/mois × 6 = 1 950 € HT** |
+| Paiement mensuel par prélèvement | *TVA 20 % en sus, soit 390 € TTC/mois* |
 
 (Adapte si Agency, ENSCO ou autre format selon le mission_type.)
 
