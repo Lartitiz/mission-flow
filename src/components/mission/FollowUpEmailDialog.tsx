@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { BINOME_PAYMENT_LINK } from '@/lib/payment-links';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,7 +89,7 @@ Laetitia`;
 
 Juste un petit rappel pour qu'on ne perde pas le fil : il me manque le premier paiement pour qu'on puisse démarrer.
 
-👉 https://buy.stripe.com/4gMfZidRHgQo7Ve0IF67S00
+👉 ${BINOME_PAYMENT_LINK}
 
 Si tu as eu un imprévu ou si tu as des questions, n'hésite pas à me faire signe. Je suis là.
 
